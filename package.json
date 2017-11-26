@@ -25,8 +25,9 @@
     "yargs": "^10.0.3"
   },
   "scripts": {
-    "build": "run",
-    "watch": "watch"
+    "build": "bin/run",
+    "deploy": "bin/deploy",
+    "watch": "bin/watch"
   },
   "author": "keneucker@gmail.com"
 }
