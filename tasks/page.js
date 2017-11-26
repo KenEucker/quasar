@@ -15,7 +15,7 @@ let _quasArgs = {
 quasArgs = Object.assign(quasArgs, _quasArgs);
 
 const task = () => {
-	return lib.injectdist(quasArgs)
+	return lib.injectCode(quasArgs)
 	.then(() => { lib.outputToHtmlFile(quasArgs); });
 };
 
@@ -76,7 +76,8 @@ gulp.task(`${qType}:build`, () => {
 gulp.task(`${qType}`, [`${qType}:build`]);
 
 module.exports = {
-	run,
 	initialPrompt,
+	qType,
+	run,
 	validateInitalArgs
 };

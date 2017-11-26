@@ -16,7 +16,7 @@ const config = require(`${process.cwd()}/config.js`);
 const getDefaultQuasArgs = (qType = null) => { 
 	return Object.assign({ 
 			dirname: config.dirname,
-			distFolder: config.distFolder,
+			outputFolder: config.outputFolder,
 			sourceFolder: config.sourceFolder,
 			assetsFolder: qType ? `${config.assetsFolder}/${qType}` : undefined,
 			stylesAsset: qType ? `${qType}.css` : undefined,
@@ -203,7 +203,7 @@ const getQuasarPromptQuestions = () => {
 }
 
 const findTargetFile = (quasArgs) => {
-	const signalPath = path.resolve(`${quasArgs.distFolder}/${quasArgs.domain}/${quasArgs.signal}`);
+	const signalPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
 	let targetFilePath = path.resolve(`${signalPath}/${quasArgs.target}`);
 
 	if (!fs.existsSync(targetFilePath)) {
@@ -227,8 +227,8 @@ const unpackFiles = (quasArgs) => {
 		}
 		
 		const zipFilePath = path.resolve(`${quasArgs.sourceFolder}/${quasArgs.input}.${quasArgs.inputExt}`);
-		const destinationPath = path.resolve(`${quasArgs.distFolder}/${quasArgs.domain}/${quasArgs.signal}`);
-		log(`unpacking source files from (${zipFilePath}) to the dist folder (${destinationPath})`);
+		const destinationPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
+		log(`unpacking source files from (${zipFilePath}) to the public folder (${destinationPath})`);
 
 		if (fs.existsSync(findTargetFile(quasArgs))) {
 			if(!quasArgs.overwriteUnpackDestination) {
@@ -252,7 +252,7 @@ const unpackFiles = (quasArgs) => {
 }
 
 // Inject the code into the html file before applying template vars
-const injectdist = (quasArgs) => {
+const injectCode = (quasArgs) => {
 	return new promise((resolve, reject) => {
 		const urlToPrependCDNLink = quasArgs.target ? quasArgs.target.replace('.html','') : quasArgs.targetFilePath.split('/').pop().replace('.html','');
 		const cdnTemplate = `<%= cdnUrlStart %><%= bucketPath %>/`;
@@ -265,7 +265,7 @@ const injectdist = (quasArgs) => {
 			js = fs.existsSync(js) ? `<script>\n${fs.readFileSync(js, 'utf8')}\n</script>\n` : ``;
 		}
 		
-		log('injecting dist code prior to applying template parameters');
+		log('injecting public code prior to applying template parameters');
 		log(`getting assets from (${quasArgs.assetsFolder})`);
 		log(`getting template file (${quasArgs.targetFilePath}) and assets(css:${quasArgs.stylesAsset}   js: ${quasArgs.scriptsAsset})`);
 
@@ -319,7 +319,7 @@ const uploadFiles = (quasArgs) => {
 // Compile the quasar into the output folder
 const outputToHtmlFile = (quasArgs) => {
 	return new promise((resolve, reject) => {
-		const outputPath = `${quasArgs.distFolder.replace(quasArgs.dirname, '')}/${quasArgs.domain}/${quasArgs.signal}`;
+		const outputPath = `${quasArgs.outputFolder.replace(quasArgs.dirname, '')}/${quasArgs.domain}/${quasArgs.signal}`;
 		log('Applying the following parameters to the template and building output', quasArgs);
 
 		return gulp.src(quasArgs.targetFilePath) 
@@ -345,7 +345,7 @@ module.exports = {
 	getFilenamesInDirectory,
 	getTaskNames,
 	getQuasarPromptQuestions,
-	injectdist,
+	injectCode,
 	logAsync,
 	log,
 	logInfo,

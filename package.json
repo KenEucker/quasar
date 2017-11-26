@@ -1,8 +1,8 @@
 {
   "name": "quasar",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "A light version of the quasi app runtime",
-  "main": "gulpfile.js",
+  "main": "app.js",
   "dependencies": {
     "aws-sdk": "^2.156.0",
     "bluebird": "^3.5.1",
@@ -25,8 +25,8 @@
     "yargs": "^10.0.3"
   },
   "scripts": {
-    "build": "node gulpfile.js",
-    "watch": "node gulpfile.js --watchJobs=true"
+    "build": "run",
+    "watch": "watch"
   },
   "author": "keneucker@gmail.com"
 }

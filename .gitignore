@@ -1,6 +1,6 @@
 .git
 .DS_Store
-dist
+public
 jobs
 node_modules
 source

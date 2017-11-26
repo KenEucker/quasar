@@ -19,7 +19,7 @@ const initialPrompt = () => {
 	const tasksPath = path.resolve('./tasks/');
 	let availableTasks = lib.getTaskNames(tasksPath);
 
-	return promptConsole([{
+	return lib.promptConsole([{
 		type: 'list',
 		name: 'task',
 		message: `Select the type of quasar you want to launch:\n`,
