@@ -1,5 +1,4 @@
 let gulp = require('gulp'),
-	prompt = require('inquirer'),
 	promise = require('bluebird'),
 	colors = require('colors');
 
@@ -46,7 +45,7 @@ const validateInitalArgs = (args = {}) => {
 
 const initialPrompt = () => {
 	// Only get the signal questions if they weren't passed in
-	let questions = !(quasArgs.signal && quasArgs.domain) ? lib.getQuasarPromptQuestions() : [];
+	let questions = !(lib.hasQuasarAnswers(quasArgs)) ? lib.getQuasarPromptQuestions() : [];
 	questions.push({
 		type: 'input',
 		name: 'imageUrl',
@@ -63,7 +62,7 @@ const initialPrompt = () => {
 		message: `Enter the output filename postfix (default extension .${quasArgs.outputExt} ${colors.yellow('(optional)')}):\n`
 	});
 
-	return prompt.prompt(questions).then(validateInitalArgs);
+	return lib.promptConsole(questions, validateInitalArgs);
 };
 
 gulp.task(`${qType}:build`, () => {

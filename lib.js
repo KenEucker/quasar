@@ -31,9 +31,30 @@ const getDefaultQuasArgs = (qType = null) => {
 			unpackFiles: true,
 			overwriteUnpackDestination: false,
 			buildCompletedSuccessfully: false,
-			qType }, 
+			qType,
+			registerRequiredQuasArgs: (args) => { return registerRequiredQuasArgs(this, args) } },
 		yargs.argv);
 }
+
+const definitelyCallFunction = (cb) => {
+	if(process.title == 'gulp') {
+		gulp.task('default', () => {
+			cb();
+		});
+	} else {
+		cb();
+	}
+}
+
+const spawnQuasarTask = (args) => {
+	const command = `node`;
+	args.unshift('gulpfile.js');
+	lib.log(`Running command ${command} ${args.join(' ')}`);
+	spawn.spawn(command, args)
+		.on("error", (error) => { console.log(`ERROR:`, error); })
+		.on("data", (data) => { console.log("DATA: ", data); })
+		.on("end", (msg) => { console.log("Ended: ", msg); });
+};
 
 const getTaskNames = (dir) => {
 	return getFilenamesInDirectory(dir, ['js'], true);
@@ -106,15 +127,15 @@ const log = (message, obj, status = '', color = colors.grey) => {
 }
 
 const logInfo = (message, obj, color = colors.yellow) => {
-	log(message,  obj, 'info', color);
+	log(`<!-- info: ${message} -->`, obj, 'info', color);
 }
 
 const logError = (message, obj, color = colors.red) => {
-	log(message,  obj, 'error', color);
+	log(`<!-- error: ${message} -->`, obj, 'error', color);
 }
 
 const logFin = (message = 'FiN!', obj, color = colors.green) => {
-	log(message,  obj, 'fin', color);
+	log(`<!-- end: ${message} -->`, obj, 'fin', color);
 }
 
 const fromDir = (startPath,filter) => {
@@ -202,6 +223,18 @@ const getQuasarPromptQuestions = () => {
 	}];
 }
 
+const registerRequiredQuasArgs = (args, registerArgs) => {
+	let quasArgs = Object.assign(args, registerArgs);
+
+	// TODO: more sophisticated registering
+
+	return quasArgs;
+};
+
+const hasQuasarAnswers = (args) => {
+
+};
+
 const findTargetFile = (quasArgs) => {
 	const signalPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
 	let targetFilePath = path.resolve(`${signalPath}/${quasArgs.target}`);
@@ -254,6 +287,7 @@ const unpackFiles = (quasArgs) => {
 // Inject the code into the html file before applying template vars
 const injectCode = (quasArgs) => {
 	return new promise((resolve, reject) => {
+		console.log(quasArgs);
 		const urlToPrependCDNLink = quasArgs.target ? quasArgs.target.replace('.html','') : quasArgs.targetFilePath.split('/').pop().replace('.html','');
 		const cdnTemplate = `<%= cdnUrlStart %><%= bucketPath %>/`;
 		let css = (quasArgs.stylesAsset && quasArgs.stylesAsset.length) ? `${quasArgs.assetsFolder}/${quasArgs.stylesAsset}` : null;
@@ -339,12 +373,14 @@ const outputToHtmlFile = (quasArgs) => {
 }
 
 module.exports = {
+	definitelyCallFunction,
 	findTargetFile,
 	fromDir,
 	getDefaultQuasArgs,
 	getFilenamesInDirectory,
 	getTaskNames,
 	getQuasarPromptQuestions,
+	hasQuasarAnswers,
 	injectCode,
 	logAsync,
 	log,
@@ -355,7 +391,9 @@ module.exports = {
 	outputToHtmlFile,
 	promptConsole,
 	quasarSelectPrompt,
+	registerRequiredQuasArgs,
 	runTask,
+	spawnQuasarTask,
 	unpackFiles,
 	uploadFiles
 }
