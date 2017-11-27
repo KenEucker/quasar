@@ -1,0 +1,27 @@
+{
+  "name": "dtads_skin_reveal",
+  "version": "1.0.0",
+  "description": "Skin and reveal script generator",
+  "main": "main.js",
+  "dependencies": {
+    "aws-sdk": "^2.156.0",
+    "bluebird": "^3.5.1",
+    "extract-zip": "^1.6.6",
+    "fs": "0.0.1-security",
+    "gulp": "^3.9.1",
+    "gulp-inject-string": "^1.1.0",
+    "gulp-template": "^3.1.0",
+    "inquirer": "^4.0.0",
+    "phantom": "^4.0.9",
+    "stream-to-promise": "^2.2.0",
+    "system": "^2.0.1"
+  },
+  "devDependencies": {
+    "gulp-prompt": "^0.1.2",
+    "gulp-rename": "^1.2.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "mleong@digitaltrends.com"
+}

@@ -9,7 +9,8 @@ let gulp = require('gulp'),
 	colors = require('colors'),
 	promise = require('bluebird'),
 	fs = require('fs'),
-	yargs = require('yargs');
+	yargs = require('yargs'),
+	mkdir = require('mkdirp-sync');
 
 const config = require(`${process.cwd()}/config.js`);
 
@@ -21,19 +22,40 @@ const getDefaultQuasArgs = (qType = null) => {
 			assetsFolder: qType ? `${config.assetsFolder}/${qType}` : undefined,
 			stylesAsset: qType ? `${qType}.css` : undefined,
 			scriptsAsset: qType ? `${qType}.js` : undefined,
-			targetFilePath: qType ? path.resolve(`${config.assetsFolder}/${qType}/${qType}.html`) : undefined,
+			target: qType ? `${qType}.html` : undefined,
+			targetFilePath: qType ? `${config.assetsFolder}/${qType}/${qType}.html` : undefined,
 			bucket: 'ads',
 			outputExt: 'txt',
 			cdnUrlStart: 'https://cdn.dtcn.com/',
 			clickUrl: '!! PASTE CLICK URL HERE !!',
-			inputExt: 'zip',
 			uploadToS3: false,
 			unpackFiles: true,
 			overwriteUnpackDestination: false,
 			buildCompletedSuccessfully: false,
-			qType }, 
+			qType,
+			registerRequiredQuasArgs: (args) => { return registerRequiredQuasArgs(this, args) } },
 		yargs.argv);
 }
+
+const definitelyCallFunction = (cb) => {
+	if(process.title == 'gulp') {
+		gulp.task('default', () => {
+			cb();
+		});
+	} else {
+		cb();
+	}
+}
+
+const spawnQuasarTask = (args) => {
+	const command = `node`;
+	args.unshift('gulpfile.js');
+	lib.log(`Running command ${command} ${args.join(' ')}`);
+	spawn.spawn(command, args)
+		.on("error", (error) => { console.log(`ERROR:`, error); })
+		.on("data", (data) => { console.log("DATA: ", data); })
+		.on("end", (msg) => { console.log("Ended: ", msg); });
+};
 
 const getTaskNames = (dir) => {
 	return getFilenamesInDirectory(dir, ['js'], true);
@@ -48,26 +70,30 @@ const getTaskNames = (dir) => {
 }
 
 const getFilenamesInDirectory = (directory, extensions = [], removeExtension = false) => {
+	let filenames = [];
 
-	const filenames = fs.readdirSync(directory)
-		.filter(function(file) {
-			const notADirectory = !fs.statSync(path.join(directory, file)).isDirectory();
-			if(notADirectory && extensions.length) {
-				let ext = path.extname(file);
-				ext = ext ? ext.split('.').pop() : ext;
+	if(fs.existsSync(directory))
+	{
+		filenames = fs.readdirSync(directory)
+			.filter(function(file) {
+				const notADirectory = !fs.statSync(path.join(directory, file)).isDirectory();
+				if(notADirectory && extensions.length) {
+					let ext = path.extname(file);
+					ext = ext ? ext.split('.').pop() : ext;
 
-				if(extensions.includes(ext)) {
-					return true;
-				} else {
-					return false;
+					if(extensions.includes(ext)) {
+						return true;
+					} else {
+						return false;
+					}
 				}
-			}
 
-			return notADirectory;
-	});
+				return notADirectory;
+		});
 
-	if (removeExtension) {
-		return filenames.map( filename => filename.replace(path.extname(filename), '') );
+		if (removeExtension) {
+			return filenames.map( filename => filename.replace(path.extname(filename), '') );
+		}
 	}
 
 	return filenames;
@@ -106,18 +132,22 @@ const log = (message, obj, status = '', color = colors.grey) => {
 }
 
 const logInfo = (message, obj, color = colors.yellow) => {
-	log(message,  obj, 'info', color);
+	log(`<!-- info: ${message} -->`, obj, 'info', color);
 }
 
 const logError = (message, obj, color = colors.red) => {
-	log(message,  obj, 'error', color);
+	log(`<!-- error: ${message} -->`, obj, 'error', color);
+}
+
+const logSuccess = (message, obj, color = colors.green) => {
+	log(`<!-- success: ${message} -->`, obj, 'error', color);
 }
 
 const logFin = (message = 'FiN!', obj, color = colors.green) => {
-	log(message,  obj, 'fin', color);
+	log(`<!-- end: ${message} -->`, obj, 'fin', color);
 }
 
-const fromDir = (startPath,filter) => {
+const fromDir = (startPath, filter) => {
 	let found = '';
 
 	if (!fs.existsSync(startPath)){
@@ -160,7 +190,7 @@ const runTask = (task) => {
 	if(gulp.hasTask(task)) {
 		gulp.start(task);
 	} else {
-		console.log(`Cannot find gulp task ${task}`);
+		logError(`Cannot find gulp task ${task}`);
 	}
 }
 
@@ -202,6 +232,18 @@ const getQuasarPromptQuestions = () => {
 	}];
 }
 
+const registerRequiredQuasArgs = (args, registerArgs) => {
+	let quasArgs = Object.assign(args, registerArgs);
+
+	// TODO: more sophisticated registering
+
+	return quasArgs;
+};
+
+const hasQuasarAnswers = (quasArgs) => {
+	return quasArgs.domain && quasArgs.signal;
+};
+
 const findTargetFile = (quasArgs) => {
 	const signalPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
 	let targetFilePath = path.resolve(`${signalPath}/${quasArgs.target}`);
@@ -219,23 +261,49 @@ const findTargetFile = (quasArgs) => {
 	return targetFilePath;
 }
 
+const copyTargetFileToOutputPath = (quasArgs) => {
+	const signalPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
+	const outputFilePath = path.resolve(`${signalPath}/${quasArgs.target}`);
+	const targetFilePath = quasArgs.targetFilePath && quasArgs.targetFilePath.length ? quasArgs.targetFilePath : findTargetFile(quasArgs);
+
+	if(fs.existsSync(targetFilePath)) {
+		log(`copying target file to output path: ${outputFilePath}`);
+		const outfile = fs.readFileSync(targetFilePath, 'utf-8');
+		
+		mkdir(signalPath);
+		if(!outfile) {
+			return targetFilePath;
+		}
+
+		fs.writeFileSync(outputFilePath, outfile);
+		return outputFilePath;
+	}
+
+	return quasArgs.targetFilePath;
+};
+
 // Unpack input files
 const unpackFiles = (quasArgs) => {
 	return new promise((resolve, reject) => {
 		if(!quasArgs.unpackFiles) {
 			resolve();
 		}
-		
-		const zipFilePath = path.resolve(`${quasArgs.sourceFolder}/${quasArgs.input}.${quasArgs.inputExt}`);
+
+		const zipFilePath = path.resolve(`${quasArgs.sourceFolder}/${quasArgs.source}.${quasArgs.sourceExt}`);
 		const destinationPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
 		log(`unpacking source files from (${zipFilePath}) to the public folder (${destinationPath})`);
+
+		if (!fs.existsSync(zipFilePath)) {
+			logError(`source could not be found`, zipFilePath);
+			return reject();
+		}
 
 		if (fs.existsSync(findTargetFile(quasArgs))) {
 			if(!quasArgs.overwriteUnpackDestination) {
 				logError(`files have already been unpacked, run again with option --overwriteUnpackDestination=true .`);
 				return resolve();
 			} else {
-				log(`overwriting files in ouput folder ${destinationPath}`);
+				logInfo(`overwriting files in ouput folder ${destinationPath}`);
 			}
 		}
 		unzip(zipFilePath, {dir: destinationPath}, function (err) {
@@ -245,7 +313,7 @@ const unpackFiles = (quasArgs) => {
 				return reject();
 			}
 
-			log(`files successfully unziped to ${destinationPath}`);
+			logSuccess(`files successfully unziped to ${destinationPath}`);
 			resolve();
 		});
 	});
@@ -267,7 +335,7 @@ const injectCode = (quasArgs) => {
 		
 		log('injecting public code prior to applying template parameters');
 		log(`getting assets from (${quasArgs.assetsFolder})`);
-		log(`getting template file (${quasArgs.targetFilePath}) and assets(css:${quasArgs.stylesAsset}   js: ${quasArgs.scriptsAsset})`);
+		log(`getting template file (${quasArgs.targetFilePath}) and assets(css:${css ? quasArgs.stylesAsset : 'none'}   js: ${js ? quasArgs.scriptsAsset  : 'none'})`);
 
 		return gulp.src(quasArgs.targetFilePath, { base: quasArgs.dirname })
 			.pipe(inject.before(`${urlToPrependCDNLink}.`, cdnTemplate))
@@ -279,7 +347,7 @@ const injectCode = (quasArgs) => {
 				reject(err);
 			})
 			.on('end', (msg) => { 
-				//log('injection pipeline ended ', msg); 
+				logSuccess('injection pipeline ended successfully');
 				resolve(quasArgs); 
 			});
 	});
@@ -294,7 +362,7 @@ const uploadFiles = (quasArgs) => {
 
 		let s3 = new aws.S3();
 		const s3Key = 'autotest';
-		log('Uploading files to S3');
+		logInfo('Uploading files to S3');
 
 		s3.createBucket({Bucket: quasArgs.bucketPath}, function(err, data) {
 			if (err) {
@@ -306,7 +374,7 @@ const uploadFiles = (quasArgs) => {
 						logError(err);
 						reject();
 					} else {
-						log(`Successfully uploaded data to ${bucketPath}/${s3Key}`);
+						logSuccess(`Successfully uploaded data to ${bucketPath}/${s3Key}`);
 					}
 
 					resolve(quasArgs);
@@ -331,7 +399,7 @@ const outputToHtmlFile = (quasArgs) => {
 		}))
 		.pipe(gulp.dest(quasArgs.dirname))
 		.on('end', () => { 
-			log(`Output file saved as: ${outputPath}/${quasArgs.output}.${quasArgs.outputExt}`);
+			logSuccess(`Output file saved as: ${outputPath}/${quasArgs.output}.${quasArgs.outputExt}`);
 			quasArgs.buildCompletedSuccessfully = true;
 			resolve(quasArgs);
 		});
@@ -339,12 +407,15 @@ const outputToHtmlFile = (quasArgs) => {
 }
 
 module.exports = {
+	copyTargetFileToOutputPath,
+	definitelyCallFunction,
 	findTargetFile,
 	fromDir,
 	getDefaultQuasArgs,
 	getFilenamesInDirectory,
 	getTaskNames,
 	getQuasarPromptQuestions,
+	hasQuasarAnswers,
 	injectCode,
 	logAsync,
 	log,
@@ -355,7 +426,9 @@ module.exports = {
 	outputToHtmlFile,
 	promptConsole,
 	quasarSelectPrompt,
+	registerRequiredQuasArgs,
 	runTask,
+	spawnQuasarTask,
 	unpackFiles,
 	uploadFiles
 }
