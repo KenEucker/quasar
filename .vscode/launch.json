@@ -8,6 +8,7 @@
 			"type": "node",
 			"request": "launch",
 			"name": "Watch Jobs",
+			"protocol": "inspector",
 			"program": "${workspaceFolder}/node_modules/gulp/bin/gulp.js",
 			"args": [
 				"--watchJobs=true"
@@ -16,6 +17,7 @@
 		{
 			"type": "node",
 			"request": "launch",
+			"protocol": "inspector",
 			"name": "Build",
 			"program": "${workspaceFolder}/app.js",
 			"args": [
