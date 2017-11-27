@@ -22,6 +22,8 @@ const getDefaultQuasArgs = (qType = null) => {
 			assetsFolder: qType ? `${config.assetsFolder}/${qType}` : undefined,
 			stylesAsset: qType ? `${qType}.css` : undefined,
 			scriptsAsset: qType ? `${qType}.js` : undefined,
+			cssInjectLocation = '</head',
+			jsInjectLocation = '</body',
 			target: qType ? `${qType}.html` : undefined,
 			targetFilePath: qType ? `${config.assetsFolder}/${qType}/${qType}.html` : undefined,
 			bucket: 'ads',
@@ -326,6 +328,8 @@ const injectCode = (quasArgs) => {
 		const cdnTemplate = `<%= cdnUrlStart %><%= bucketPath %>/`;
 		let css = (quasArgs.stylesAsset && quasArgs.stylesAsset.length) ? `${quasArgs.assetsFolder}/${quasArgs.stylesAsset}` : null;
 		let js = (quasArgs.scriptsAsset && quasArgs.scriptsAsset.length) ? `${quasArgs.assetsFolder}/${quasArgs.scriptsAsset}` : null;
+
+		// TODO: check if injection locations exist or not
 		if(css) {
 			let css_contents = fs.existsSync(css) ? fs.readFileSync(css, 'utf8') : '';
 			css = css_contents.length ? `<style>\n${css_contents}\n</style>\n` : ``;
@@ -341,8 +345,8 @@ const injectCode = (quasArgs) => {
 
 		return gulp.src(quasArgs.targetFilePath, { base: quasArgs.dirname })
 			.pipe(inject.before(`${urlToPrependCDNLink}.`, cdnTemplate))
-			.pipe(inject.before('</head', css))
-			.pipe(inject.before('</body', js))
+			.pipe(inject.before(quasArgs.cssInjectLocation, css))
+			.pipe(inject.before(quasArgs.jsInjectLocation, js))
 			.pipe(gulp.dest(quasArgs.dirname))
 			.on('error', (err) => { 
 				logError('error on injection pipeline ', err); 
