@@ -1,6 +1,5 @@
 let gulp = require('gulp'),
 	requireDir = require('require-dir'),
-	prompt = require('inquirer'),
 	fs = require('fs'),
 	path = require('path'),
 	promise = require('bluebird'),
@@ -29,26 +28,6 @@ const initialPrompt = () => {
 	});
 }
 
-const areWeRunningGulped = (cb) => {
-	if(process.title == 'gulp') {
-		gulp.task('default', () => {
-			cb();
-		});
-	} else {
-		cb();
-	}
-}
-
-const spawnChildTask = (args) => {
-	const command = `node`;
-	args.unshift('gulpfile.js');
-	lib.log(`Running command ${command} ${args.join(' ')}`);
-	spawn.spawn(command, args)
-		.on("error", (error) => { console.log(`ERROR:`, error); })
-		.on("data", (data) => { console.log("DATA: ", data); })
-		.on("end", (msg) => { console.log("Ended: ", msg); });
-};
-
 const transformToProcessArgs = (data, file) => {
 	lib.log(`processing file (${file.path})`);
 	let args = [];
@@ -58,7 +37,7 @@ const transformToProcessArgs = (data, file) => {
 		args.push(`--${key}=${val}`);
 	});
 
-	spawnChildTask(args);
+	lib.spawnQuasarTask(args);
 
 	return args;
 };
@@ -71,16 +50,16 @@ gulp.task(`watchJobs`, () => {
 });
 
 if(yargs.argv.watchJobs) {
-	areWeRunningGulped(() => {
+	lib.definitelyCallFunction(() => {
 		lib.runTask('watchJobs');
 	});
 } else if(yargs.argv.qType) {
-	console.log('!-- automated build --!')
-	areWeRunningGulped(() => {
+	lib.logInfo('automated quasar build from quasArgs')
+	lib.definitelyCallFunction(() => {
 		lib.runTask(yargs.argv.qType);
 	});
 } else {
-	areWeRunningGulped(() => {
+	lib.definitelyCallFunction(() => {
 		initialPrompt();
 	});
 }
