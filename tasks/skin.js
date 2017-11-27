@@ -1,18 +1,19 @@
 let gulp = require('gulp'),
-	prompt = require('inquirer'),
 	promise = require('bluebird'),
-	colors = require('colors');
+	colors = require('colors'),
+	fs = require('fs');
 
-const config = require(`${process.cwd()}/config.js`);
-const lib = require(`${config.dirname}/lib.js`);
 const adType = 'skin';
-let dtAdsArgs = lib.getDefaultAdArgs(adType);
+const shim = 'dt-lib-shim.js';
+const config = require(`${process.cwd()}/config.js`);
+const lib = fs.existsSync(`${config.assetsFolder}/${shim}`) ? require(`${config.assetsFolder}/${shim}`) : require(`${config.dirname}/lib.js`);
+let dtAdsArgs = lib.getDefaultQuasArgs(adType);
 
-let _dtAdsArgs = {
+dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
+	adType: adType,
 	clickUrl: '!! PASTE CLICK URL HERE !!',
 	impressionTracker: '!! PASTE IMPRESSION TRACKER URL HERE !!',
-};
-dtAdsArgs = Object.assign(dtAdsArgs, _dtAdsArgs);
+});
 
 const task = () => {
 	return lib.injectAdCode(dtAdsArgs)
@@ -46,7 +47,7 @@ const validateInitalArgs = (args = {}) => {
 
 const initialPrompt = () => {
 	// Only get the campaign questions if they weren't passed in
-	let questions = !(dtAdsArgs.campaign && dtAdsArgs.client) ? lib.getCampaignPromptQuestions() : [];
+	let questions = !(lib.hasCampaignAnswers(dtAdsArgs)) ? lib.getCampaignPromptQuestions() : [];
 	questions.push({
 		type: 'input',
 		name: 'imageUrl',
@@ -63,7 +64,7 @@ const initialPrompt = () => {
 		message: `Enter the output filename postfix (default extension .${dtAdsArgs.outputExt} ${colors.yellow('(optional)')}):\n`
 	});
 
-	return prompt.prompt(questions).then(validateInitalArgs);
+	return lib.promptConsole(questions, validateInitalArgs);
 };
 
 gulp.task(`${adType}:build`, () => {
@@ -76,7 +77,8 @@ gulp.task(`${adType}:build`, () => {
 gulp.task(`${adType}`, [`${adType}:build`]);
 
 module.exports = {
-	run,
 	initialPrompt,
+	qType: adType,
+	run,
 	validateInitalArgs
 };

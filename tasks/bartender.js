@@ -1,22 +1,23 @@
 let gulp = require('gulp'),
 	template = require('gulp-template'),
-	prompt = require('inquirer'),
 	rename = require('gulp-rename'),
 	promise = require('bluebird'),
 	path = require('path'),
 	colors = require('colors'),
-	yargs = require('yargs');
+	yargs = require('yargs'),
+	fs = require('fs');
 
-const config = require(`${process.cwd()}/config.js`);
-const lib = require(`${config.dirname}/lib.js`);
 const adType = 'bartender';
-let dtAdsArgs = lib.getDefaultAdArgs(adType);
+const shim = 'dt-lib-shim.js';
+const config = require(`${process.cwd()}/config.js`);
+const lib = fs.existsSync(`${config.assetsFolder}/${shim}`) ? require(`${config.assetsFolder}/${shim}`) : require(`${config.dirname}/lib.js`);
 
-let _dtAdsArgs = {
+let dtAdsArgs = lib.getDefaultQuasArgs(adType);
+dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
+	adType: adType,
 	clickUrl: '!! PASTE CLICK URL HERE !!',
 	impressionTracker: '!! PASTE IMPRESSION TRACKER URL HERE !!',
-};
-dtAdsArgs = Object.assign(dtAdsArgs, _dtAdsArgs);
+});
 
 const task = () => {
 	return lib.injectAdCode(dtAdsArgs)
@@ -29,7 +30,7 @@ const run = () => {
 
 const validateInitalArgs = (args) => {
 	return new Promise((resolve, reject) => {
-		dtAdsArgs = Object.assign(dtAdsArgs, args);
+		dtAdsArgs = lib.resolveQuasArgs(dtAdsArgs, args);
 
 		if(dtAdsArgs.output && dtAdsArgs.output.length) {
 			const split = dtAdsArgs.output.split('.');
@@ -49,7 +50,7 @@ const validateInitalArgs = (args) => {
 
 const initialPrompt = () => {
 	// Only get the campaign questions if they weren't passed in
-	let questions = !(dtAdsArgs.campaign && dtAdsArgs.client) ? lib.getCampaignPromptQuestions() : [];
+	let questions = !(lib.hasCampaignAnswers(dtAdsArgs)) ? lib.getCampaignPromptQuestions() : [];
 	questions.push({
 		type: 'input',
 		name: 'imageUrl',
@@ -61,7 +62,7 @@ const initialPrompt = () => {
 		message: `Enter the output filename postfix (default extension .${dtAdsArgs.outputExt} ${colors.yellow('(optional)')}):\n`
 	});
 
-	return prompt.prompt(questions).then(validateInitalArgs);
+	return lib.promptConsole(questions, validateInitalArgs);
 }
 
 gulp.task(`${adType}:build`, () => {
@@ -75,7 +76,8 @@ gulp.task(`${adType}:build`, () => {
 gulp.task(`${adType}`, [`${adType}:build`]);
 
 module.exports = {
-	run,
 	initialPrompt,
+	qType: adType,
+	run,
 	validateInitalArgs
 };

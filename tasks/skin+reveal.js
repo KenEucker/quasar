@@ -1,24 +1,25 @@
 let gulp = require('gulp'),
 	template = require('gulp-template'),
-	prompt = require('inquirer'),
 	rename = require('gulp-rename'),
 	promise = require('bluebird'),
 	path = require('path'),
 	colors = require('colors'),
-	yargs = require('yargs');
+	yargs = require('yargs'),
+	fs = require('fs');
 
 const adType = 'skin+reveal';
+const shim = 'dt-lib-shim.js';
 const config = require(`${process.cwd()}/config.js`);
-const lib = require(`${config.dirname}/lib.js`);
-let dtAdsArgs = lib.getDefaultAdArgs(adType);
+const lib = fs.existsSync(`${config.assetsFolder}/${shim}`) ? require(`${config.assetsFolder}/${shim}`) : require(`${config.dirname}/lib.js`);
+let dtAdsArgs = lib.getDefaultQuasArgs(adType);
 
-let _dtAdsArgs = {
+dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
+	adType: adType,
 	skinClickUrl: '!! PASTE SKIN CLICK URL HERE !!',
 	revealClickUrl: '!! PASTE REVEAL CLICK URL HERE !!',
 	skinImpressionTracker: '!! PASTE SKIN IMPRESSION TRACKER URL HERE !!',
 	revealImpressionTracker: '!! PASTE REVEAL IMPRESSION TRACKER URL HERE !!',
-};
-dtAdsArgs = Object.assign(dtAdsArgs, _dtAdsArgs);
+});
 
 const task = () => {
 	return lib.injectAdCode(dtAdsArgs)
@@ -51,7 +52,7 @@ const validateInitalArgs = (args) => {
 
 const initialPrompt = function() {
 	// Only get the campaign questions if they weren't passed in
-	let questions = !(dtAdsArgs.campaign && dtAdsArgs.client) ? lib.getCampaignPromptQuestions() : [];
+	let questions = !(lib.hasCampaignAnswers(dtAdsArgs)) ? lib.getCampaignPromptQuestions() : [];
 	questions.push({
 		type: 'input',
 		name: 'skinImage',
@@ -78,7 +79,7 @@ const initialPrompt = function() {
 		message: `Enter the output filename postfix (default extension .${dtAdsArgs.outputExt} ${colors.yellow('(optional)')}):\n`
 	});
 
-	return prompt.prompt(questions).then(validateInitalArgs);
+	return lib.promptConsole(questions, validateInitalArgs);
 }
 
 gulp.task(`${adType}:build`, () => {
@@ -91,7 +92,8 @@ gulp.task(`${adType}:build`, () => {
 gulp.task(`${adType}`, [`${adType}:build`]);
 
 module.exports = {
-	run,
 	initialPrompt,
+	qType: adType,
+	run,
 	validateInitalArgs
 };

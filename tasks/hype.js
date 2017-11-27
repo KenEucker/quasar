@@ -1,14 +1,17 @@
 let gulp = require('gulp'),
-	prompt = require('inquirer'),
 	colors = require('colors'),
 	phantom = require('phantom'),
 	promise = require('bluebird'),
 	fs = require('fs');
 
 const adType = 'hype';
+const shim = 'dt-lib-shim.js';
 const config = require(`${process.cwd()}/config.js`);
-const lib = require(`${config.dirname}/lib.js`);
-let dtAdsArgs = lib.getDefaultAdArgs(adType);
+const lib = fs.existsSync(`${config.assetsFolder}/${shim}`) ? require(`${config.assetsFolder}/${shim}`) : require(`${config.dirname}/lib.js`);
+let dtAdsArgs = lib.getDefaultQuasArgs(adType);
+dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
+	adType: adType,
+});
 
 const task = () => {
 	return lib.unpackFiles(dtAdsArgs)
@@ -83,7 +86,7 @@ const initialPrompt = () => {
 	const availableInputFiles = lib.getFilenamesInDirectory(dtAdsArgs.sourceFolder, ['zip']);
 
 	// Only get the campaign questions if they weren't passed in
-	let questions = !(dtAdsArgs.campaign && dtAdsArgs.client) ? lib.getCampaignPromptQuestions() : [];
+	let questions = !(lib.hasCampaignAnswers(dtAdsArgs)) ? lib.getCampaignPromptQuestions() : [];
 	questions.push({
 		type: 'list',
 		name: 'input',
@@ -99,7 +102,7 @@ const initialPrompt = () => {
 		message: `Enter the output filename postfix (default extension .${dtAdsArgs.outputExt} ${colors.yellow('(optional)')}):\n`
 	});
 
-	return prompt.prompt(questions).then(validateInitalArgs);
+	return lib.promptConsole(questions, validateInitalArgs);
 };
 
 // Parse html input file for params
@@ -143,17 +146,12 @@ const confirmationPrompt = () => {
 	return new promise((resolve, reject) => {
 		lib.log('confirming parameters');
 
-		prompt.prompt([{
-		// 	type: 'confirm',
-		// 	name: 'uploadToS3',
-		// 	message: `Upload documents to s3?`
-		// },
-		// {
+		lib.promptConsole([{
 			type: 'checkbox',
 			name: 'hypeElements',
 			message: `Select the ids of the clickable HYPE elements to attach click events. The following ${dtAdsArgs.hypeElements.length} HYPE elements were found:`,
 			choices: dtAdsArgs.hypeElements.map(c => { return { name: c, checked: true } })
-		}]).then(res => {
+		}], (res) => {
 			dtAdsArgs = Object.assign(dtAdsArgs, res);
 
 			resolve(dtAdsArgs);
@@ -171,8 +169,7 @@ const injectHypeAdCode = () => {
 	});
 };
 
-// Test Ad Unit 
-
+// Test HYPE Ad Unit 
 
 gulp.task(`${adType}:build`, () => {
 	if(!dtAdsArgs.noPrompt) {
@@ -184,7 +181,8 @@ gulp.task(`${adType}:build`, () => {
 gulp.task(`${adType}`, [`${adType}:build`]);
 
 module.exports = {
-	run,
 	initialPrompt,
+	qType: adType,
+	run,
 	validateInitalArgs
 };
