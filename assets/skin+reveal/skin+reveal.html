@@ -1,0 +1,21 @@
+<!-- SKIN -->
+<img src="<%= skinImpressionTracker %>" id="dt-impression-tracker-skin"/>
+<script>
+    window.top.DTAds.skin( {
+        background_image: '<%= skinImage %>',
+        background_color: '<%= skinColor %>',
+        click_url:        '<%= skinClickUrl %>'
+    });
+</script>
+
+<!-- REVEAL -->
+<img src="<%= revealImpressionTracker %>" id="dt-impression-tracker-skin"/>
+<script>
+    window.top.DTAds.reveal( {
+        preset:       'full-mem',
+        asset_url:    '<%= revealImage %>',
+        duration:     5000,
+        click_url:    '<%= revealClickUrl %>',
+        timer_color:  '<%= revealTimerColor %>'
+    });
+</script>
