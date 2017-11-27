@@ -38,6 +38,7 @@ const validateInitalArgs = (args = {}) => {
 			//Default the output filename to the signal
 			quasArgs.output = `${quasArgs.signal}_${quasArgs.qType}`;
 		}
+		quasArgs.targetFilePath = lib.copyTargetFileToOutputPath(quasArgs);
 
 		return resolve();
 	});

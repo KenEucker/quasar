@@ -22,7 +22,7 @@ dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
 });
 
 const task = () => {
-	return lib.injectAdCode(dtAdsArgs)
+	return lib.injectCode(dtAdsArgs)
 	.then(() => { lib.outputToHtmlFile(dtAdsArgs); });
 };
 
@@ -45,6 +45,8 @@ const validateInitalArgs = (args) => {
 			//Default the output filename to the campaign
 			dtAdsArgs.output = `${dtAdsArgs.campaign}_${dtAdsArgs.adType}`;
 		}
+		dtAdsArgs.targetFilePath = lib.copyTargetFileToOutputPath(dtAdsArgs);
+		dtAdsArgs = lib.resolveQuasArgs(dtAdsArgs, args);
 
 		return resolve();
 	});

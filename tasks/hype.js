@@ -11,13 +11,14 @@ const lib = fs.existsSync(`${config.assetsFolder}/${shim}`) ? require(`${config.
 let dtAdsArgs = lib.getDefaultQuasArgs(adType);
 dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
 	adType: adType,
+	sourceExt: 'zip'
 });
 
 const task = () => {
 	return lib.unpackFiles(dtAdsArgs)
 		.then(() => { return parseFiles() })
 		.then(() => { return confirmationPrompt() })
-		.then(() => { return lib.injectAdCode(dtAdsArgs) })
+		.then(() => { return lib.injectCode(dtAdsArgs) })
 		.then(() => { return injectHypeAdCode() })
 		.then(() => { return lib.uploadFiles(dtAdsArgs) })
 		.then(() => { return lib.outputToHtmlFile(dtAdsArgs) })
@@ -38,18 +39,18 @@ const run = () => {
 
 const validateInitalArgs = (args = {}) => {
 	return new Promise((resolve, reject) => {
-		dtAdsArgs = Object.assign(dtAdsArgs, args);
-
-		if(dtAdsArgs.input && dtAdsArgs.input.length) {
-			const split = dtAdsArgs.input.split('.');
+		dtAdsArgs = lib.resolveQuasArgs(dtAdsArgs, args);
+		
+		if(dtAdsArgs.source && dtAdsArgs.source.length) {
+			const split = dtAdsArgs.source.split('.');
 
 			if(split.length > 1) {
-				dtAdsArgs.inputExt = split.pop();
-				dtAdsArgs.input = dtAdsArgs.input.substr(0, dtAdsArgs.input.length - dtAdsArgs.inputExt.length - 1);
+				dtAdsArgs.sourceExt = split.pop();
+				dtAdsArgs.source = dtAdsArgs.source.substr(0, dtAdsArgs.source.length - dtAdsArgs.sourceExt.length - 1);
 			}
 		} else {
 			//Default the input filename to the campaign
-			dtAdsArgs.input = dtAdsArgs.campaign;
+			dtAdsArgs.source = dtAdsArgs.campaign;
 		}
 
 		if(dtAdsArgs.output && dtAdsArgs.output.length) {
@@ -65,18 +66,17 @@ const validateInitalArgs = (args = {}) => {
 		}
 
 		if(!dtAdsArgs.target || !dtAdsArgs.target.length) {
-			dtAdsArgs.target = `${dtAdsArgs.input}.html`;
+			dtAdsArgs.target = `${dtAdsArgs.source}.html`;
 		} else {
 			const split = dtAdsArgs.target.split('.');
 			if(split.length == 1) {
 				dtAdsArgs.target += '.html';
 			}
 		}
-		lib.log(`config location: ${process.cwd()}`, config, 'info');
-		const datetime = new Date(Date.now());
-		dtAdsArgs.s3Bucket = `${dtAdsArgs.bucket}/${dtAdsArgs.client}/${datetime.getFullYear()}/${datetime.getMonth() + 1}/${dtAdsArgs.campaign}`;
-		dtAdsArgs.targetFilePath = lib.findTargetFile(dtAdsArgs);
 
+		const datetime = new Date(Date.now());
+		dtAdsArgs.bucketPath = `${dtAdsArgs.bucket}/${dtAdsArgs.client}/${datetime.getFullYear()}/${datetime.getMonth() + 1}/${dtAdsArgs.campaign}`;
+		dtAdsArgs.targetFilePath = lib.findTargetFile(dtAdsArgs);
 		return resolve();
 	});
 };
@@ -84,15 +84,20 @@ const validateInitalArgs = (args = {}) => {
 // Get initial ad unit parameters
 const initialPrompt = () => {
 	const availableInputFiles = lib.getFilenamesInDirectory(dtAdsArgs.sourceFolder, ['zip']);
+	let questions = !(lib.hasCampaignAnswers(dtAdsArgs)) ? lib.getCampaignPromptQuestions() : [];
+	if(availableInputFiles.length) {
+		questions.push({
+			type: 'list',
+			name: 'source',
+			message: `Enter the input archive filename (default .${dtAdsArgs.sourceExt}):\n`,
+			choices: availableInputFiles
+		});
+	} else {
+		lib.log(`No sources could be found, expecting template to exist in output folder (${dtAdsArgs.outputFolder})`);
+	}
 
 	// Only get the campaign questions if they weren't passed in
-	let questions = !(lib.hasCampaignAnswers(dtAdsArgs)) ? lib.getCampaignPromptQuestions() : [];
 	questions.push({
-		type: 'list',
-		name: 'input',
-		message: `Enter the input archive filename (default extension .${dtAdsArgs.inputExt}):\n`,
-		choices: availableInputFiles
-	},{
 		type: 'input',
 		name: 'target',
 		message: `Enter the target html filename ${colors.yellow('(optional)')}:\n`
@@ -110,8 +115,8 @@ const parseFiles = () => {
 	return new promise(async (resolve, reject) => {
 		const instance = await phantom.create();
 		const page = await instance.createPage();
-		dtAdsArgs.targetFilePath = lib.findTargetFile(dtAdsArgs);
-		
+		dtAdsArgs.targetFilePath = lib.copyTargetFileToOutputPath(dtAdsArgs);
+
 		lib.log(`rendering target file (${dtAdsArgs.targetFilePath}) and learning parameters`);
 		
 		await page.on('onResourceRequested', function(requestData) {

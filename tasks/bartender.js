@@ -20,7 +20,7 @@ dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
 });
 
 const task = () => {
-	return lib.injectAdCode(dtAdsArgs)
+	return lib.injectCode(dtAdsArgs)
 	.then(() => { lib.outputToHtmlFile(dtAdsArgs); });
 };
 
@@ -44,6 +44,7 @@ const validateInitalArgs = (args) => {
 			dtAdsArgs.output = `${dtAdsArgs.campaign}_${dtAdsArgs.adType}`;
 		}
 
+		dtAdsArgs.targetFilePath = lib.copyTargetFileToOutputPath(dtAdsArgs);
 		return resolve();
 	});
 };
@@ -67,7 +68,6 @@ const initialPrompt = () => {
 
 gulp.task(`${adType}:build`, () => {
 	if(!dtAdsArgs.noPrompt) {
-		console.log("running user prompting");
 		return initialPrompt().then(task);
 	} else {
 		return run();
