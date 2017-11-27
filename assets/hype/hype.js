@@ -1,6 +1,7 @@
 var clickURL = 'PLACE CLICK URL HERE!';
 var clickIDs = [ <%= hypeElements %> ];
 var dtadsCampaign = '<%= campaign %>';
+var windowTarget = '_blank';
 
 function setClickEvents() {
 	for(var i = 0; i < clickIDs.length; ++i) {
@@ -11,7 +12,8 @@ function setClickEvents() {
 		if(el) {
 			el.onclick = function() {
 				window.top.ga('send', 'event', dtadsCampaign, 'click', clickName, {nonInteraction: true});
-				window.open(clickURL, '_blank');
+				var win = window.open(window.open(clickURL, windowTarget));
+				win.focus();
 			};
 		}
 
