@@ -1,6 +1,6 @@
 var clickURL = 'PLACE CLICK URL HERE!';
 var clickIDs = [ <%= hypeElements %> ];
-var dtadsCampaign = '<%= campaign %>';
+var dtadsCampaign = '<%= client %>_<%= campaign %>';
 var windowTarget = '_blank';
 
 function setClickEvents() {
