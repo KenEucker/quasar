@@ -22,8 +22,6 @@ const getDefaultQuasArgs = (qType = null) => {
 			assetsFolder: qType ? `${config.assetsFolder}/${qType}` : undefined,
 			stylesAsset: qType ? `${qType}.css` : undefined,
 			scriptsAsset: qType ? `${qType}.js` : undefined,
-			cssInjectLocation = '</head',
-			jsInjectLocation = '</body',
 			target: qType ? `${qType}.html` : undefined,
 			targetFilePath: qType ? `${config.assetsFolder}/${qType}/${qType}.html` : undefined,
 			bucket: 'ads',
@@ -345,8 +343,8 @@ const injectCode = (quasArgs) => {
 
 		return gulp.src(quasArgs.targetFilePath, { base: quasArgs.dirname })
 			.pipe(inject.before(`${urlToPrependCDNLink}.`, cdnTemplate))
-			.pipe(inject.before(quasArgs.cssInjectLocation, css))
-			.pipe(inject.before(quasArgs.jsInjectLocation, js))
+			.pipe(inject.before('</head>', css))
+			.pipe(inject.before('</body>', js))
 			.pipe(gulp.dest(quasArgs.dirname))
 			.on('error', (err) => { 
 				logError('error on injection pipeline ', err); 
