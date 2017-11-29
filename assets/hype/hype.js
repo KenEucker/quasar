@@ -1,4 +1,4 @@
-var clickURL = 'PLACE CLICK URL HERE!';
+var campaignClickUrl = 'PLACE CLICK URL HERE!';
 var clickIDs = [ <%= hypeElements %> ];
 var dtadsCampaign = '<%= client %>_<%= campaign %>';
 var windowTarget = '_blank';
@@ -68,7 +68,11 @@ function videoTracking(video) {
 
 }
 
-function addClickEvent(el = null, clickID = null) {
+function addClickEvent(el = null, clickName = null, clickUrl = null, clickID = null) {
+	if(!clickUrl) {
+		clickUrl = campaignClickUrl;
+	}
+
 	if(!el) {
 		if(!clickID) {
 			console.log("look at what you're doing with your life and reevaluate your decisions.");
@@ -80,8 +84,8 @@ function addClickEvent(el = null, clickID = null) {
 	if(el) {
 		el.onclick = function() {
 			window.ga(gaTracker + '.send', 'event', dtadsCampaign, 'click', clickName, {nonInteraction: true});
-			var win = window.open(window.open(clickURL, windowTarget));
-			win.focus();
+			var win = window.open(window.open(campaignClickUrl, windowTarget));
+			if(win) { win.focus(); }
 		};
 	}
 }

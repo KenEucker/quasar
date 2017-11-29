@@ -1,0 +1,13 @@
+body, html {
+	height: 100%;
+}
+.image {
+	margin: 0;
+	height: 100%;
+	width: 100%;
+	background-image: url('<%= imageUrl %>');
+	background-repeat: no-repeat;
+	cursor: pointer;
+	background-size: contain;
+	background-position: center;
+}
