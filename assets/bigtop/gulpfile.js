@@ -6,6 +6,6 @@ let gulp = require('gulp'),
 gulp.task('default', [qType]);
 
 module.exports = {
-    qType,
-    task: qType
+qType,
+task: qType
 }

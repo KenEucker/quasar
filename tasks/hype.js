@@ -11,7 +11,8 @@ const lib = fs.existsSync(`${config.assetsFolder}/${shim}`) ? require(`${config.
 let dtAdsArgs = lib.getDefaultQuasArgs(adType);
 dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
 	adType: adType,
-	sourceExt: 'zip'
+	sourceExt: 'zip',
+	googleAnalyticsID: 'UA-82208-8'
 });
 
 const task = () => {

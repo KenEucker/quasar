@@ -27,8 +27,8 @@ const run = () => {
 const validateInitalArgs = (args = {}) => {
 	return new Promise((resolve, reject) => {
 		// Merge options with passed in parameters
-		dtAdsArgs = Object.assign(dtAdsArgs, args);
-		
+		dtAdsArgs = lib.resolveQuasArgs(dtAdsArgs, args);
+
 		if(dtAdsArgs.output && dtAdsArgs.output.length) {
 			const split = dtAdsArgs.output.split('.');
 
@@ -41,7 +41,6 @@ const validateInitalArgs = (args = {}) => {
 			dtAdsArgs.output = `${dtAdsArgs.campaign}_${dtAdsArgs.adType}`;
 		}
 		dtAdsArgs.targetFilePath = lib.copyTargetFileToOutputPath(dtAdsArgs);
-		dtAdsArgs = lib.resolveQuasArgs(dtAdsArgs, args);
 
 		return resolve();
 	});

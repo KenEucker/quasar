@@ -2,7 +2,7 @@ var campaignClickUrl = 'PLACE CLICK URL HERE!';
 var clickIDs = [ <%= hypeElements %> ];
 var dtadsCampaign = '<%= client %>_<%= campaign %>';
 var windowTarget = '_blank';
-var gaID = "UA-82208-8";
+var gaID = "<%= googleAnalyticsID %>";
 var gaTracker = "gaTracker";
 
 var addGAScript = function() {

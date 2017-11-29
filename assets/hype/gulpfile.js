@@ -1,4 +1,11 @@
 let gulp = require('gulp'),
-	build = require('../../tasks/hype');
+	path = require('path'),
+	qType = path.basename(__dirname),
+	build = require(`../../tasks/${qType}`);
 
-gulp.task('default', ['hype']);
+gulp.task('default', [qType]);
+
+module.exports = {
+qType,
+task: qType
+}
