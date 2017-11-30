@@ -8,6 +8,6 @@ body, html {
 	background-image: url('<%= imageUrl %>');
 	background-repeat: no-repeat;
 	cursor: pointer;
-	background-size: contain;
+	background-size: cover;
 	background-position: center;
 }
