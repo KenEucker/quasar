@@ -4,3 +4,11 @@ public
 jobs
 node_modules
 source
+tasks/bartender.js
+tasks/bigtop.js
+tasks/hype.js
+tasks/skin.js
+assets/bartender/*
+assets/bigtop/*
+assets/hype/*
+assets/skin/*
