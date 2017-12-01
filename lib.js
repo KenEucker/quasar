@@ -24,7 +24,7 @@ const getDefaultQuasArgs = (qType = null) => {
 			scriptsAsset: qType ? `${qType}.js` : undefined,
 			target: qType ? `${qType}.html` : undefined,
 			targetFilePath: qType ? `${config.assetsFolder}/${qType}/${qType}.html` : undefined,
-			bucket: 'quasar',
+			bucket: 'ads',
 			outputExt: 'txt',
 			cdnUrlStart: 'https://cdn.dtcn.com/',
 			clickUrl: '!! PASTE CLICK URL HERE !!',
