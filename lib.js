@@ -22,8 +22,6 @@ const getDefaultQuasArgs = (qType = null) => {
 			assetsFolder: qType ? `${config.assetsFolder}/${qType}` : undefined,
 			stylesAsset: qType ? `${qType}.css` : undefined,
 			scriptsAsset: qType ? `${qType}.js` : undefined,
-			cssInjectLocation = '</head',
-			jsInjectLocation = '</body',
 			target: qType ? `${qType}.html` : undefined,
 			targetFilePath: qType ? `${config.assetsFolder}/${qType}/${qType}.html` : undefined,
 			bucket: 'ads',
@@ -367,14 +365,16 @@ const uploadFiles = (quasArgs) => {
 		}
 
 		let s3 = new aws.S3();
-		const s3Key = 'autotest';
+		let s3Key = 'test';
+
+		aws.config.loadFromPath('./.config');
 		logInfo('Uploading files to S3');
 
-		s3.createBucket({Bucket: quasArgs.bucketPath}, function(err, data) {
+		s3.createBucket({Bucket: quasArgs.bucket}, function(err, data) {
 			if (err) {
 				logError(err);
 			} else {
-				params = {Bucket: bucketPath, Key: s3Key, Body: 'Hello!'};
+				params = {Bucket: bucketPath, Key: `${bucketPath}/${s3Key}`, Body: 'Hello!'};
 				s3.putObject(params, function(err, data) {
 					if (err) {
 						logError(err);
