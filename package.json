@@ -16,6 +16,7 @@
     "gulp-json-transform": "^0.4.5",
     "gulp-prompt": "^0.1.2",
     "gulp-rename": "^1.2.2",
+    "gulp-s3-upload": "^1.6.6",
     "gulp-template": "^3.1.0",
     "gulp-transform": "^3.0.5",
     "gulp-watch": "^4.3.11",

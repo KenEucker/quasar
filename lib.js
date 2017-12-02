@@ -3,6 +3,7 @@ let gulp = require('gulp'),
 	rename = require('gulp-rename'),
 	inject = require('gulp-inject-string'),
 	prompt = require('inquirer'),
+	gulpS3 = require('gulp-s3-upload'),
 	aws = require('aws-sdk'),
 	unzip = require("extract-zip"),
 	path = require('path'),
@@ -24,11 +25,11 @@ const getDefaultQuasArgs = (qType = null) => {
 			scriptsAsset: qType ? `${qType}.js` : undefined,
 			target: qType ? `${qType}.html` : undefined,
 			targetFilePath: qType ? `${config.assetsFolder}/${qType}/${qType}.html` : undefined,
-			bucket: 'ads',
+			bucket: 'quasar',
 			outputExt: 'txt',
 			cdnUrlStart: 'https://cdn.dtcn.com/',
 			clickUrl: '!! PASTE CLICK URL HERE !!',
-			uploadToS3: false,
+			uploadToS3: true,
 			unpackFiles: true,
 			overwriteUnpackDestination: false,
 			buildCompletedSuccessfully: false,
@@ -357,36 +358,46 @@ const injectCode = (quasArgs) => {
 	});
 }
 
+const uploadFileToS3 = (Bucket, Key, Body, callback, ACL = 'public-read') => {
+	aws.config.loadFromPath('./.config');
+	let s3 = new aws.S3();
+	logInfo('Uploading files to S3');
+
+	const params = {
+		Key: `${Key}`,
+		Bucket,
+		ACL,
+		Body
+	};
+	s3.putObject(params, function (err, data) {
+		if (err) {
+			logError("Error uploading image: ", err);
+		} else {
+			logInfo("Successfully uploaded image on S3", data);
+			if(callback) { callback(data); }
+		}
+	});
+};
+
 // Upload resources to S3
 const uploadFiles = (quasArgs) => {
 	return new promise((resolve, reject) => {
 		if(!quasArgs.uploadToS3) {
 			return resolve();
 		}
+		var config = JSON.parse(fs.readFileSync(`${quasArgs.dirname}/.config`));
+		console.log(quasArgs);
+		console.log(config);
+		let s3 = gulpS3(config);
 
-		let s3 = new aws.S3();
-		let s3Key = 'test';
-
-		aws.config.loadFromPath('./.config');
-		logInfo('Uploading files to S3');
-
-		s3.createBucket({Bucket: quasArgs.bucket}, function(err, data) {
-			if (err) {
-				logError(err);
-			} else {
-				params = {Bucket: bucketPath, Key: `${bucketPath}/${s3Key}`, Body: 'Hello!'};
-				s3.putObject(params, function(err, data) {
-					if (err) {
-						logError(err);
-						reject();
-					} else {
-						logSuccess(`Successfully uploaded data to ${bucketPath}/${s3Key}`);
-					}
-
-					resolve(quasArgs);
-				});
-			}
-		});
+		gulp.src(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}/**`)
+			.pipe(s3({
+				Bucket: `/${quasArgs.bucketPath}`,
+				ACL: 'public-read'
+			}, {
+				// S3 Constructor Options, ie: 
+				maxRetries: 5
+			}));
 	});
 }
 
