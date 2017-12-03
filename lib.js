@@ -27,7 +27,7 @@ const getDefaultQuasArgs = (qType = null) => {
 			targetFilePath: qType ? `${config.assetsFolder}/${qType}/${qType}.html` : undefined,
 			bucket: '%AWS%',
 			outputExt: 'txt',
-			cdnUrlStart: 'https://cdn.dtcn.com/',
+			cdnUrlStart: 'https://cdn.com/',
 			clickUrl: '!! PASTE CLICK URL HERE !!',
 			uploadToS3: false,
 			unpackFiles: true,
