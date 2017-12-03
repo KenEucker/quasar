@@ -1,16 +1,17 @@
 let gulp = require('gulp'),
-	template = require('gulp-template'),
-	rename = require('gulp-rename'),
-	inject = require('gulp-inject-string'),
-	prompt = require('inquirer'),
-	aws = require('aws-sdk'),
-	unzip = require("extract-zip"),
-	path = require('path'),
-	colors = require('colors'),
-	promise = require('bluebird'),
-	fs = require('fs'),
-	yargs = require('yargs'),
-	mkdir = require('mkdirp-sync');
+template = require('gulp-template'),
+rename = require('gulp-rename'),
+inject = require('gulp-inject-string'),
+prompt = require('inquirer'),
+gulpS3 = require('gulp-s3-upload'),
+aws = require('aws-sdk'),
+unzip = require("extract-zip"),
+path = require('path'),
+colors = require('colors'),
+promise = require('bluebird'),
+fs = require('fs'),
+yargs = require('yargs'),
+mkdir = require('mkdirp-sync');
 
 const config = require(`${process.cwd()}/config.js`);
 
@@ -24,7 +25,7 @@ const getDefaultQuasArgs = (qType = null) => {
 			scriptsAsset: qType ? `${qType}.js` : undefined,
 			target: qType ? `${qType}.html` : undefined,
 			targetFilePath: qType ? `${config.assetsFolder}/${qType}/${qType}.html` : undefined,
-			bucket: 'ads',
+			bucket: '%AWS%',
 			outputExt: 'txt',
 			cdnUrlStart: 'https://cdn.dtcn.com/',
 			clickUrl: '!! PASTE CLICK URL HERE !!',
@@ -55,7 +56,7 @@ const spawnQuasarTask = (args) => {
 		.on("error", (error) => { console.log(`ERROR:`, error); })
 		.on("data", (data) => { console.log("DATA: ", data); })
 		.on("end", (msg) => { console.log("Ended: ", msg); });
-};
+}
 
 const getTaskNames = (dir) => {
 	return getFilenamesInDirectory(dir, ['js'], true);
@@ -131,6 +132,10 @@ const log = (message, obj, status = '', color = colors.grey) => {
 	return;
 }
 
+const logData = (message, obj, color = colors.yellow) => {
+	log(`<!-- data: ${message} -->`, obj, 'info', color);
+}
+
 const logInfo = (message, obj, color = colors.yellow) => {
 	log(`<!-- info: ${message} -->`, obj, 'info', color);
 }
@@ -167,7 +172,7 @@ const fromDir = (startPath, filter) => {
 	};
 
 	return found;
-};
+}
 
 // This one has to be typehinted as a function for the async method
 const makePromptRequired = function (input) {
@@ -184,9 +189,9 @@ const makePromptRequired = function (input) {
 		// Pass the return value in the done callback
 		done(null, true);
 	}, 100);
-}
+	}
 
-const runTask = (task) => {
+	const runTask = (task) => {
 	if(gulp.hasTask(task)) {
 		gulp.start(task);
 	} else {
@@ -218,13 +223,13 @@ const initialPrompt = (quasArgs) => {
 	questions = questions.concat(quasArgs.initalArgs || []);
 
 	return promptConsole(questions, quasArgs.initalArgsValidation);
-};
+	};
 
-const promptConsole = (questions, getResults) => {
+	const promptConsole = (questions, getResults) => {
 	return prompt.prompt(questions).then(getResults);
-}
+	}
 
-const getQuasarPromptQuestions = () => {
+	const getQuasarPromptQuestions = () => {
 	return [{
 		type: 'input',
 		name: 'domain',
@@ -237,24 +242,24 @@ const getQuasarPromptQuestions = () => {
 		message: 'Enter the name of the signal to be used when compiling quasars:\n',
 		validate: makePromptRequired
 	}];
-}
+	}
 
-const registerRequiredQuasArgs = (args, registerArgs) => {
+	const registerRequiredQuasArgs = (args, registerArgs) => {
 	let quasArgs = Object.assign(args, registerArgs);
 
 	// TODO: more sophisticated registering
 
 	return quasArgs;
-};
+}
 
 const hasQuasarInitialArgs = (quasArgs) => {
 	return quasArgs.domain && quasArgs.signal;
-};
+}
 
 const findTargetFile = (quasArgs) => {
 	const signalPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
 	let targetFilePath = quasArgs.targetFilePath || path.resolve(`${signalPath}/${quasArgs.target}`);
-	
+
 	if (!fs.existsSync(targetFilePath)) {
 		const oldTargetFilePath = targetFilePath;
 		targetFilePath = fromDir(`${signalPath}`, `${quasArgs.target}`);
@@ -287,7 +292,7 @@ const copyTargetFileToOutputPath = (quasArgs) => {
 	}
 
 	return outputFilePath;
-};
+}
 
 // Unpack input files
 const unpackFiles = (quasArgs) => {
@@ -364,6 +369,27 @@ const injectCode = (quasArgs) => {
 	});
 }
 
+const uploadFileToS3 = (Bucket, Key, Body, callback, ACL = 'public-read') => {
+	aws.config.loadFromPath('./.config');
+	let s3 = new aws.S3();
+	logInfo('Uploading files to S3');
+
+	const params = {
+		Key: `${Key}`,
+		Bucket,
+		ACL,
+		Body
+	};
+	s3.putObject(params, function (err, data) {
+		if (err) {
+			logError("Error uploading image: ", err);
+		} else {
+			logInfo("Successfully uploaded image on S3", data);
+			if(callback) { callback(data); }
+		}
+	});
+};
+
 // Upload resources to S3
 const uploadFiles = (quasArgs) => {
 	return new promise((resolve, reject) => {
@@ -371,29 +397,25 @@ const uploadFiles = (quasArgs) => {
 			return resolve();
 		}
 
-		let s3 = new aws.S3();
-		let s3Key = 'test';
+		const configFilename = `${quasArgs.dirname}/.config`;
+		if(fs.existsSync(configFilename)) {
+			logInfo(`Uploading files form ${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}/ to the path: %AWS%/${quasArgs.bucketPath}`);
 
-		aws.config.loadFromPath('./.config');
-		logInfo('Uploading files to S3');
+			var config = JSON.parse(fs.readFileSync(configFilename));
+			let s3 = gulpS3(config);
 
-		s3.createBucket({Bucket: quasArgs.bucket}, function(err, data) {
-			if (err) {
-				logError(err);
-			} else {
-				params = {Bucket: bucketPath, Key: `${bucketPath}/${s3Key}`, Body: 'Hello!'};
-				s3.putObject(params, function(err, data) {
-					if (err) {
-						logError(err);
-						reject();
-					} else {
-						logSuccess(`Successfully uploaded data to ${bucketPath}/${s3Key}`);
-					}
-
-					resolve(quasArgs);
-				});
-			}
-		});
+			gulp.src(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}/**`)
+				.pipe(s3({
+					Bucket: `${quasArgs.bucketPath}`,
+					ACL: 'public-read'
+				}, {
+					maxRetries: 5
+				}))
+				.on('end', () => { logSuccess(`Files successfully uploaded to S3 under the path: /${quasArgs.bucketPath}`); resolve(); });
+		} else {
+			logError(`Could not find AWS configuration, aborting upload.`);
+			return resolve();
+		}
 	});
 }
 
@@ -401,7 +423,8 @@ const uploadFiles = (quasArgs) => {
 const outputToHtmlFile = (quasArgs) => {
 	return new promise((resolve, reject) => {
 		const outputPath = `${quasArgs.outputFolder.replace(quasArgs.dirname, '')}/${quasArgs.domain}/${quasArgs.signal}`;
-		log('Applying the following parameters to the template and building output', quasArgs);
+		log('Applying the following parameters to the template and building output');
+		// logData(quasArgs);
 
 		return gulp.src(quasArgs.targetFilePath) 
 		.pipe(template(quasArgs))
