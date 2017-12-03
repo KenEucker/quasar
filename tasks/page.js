@@ -10,6 +10,24 @@ let quasArgs = lib.getDefaultQuasArgs(qType);
 let _quasArgs = {
 	backgroundColor: '!! PASTE BACKGROUND COLOR HERE !!',
 	clickUrl: '!! PASTE CLICK URL HERE !!',
+	initalArgs: [{
+			type: 'input',
+			name: 'imageUrl',
+			message: 'Skin URL:'
+		},
+		{
+			type: 'input',
+			name: 'bgColor',
+			message: 'Skin BG Color(HEX):'
+		},
+		{
+			type: 'input',
+			name: 'output',
+			message: `Enter the output filename postfix (default extension .${quasArgs.outputExt} ${colors.yellow('(optional)')}):\n`
+		}],
+		initalArgsValidation: validateInitalArgs,
+		confirmationArgs: [],
+		confirmationArgsValidation: null
 };
 quasArgs = Object.assign(quasArgs, _quasArgs);
 
@@ -44,31 +62,9 @@ const validateInitalArgs = (args = {}) => {
 	});
 };
 
-const initialPrompt = () => {
-	// Only get the signal questions if they weren't passed in
-	let questions = !(lib.hasQuasarAnswers(quasArgs)) ? lib.getQuasarPromptQuestions() : [];
-	questions.push({
-		type: 'input',
-		name: 'imageUrl',
-		message: 'Skin URL:'
-	},
-	{
-		type: 'input',
-		name: 'bgColor',
-		message: 'Skin BG Color(HEX):'
-	},
-	{
-		type: 'input',
-		name: 'output',
-		message: `Enter the output filename postfix (default extension .${quasArgs.outputExt} ${colors.yellow('(optional)')}):\n`
-	});
-
-	return lib.promptConsole(questions, validateInitalArgs);
-};
-
 gulp.task(`${qType}:build`, () => {
 	if(!quasArgs.noPrompt) {
-		return initialPrompt().then(task);
+		return lib.initialPrompt(quasArgs).then(task);
 	} else {
 		return run();
 	}
@@ -76,8 +72,6 @@ gulp.task(`${qType}:build`, () => {
 gulp.task(`${qType}`, [`${qType}:build`]);
 
 module.exports = {
-	initialPrompt,
 	qType,
-	run,
-	validateInitalArgs
+	run
 };

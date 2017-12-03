@@ -214,6 +214,13 @@ const quasarSelectPrompt = (quasArgs) => {
 	});
 }
 
+const initialPrompt = (quasArgs) => {
+	let questions = !(hasQuasarAnswers(quasArgs)) ? getQuasarPromptQuestions() : [];
+	questions = questions.concat(quasArgs.initalArgs || []);
+
+	return promptConsole(questions, quasArgs.initalArgsValidation);
+};
+
 const promptConsole = (questions, getResults) => {
 	return prompt.prompt(questions).then(getResults);
 }
