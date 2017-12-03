@@ -246,8 +246,8 @@ const hasQuasarAnswers = (quasArgs) => {
 
 const findTargetFile = (quasArgs) => {
 	const signalPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
-	let targetFilePath = path.resolve(`${signalPath}/${quasArgs.target}`);
-
+	let targetFilePath = quasArgs.targetFilePath || path.resolve(`${signalPath}/${quasArgs.target}`);
+	
 	if (!fs.existsSync(targetFilePath)) {
 		const oldTargetFilePath = targetFilePath;
 		targetFilePath = fromDir(`${signalPath}`, `${quasArgs.target}`);
@@ -263,8 +263,8 @@ const findTargetFile = (quasArgs) => {
 
 const copyTargetFileToOutputPath = (quasArgs) => {
 	const signalPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
-	const outputFilePath = path.resolve(`${signalPath}/${quasArgs.target}`);
-	const targetFilePath = quasArgs.targetFilePath && quasArgs.targetFilePath.length ? quasArgs.targetFilePath : findTargetFile(quasArgs);
+	const targetFilePath = findTargetFile(quasArgs);
+	const outputFilePath = fromDir(signalPath, quasArgs.target) || path.resolve(`${signalPath}/${quasArgs.target}`);
 
 	if(fs.existsSync(targetFilePath)) {
 		log(`copying target file to output path: ${outputFilePath}`);
@@ -279,7 +279,7 @@ const copyTargetFileToOutputPath = (quasArgs) => {
 		return outputFilePath;
 	}
 
-	return quasArgs.targetFilePath;
+	return outputFilePath;
 };
 
 // Unpack input files
@@ -326,11 +326,15 @@ const injectCode = (quasArgs) => {
 		const cdnTemplate = `<%= cdnUrlStart %><%= bucketPath %>/`;
 		let css = (quasArgs.stylesAsset && quasArgs.stylesAsset.length) ? `${quasArgs.assetsFolder}/${quasArgs.stylesAsset}` : null;
 		let js = (quasArgs.scriptsAsset && quasArgs.scriptsAsset.length) ? `${quasArgs.assetsFolder}/${quasArgs.scriptsAsset}` : null;
+
+		// TODO: check if injection locations exist or not
 		if(css) {
-			css = fs.existsSync(css) ? `<style>\n${fs.readFileSync(css, 'utf8')}\n</style>\n` : ``;
+			let css_contents = fs.existsSync(css) ? fs.readFileSync(css, 'utf8') : '';
+			css = css_contents.length ? `<style>\n${css_contents}\n</style>\n` : ``;
 		}
 		if(js) {
-			js = fs.existsSync(js) ? `<script>\n${fs.readFileSync(js, 'utf8')}\n</script>\n` : ``;
+			let js_contents = fs.existsSync(js) ? fs.readFileSync(js, 'utf8') : '';
+			js = js_contents.length ? `<script>\n${js_contents}\n</script>\n` : ``;
 		}
 		
 		log('injecting public code prior to applying template parameters');
@@ -339,8 +343,8 @@ const injectCode = (quasArgs) => {
 
 		return gulp.src(quasArgs.targetFilePath, { base: quasArgs.dirname })
 			.pipe(inject.before(`${urlToPrependCDNLink}.`, cdnTemplate))
-			.pipe(inject.before('</head', css))
-			.pipe(inject.before('</body', js))
+			.pipe(inject.before(quasArgs.cssInjectLocation, css))
+			.pipe(inject.before(quasArgs.jsInjectLocation, js))
 			.pipe(gulp.dest(quasArgs.dirname))
 			.on('error', (err) => { 
 				logError('error on injection pipeline ', err); 
@@ -361,14 +365,16 @@ const uploadFiles = (quasArgs) => {
 		}
 
 		let s3 = new aws.S3();
-		const s3Key = 'autotest';
+		let s3Key = 'test';
+
+		aws.config.loadFromPath('./.config');
 		logInfo('Uploading files to S3');
 
-		s3.createBucket({Bucket: quasArgs.bucketPath}, function(err, data) {
+		s3.createBucket({Bucket: quasArgs.bucket}, function(err, data) {
 			if (err) {
 				logError(err);
 			} else {
-				params = {Bucket: bucketPath, Key: s3Key, Body: 'Hello!'};
+				params = {Bucket: bucketPath, Key: `${bucketPath}/${s3Key}`, Body: 'Hello!'};
 				s3.putObject(params, function(err, data) {
 					if (err) {
 						logError(err);
