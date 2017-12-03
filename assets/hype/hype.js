@@ -84,7 +84,7 @@ function addClickEvent(el = null, clickName = null, clickUrl = null, clickID = n
 	if(el) {
 		el.onclick = function() {
 			window.ga(gaTracker + '.send', 'event', dtadsCampaign, 'click', clickName, {nonInteraction: true});
-			var win = window.open(window.open(campaignClickUrl, windowTarget));
+			var win = window.open(campaignClickUrl, windowTarget);
 			if(win) { win.focus(); }
 		};
 	}

@@ -7,13 +7,6 @@ const adType = 'skin';
 const shim = 'dt-lib-shim.js';
 const config = require(`${process.cwd()}/config.js`);
 const lib = fs.existsSync(`${config.assetsFolder}/${shim}`) ? require(`${config.assetsFolder}/${shim}`) : require(`${config.dirname}/lib.js`);
-let dtAdsArgs = lib.getDefaultQuasArgs(adType);
-
-dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
-	adType: adType,
-	clickUrl: '!! PASTE CLICK URL HERE !!',
-	impressionTracker: '!! PASTE IMPRESSION TRACKER URL HERE !!',
-});
 
 const task = () => {
 	return lib.injectCode(dtAdsArgs)
@@ -46,39 +39,39 @@ const validateInitalArgs = (args = {}) => {
 	});
 };
 
-const initialPrompt = () => {
-	// Only get the campaign questions if they weren't passed in
-	let questions = !(lib.hasCampaignAnswers(dtAdsArgs)) ? lib.getCampaignPromptQuestions() : [];
-	questions.push({
-		type: 'input',
-		name: 'imageUrl',
-		message: 'Skin URL:'
-	},
-	{
-		type: 'input',
-		name: 'bgColor',
-		message: 'Skin BG Color(HEX):'
-	},
-	{
-		type: 'input',
-		name: 'output',
-		message: `Enter the output filename postfix (default extension .${dtAdsArgs.outputExt} ${colors.yellow('(optional)')}):\n`
-	});
-
-	return lib.promptConsole(questions, validateInitalArgs);
-};
-
 gulp.task(`${adType}:build`, () => {
 	if(!dtAdsArgs.noPrompt) {
-		return initialPrompt().then(task);
+		return lib.initialPrompt(dtAdsArgs).then(task);
 	} else {
 		return run();
 	}
 });
 gulp.task(`${adType}`, [`${adType}:build`]);
 
+let dtAdsArgs = lib.getDefaultQuasArgs(adType);
+dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
+	adType: adType,
+	clickUrl: '!! PASTE CLICK URL HERE !!',
+	impressionTracker: '!! PASTE IMPRESSION TRACKER URL HERE !!',
+	initalArgs: [{
+			type: 'input',
+			name: 'imageUrl',
+			message: 'Skin URL:'
+		},
+		{
+			type: 'input',
+			name: 'bgColor',
+			message: 'Skin BG Color(HEX):'
+		},
+		{
+			type: 'input',
+			name: 'output',
+			message: `Enter the output filename postfix (default extension .${dtAdsArgs.outputExt} ${colors.yellow('(optional)')}):\n`
+		}],
+		initalArgsValidation: validateInitalArgs
+});
+
 module.exports = {
-	initialPrompt,
 	qType: adType,
 	run,
 	validateInitalArgs

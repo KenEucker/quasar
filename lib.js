@@ -29,7 +29,7 @@ const getDefaultQuasArgs = (qType = null) => {
 			outputExt: 'txt',
 			cdnUrlStart: 'https://cdn.dtcn.com/',
 			clickUrl: '!! PASTE CLICK URL HERE !!',
-			uploadToS3: true,
+			uploadToS3: false,
 			unpackFiles: true,
 			overwriteUnpackDestination: false,
 			buildCompletedSuccessfully: false,
@@ -215,7 +215,7 @@ const quasarSelectPrompt = (quasArgs) => {
 }
 
 const initialPrompt = (quasArgs) => {
-	let questions = !(hasQuasarAnswers(quasArgs)) ? getQuasarPromptQuestions() : [];
+	let questions = !(hasQuasarInitialArgs(quasArgs)) ? getQuasarPromptQuestions() : [];
 	questions = questions.concat(quasArgs.initalArgs || []);
 
 	return promptConsole(questions, quasArgs.initalArgsValidation);
@@ -248,7 +248,7 @@ const registerRequiredQuasArgs = (args, registerArgs) => {
 	return quasArgs;
 };
 
-const hasQuasarAnswers = (quasArgs) => {
+const hasQuasarInitialArgs = (quasArgs) => {
 	return quasArgs.domain && quasArgs.signal;
 };
 
@@ -439,7 +439,8 @@ module.exports = {
 	getFilenamesInDirectory,
 	getTaskNames,
 	getQuasarPromptQuestions,
-	hasQuasarAnswers,
+	hasQuasarInitialArgs,
+	initialPrompt,
 	injectCode,
 	logAsync,
 	log,

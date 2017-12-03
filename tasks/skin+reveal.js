@@ -11,15 +11,6 @@ const adType = 'skin+reveal';
 const shim = 'dt-lib-shim.js';
 const config = require(`${process.cwd()}/config.js`);
 const lib = fs.existsSync(`${config.assetsFolder}/${shim}`) ? require(`${config.assetsFolder}/${shim}`) : require(`${config.dirname}/lib.js`);
-let dtAdsArgs = lib.getDefaultQuasArgs(adType);
-
-dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
-	adType: adType,
-	skinClickUrl: '!! PASTE SKIN CLICK URL HERE !!',
-	revealClickUrl: '!! PASTE REVEAL CLICK URL HERE !!',
-	skinImpressionTracker: '!! PASTE SKIN IMPRESSION TRACKER URL HERE !!',
-	revealImpressionTracker: '!! PASTE REVEAL IMPRESSION TRACKER URL HERE !!',
-});
 
 const task = () => {
 	return lib.injectCode(dtAdsArgs)
@@ -52,49 +43,51 @@ const validateInitalArgs = (args) => {
 	});
 };
 
-const initialPrompt = function() {
-	// Only get the campaign questions if they weren't passed in
-	let questions = !(lib.hasCampaignAnswers(dtAdsArgs)) ? lib.getCampaignPromptQuestions() : [];
-	questions.push({
-		type: 'input',
-		name: 'skinImage',
-		message: 'Enter the url for the skin image:'
-	},
-	{
-		type: 'input',
-		name: 'skinColor',
-		message: 'Enter the color for the skin:'
-	},
-	{
-		type: 'input',
-		name: 'revealImage',
-		message: 'Enter the url for the reveal image:'
-	},
-	{
-		type: 'input',
-		name: 'revealTimerColor',
-		message: 'Enter the color for the reveal timer:'
-	},
-	{
-		type: 'input',
-		name: 'output',
-		message: `Enter the output filename postfix (default extension .${dtAdsArgs.outputExt} ${colors.yellow('(optional)')}):\n`
-	});
-
-	return lib.promptConsole(questions, validateInitalArgs);
-}
-
 gulp.task(`${adType}:build`, () => {
 	if(!dtAdsArgs.noPrompt) {
-		return initialPrompt().then(task);
+		return lib.initialPrompt(dtAdsArgs).then(task);
 	} else {
 		return run();
 	}
 });
 gulp.task(`${adType}`, [`${adType}:build`]);
 
+let dtAdsArgs = lib.getDefaultQuasArgs(adType);
+dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
+	adType: adType,
+	skinClickUrl: '!! PASTE SKIN CLICK URL HERE !!',
+	revealClickUrl: '!! PASTE REVEAL CLICK URL HERE !!',
+	skinImpressionTracker: '!! PASTE SKIN IMPRESSION TRACKER URL HERE !!',
+	revealImpressionTracker: '!! PASTE REVEAL IMPRESSION TRACKER URL HERE !!',
+	initalArgs: [{
+			type: 'input',
+			name: 'skinImage',
+			message: 'Enter the url for the skin image:'
+		},
+		{
+			type: 'input',
+			name: 'skinColor',
+			message: 'Enter the color for the skin:'
+		},
+		{
+			type: 'input',
+			name: 'revealImage',
+			message: 'Enter the url for the reveal image:'
+		},
+		{
+			type: 'input',
+			name: 'revealTimerColor',
+			message: 'Enter the color for the reveal timer:'
+		},
+		{
+			type: 'input',
+			name: 'output',
+			message: `Enter the output filename postfix (default extension .${dtAdsArgs.outputExt} ${colors.yellow('(optional)')}):\n`
+		}],
+		initalArgsValidation: validateInitalArgs
+});
+
 module.exports = {
-	initialPrompt,
 	qType: adType,
 	run,
 	validateInitalArgs

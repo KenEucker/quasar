@@ -5,31 +5,6 @@ let gulp = require('gulp'),
 const config = require(`${process.cwd()}/config.js`);
 const lib = require(`${config.dirname}/lib.js`);
 const qType = 'page';
-let quasArgs = lib.getDefaultQuasArgs(qType);
-
-let _quasArgs = {
-	backgroundColor: '!! PASTE BACKGROUND COLOR HERE !!',
-	clickUrl: '!! PASTE CLICK URL HERE !!',
-	initalArgs: [{
-			type: 'input',
-			name: 'imageUrl',
-			message: 'Skin URL:'
-		},
-		{
-			type: 'input',
-			name: 'bgColor',
-			message: 'Skin BG Color(HEX):'
-		},
-		{
-			type: 'input',
-			name: 'output',
-			message: `Enter the output filename postfix (default extension .${quasArgs.outputExt} ${colors.yellow('(optional)')}):\n`
-		}],
-		initalArgsValidation: validateInitalArgs,
-		confirmationArgs: [],
-		confirmationArgsValidation: null
-};
-quasArgs = Object.assign(quasArgs, _quasArgs);
 
 const task = () => {
 	return lib.injectCode(quasArgs)
@@ -70,6 +45,28 @@ gulp.task(`${qType}:build`, () => {
 	}
 });
 gulp.task(`${qType}`, [`${qType}:build`]);
+
+let quasArgs = lib.getDefaultQuasArgs(qType);
+quasArgs = lib.registerRequiredQuasArgs(quasArgs, {
+	backgroundColor: '!! PASTE BACKGROUND COLOR HERE !!',
+	clickUrl: '!! PASTE CLICK URL HERE !!',
+	initalArgs: [{
+			type: 'input',
+			name: 'imageUrl',
+			message: 'Skin URL:'
+		},
+		{
+			type: 'input',
+			name: 'bgColor',
+			message: 'Skin BG Color(HEX):'
+		},
+		{
+			type: 'input',
+			name: 'output',
+			message: `Enter the output filename postfix (default extension .${quasArgs.outputExt} ${colors.yellow('(optional)')}):\n`
+		}],
+		initalArgsValidation: validateInitalArgs
+	});
 
 module.exports = {
 	qType,

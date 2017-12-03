@@ -8,12 +8,6 @@ const adType = 'hype';
 const shim = 'dt-lib-shim.js';
 const config = require(`${process.cwd()}/config.js`);
 const lib = fs.existsSync(`${config.assetsFolder}/${shim}`) ? require(`${config.assetsFolder}/${shim}`) : require(`${config.dirname}/lib.js`);
-let dtAdsArgs = lib.getDefaultQuasArgs(adType);
-dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
-	adType: adType,
-	sourceExt: 'zip',
-	googleAnalyticsID: 'UA-82208-8'
-});
 
 const task = () => {
 	return lib.unpackFiles(dtAdsArgs)
@@ -80,35 +74,6 @@ const validateInitalArgs = (args = {}) => {
 		dtAdsArgs.targetFilePath = lib.findTargetFile(dtAdsArgs);
 		return resolve();
 	});
-};
-
-// Get initial ad unit parameters
-const initialPrompt = () => {
-	const availableInputFiles = lib.getFilenamesInDirectory(dtAdsArgs.sourceFolder, ['zip']);
-	let questions = !(lib.hasCampaignAnswers(dtAdsArgs)) ? lib.getCampaignPromptQuestions() : [];
-	if(availableInputFiles.length) {
-		questions.push({
-			type: 'list',
-			name: 'source',
-			message: `Enter the input archive filename (default .${dtAdsArgs.sourceExt}):\n`,
-			choices: availableInputFiles
-		});
-	} else {
-		lib.log(`No sources could be found, expecting template to exist in output folder (${dtAdsArgs.outputFolder})`);
-	}
-
-	// Only get the campaign questions if they weren't passed in
-	questions.push({
-		type: 'input',
-		name: 'target',
-		message: `Enter the target html filename ${colors.yellow('(optional)')}:\n`
-	},{
-		type: 'input',
-		name: 'output',
-		message: `Enter the output filename postfix (default extension .${dtAdsArgs.outputExt} ${colors.yellow('(optional)')}):\n`
-	});
-
-	return lib.promptConsole(questions, validateInitalArgs);
 };
 
 // Parse html input file for params
@@ -179,15 +144,36 @@ const injectHypeAdCode = () => {
 
 gulp.task(`${adType}:build`, () => {
 	if(!dtAdsArgs.noPrompt) {
-		return initialPrompt().then(task);
+		return lib.initialPrompt(dtAdsArgs).then(task);
 	} else {
 		return run();
 	}
 });
 gulp.task(`${adType}`, [`${adType}:build`]);
 
+let dtAdsArgs = lib.getDefaultQuasArgs(adType);
+dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
+	adType: adType,
+	sourceExt: 'zip',
+	googleAnalyticsID: 'UA-82208-8',
+	initalArgs: [{
+		type: 'list',
+		name: 'source',
+		message: `Enter the input archive filename (default .zip):\n`,
+		choices: lib.getFilenamesInDirectory(dtAdsArgs.sourceFolder, ['zip'])
+	},{
+		type: 'input',
+		name: 'target',
+		message: `Enter the target html filename ${colors.yellow('(optional)')}:\n`
+	},{
+		type: 'input',
+		name: 'output',
+		message: `Enter the output filename postfix (default extension .${dtAdsArgs.outputExt} ${colors.yellow('(optional)')}):\n`
+	}],
+	initalArgsValidation: validateInitalArgs
+});
+
 module.exports = {
-	initialPrompt,
 	qType: adType,
 	run,
 	validateInitalArgs
