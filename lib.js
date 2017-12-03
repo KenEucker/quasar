@@ -214,7 +214,7 @@ const quasarSelectPrompt = (quasArgs) => {
 }
 
 const initialPrompt = (quasArgs) => {
-	let questions = !(hasQuasarAnswers(quasArgs)) ? getQuasarPromptQuestions() : [];
+	let questions = !(hasQuasarInitialArgs(quasArgs)) ? getQuasarPromptQuestions() : [];
 	questions = questions.concat(quasArgs.initalArgs || []);
 
 	return promptConsole(questions, quasArgs.initalArgsValidation);
@@ -247,7 +247,7 @@ const registerRequiredQuasArgs = (args, registerArgs) => {
 	return quasArgs;
 };
 
-const hasQuasarAnswers = (quasArgs) => {
+const hasQuasarInitialArgs = (quasArgs) => {
 	return quasArgs.domain && quasArgs.signal;
 };
 
@@ -428,7 +428,8 @@ module.exports = {
 	getFilenamesInDirectory,
 	getTaskNames,
 	getQuasarPromptQuestions,
-	hasQuasarAnswers,
+	hasQuasarInitialArgs,
+	initialPrompt,
 	injectCode,
 	logAsync,
 	log,
