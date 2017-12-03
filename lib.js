@@ -133,7 +133,7 @@ const log = (message, obj, status = '', color = colors.grey) => {
 }
 
 const logData = (message, obj, color = colors.yellow) => {
-	log(`<!-- info: ${message} -->`, obj, 'info', color);
+	log(`<!-- data: ${message} -->`, obj, 'info', color);
 }
 
 const logInfo = (message, obj, color = colors.yellow) => {
@@ -189,9 +189,9 @@ const makePromptRequired = function (input) {
 		// Pass the return value in the done callback
 		done(null, true);
 	}, 100);
-}
+	}
 
-const runTask = (task) => {
+	const runTask = (task) => {
 	if(gulp.hasTask(task)) {
 		gulp.start(task);
 	} else {
@@ -223,13 +223,13 @@ const initialPrompt = (quasArgs) => {
 	questions = questions.concat(quasArgs.initalArgs || []);
 
 	return promptConsole(questions, quasArgs.initalArgsValidation);
-};
+	};
 
-const promptConsole = (questions, getResults) => {
+	const promptConsole = (questions, getResults) => {
 	return prompt.prompt(questions).then(getResults);
-}
+	}
 
-const getQuasarPromptQuestions = () => {
+	const getQuasarPromptQuestions = () => {
 	return [{
 		type: 'input',
 		name: 'domain',
@@ -242,9 +242,9 @@ const getQuasarPromptQuestions = () => {
 		message: 'Enter the name of the signal to be used when compiling quasars:\n',
 		validate: makePromptRequired
 	}];
-}
+	}
 
-const registerRequiredQuasArgs = (args, registerArgs) => {
+	const registerRequiredQuasArgs = (args, registerArgs) => {
 	let quasArgs = Object.assign(args, registerArgs);
 
 	// TODO: more sophisticated registering
@@ -259,7 +259,7 @@ const hasQuasarInitialArgs = (quasArgs) => {
 const findTargetFile = (quasArgs) => {
 	const signalPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
 	let targetFilePath = quasArgs.targetFilePath || path.resolve(`${signalPath}/${quasArgs.target}`);
-	
+
 	if (!fs.existsSync(targetFilePath)) {
 		const oldTargetFilePath = targetFilePath;
 		targetFilePath = fromDir(`${signalPath}`, `${quasArgs.target}`);
