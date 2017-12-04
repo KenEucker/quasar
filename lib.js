@@ -29,7 +29,7 @@ const getDefaultQuasArgs = (qType = null) => {
 			outputExt: 'txt',
 			cdnUrlStart: 'https://cdn.dtcn.com/',
 			clickUrl: '!! PASTE CLICK URL HERE !!',
-			uploadToS3: true,
+			uploadToS3: false,
 			unpackFiles: true,
 			overwriteUnpackDestination: false,
 			buildCompletedSuccessfully: false,
