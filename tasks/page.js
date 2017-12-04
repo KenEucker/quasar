@@ -52,18 +52,8 @@ quasArgs = lib.registerRequiredQuasArgs(quasArgs, {
 	clickUrl: '!! PASTE CLICK URL HERE !!',
 	initalArgs: [{
 			type: 'input',
-			name: 'imageUrl',
-			message: 'Skin URL:'
-		},
-		{
-			type: 'input',
-			name: 'bgColor',
-			message: 'Skin BG Color(HEX):'
-		},
-		{
-			type: 'input',
-			name: 'output',
-			message: `Enter the output filename postfix (default extension .${quasArgs.outputExt} ${colors.yellow('(optional)')}):\n`
+			name: 'body',
+			message: 'Enter the body text'
 		}],
 		initalArgsValidation: validateInitalArgs
 	});

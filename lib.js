@@ -12,6 +12,12 @@ let gulp = require('gulp'),
 	fs = require('fs'),
 	yargs = require('yargs'),
 	mkdir = require('mkdirp-sync');
+<<<<<<< HEAD
+=======
+
+// Exported values
+let logToFile = false;
+>>>>>>> 190fbd9f00075f3886f4ce76c55e7afb26b8eb72
 
 const config = require(`${process.cwd()}/config.js`);
 
@@ -27,12 +33,14 @@ const getDefaultQuasArgs = (qType = null) => {
 			targetFilePath: qType ? `${config.assetsFolder}/${qType}/${qType}.html` : undefined,
 			bucket: 'dtcn/ads/quasar',
 			outputExt: 'txt',
-			cdnUrlStart: 'https://cdn.dtcn.com/',
+			cdnUrlStart: 'https://cdn.com/',
 			clickUrl: '!! PASTE CLICK URL HERE !!',
 			uploadToS3: false,
 			unpackFiles: true,
 			overwriteUnpackDestination: false,
+			cleanUpTargetFileTemplate: true,
 			buildCompletedSuccessfully: false,
+			logToFile: '.log',
 			qType,
 			registerRequiredQuasArgs: (args) => { return registerRequiredQuasArgs(this, args) } },
 		yargs.argv);
@@ -109,26 +117,38 @@ const log = (message, obj, status = '', color = colors.grey) => {
 
 	switch(status) {
 		case 'error':
-			logger = console.error;
+			if(logToFile) {
+				
+			} else {
+				logger = console.error;
+			}
 		break;
 		
 		case 'log':
-			logger = console.log;
+			if(logToFile) {
+				
+			} else {
+				logger = console.log;
+			}
 		break;
 
 		case '':
 		case 'info':
 		default:
-			logger = console.info;
+			if(logToFile) {
+				
+			} else {
+				logger = console.info;
+			}
 		break;
 	}
-
 
 	if(obj) {
 		logger(color(message), obj);
 	} else {
 		logger(color(message));
 	}
+
 	return;
 }
 
@@ -273,6 +293,19 @@ const findTargetFile = (quasArgs) => {
 	return targetFilePath;
 }
 
+const moveTargetFilesToRootOfSignalPath = (quasArgs) => {
+	const targetFilePath = findTargetFile(quasArgs);
+	const signalPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
+
+	if(targetFilePath !== signalPath) {
+		logInfo(`Moving files from deep folder structure to base signal path (${signalPath})`);
+		const baseDir = path.basename(targetFilePath);
+		mv(`${baseDir}`, `${signalPath}`, {mkdirp: true}, function(err) {
+			logError(`Error moving files from ${baseDir} to ${signalPath}`);
+		});
+	}
+}
+
 const copyTargetFileToOutputPath = (quasArgs) => {
 	const signalPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
 	const targetFilePath = findTargetFile(quasArgs);
@@ -326,7 +359,9 @@ const unpackFiles = (quasArgs) => {
 			}
 
 			logSuccess(`files successfully unziped to ${destinationPath}`);
-			resolve();
+			// moveTargetFilesToRootOfSignalPath(quasArgs);
+
+			resolve(quasArgs);
 		});
 	});
 }
@@ -435,6 +470,10 @@ const outputToHtmlFile = (quasArgs) => {
 		}))
 		.pipe(gulp.dest(quasArgs.dirname))
 		.on('end', () => { 
+			if(quasArgs.cleanUpTargetFileTemplate) {
+				logInfo(`Removing templated file ${quasArgs.targetFilePath}`);
+				fs.unlink(quasArgs.targetFilePath);
+			}
 			logSuccess(`Output file saved as: ${outputPath}/${quasArgs.output}.${quasArgs.outputExt}`);
 			quasArgs.buildCompletedSuccessfully = true;
 			resolve(quasArgs);
@@ -467,5 +506,7 @@ module.exports = {
 	runTask,
 	spawnQuasarTask,
 	unpackFiles,
-	uploadFiles
+	uploadFiles,
+	// Externally controlled values
+	logToFile
 }
