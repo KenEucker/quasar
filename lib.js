@@ -12,12 +12,9 @@ let gulp = require('gulp'),
 	fs = require('fs'),
 	yargs = require('yargs'),
 	mkdir = require('mkdirp-sync');
-<<<<<<< HEAD
-=======
 
 // Exported values
 let logToFile = false;
->>>>>>> 190fbd9f00075f3886f4ce76c55e7afb26b8eb72
 
 const config = require(`${process.cwd()}/config.js`);
 

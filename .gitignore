@@ -4,9 +4,5 @@ public
 jobs
 node_modules
 source
-<<<<<<< HEAD
-.config
-=======
 .config
 .log
->>>>>>> 190fbd9f00075f3886f4ce76c55e7afb26b8eb72
