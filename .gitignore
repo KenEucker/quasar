@@ -4,3 +4,5 @@ public
 jobs
 node_modules
 source
+.config
+.log
