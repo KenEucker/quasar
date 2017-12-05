@@ -1,8 +1,8 @@
 {
-  "name": "dtads_skin_reveal",
+  "name": "dt-ads",
   "version": "1.0.0",
-  "description": "Skin and reveal script generator",
-  "main": "main.js",
+  "description": "DT adunit template generator",
+  "main": "gulpfile.js",
   "dependencies": {
     "gulp": "^3.9.1",
     "gulp-template": "^3.1.0"

@@ -1,8 +1,8 @@
 {
-  "name": "dtads_skin_reveal",
+  "name": "dt-ads",
   "version": "1.0.0",
-  "description": "Skin and reveal script generator",
-  "main": "main.js",
+  "description": "DT adunit template generator",
+  "main": "gulpfile.js",
   "dependencies": {
     "aws-sdk": "^2.156.0",
     "bluebird": "^3.5.1",
