@@ -56,6 +56,9 @@ dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
 	adType: adType,
 	clickUrl: '!! PASTE CLICK URL HERE !!',
 	impressionTracker: '!! PASTE IMPRESSION TRACKER URL HERE !!',
+	backgroundColor: 'transparent',
+	clickTarget: '_blank',
+	adHtml: '',
 	initalArgs: [{
 			type: 'input',
 			name: 'imageUrl',
