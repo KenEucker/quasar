@@ -24,7 +24,7 @@ There is a build process for copying the assets to the ouput folder and then inj
 ## 1.0.0
 ### Features 
 - [x] Upload to AWS buckets
-- [ ]  bundler import (take a bunch of css, js, and html files and run them through webpack or rollup to get a single html, css, and js file on the other end -- probably shouldn't minify or uglify in this process)
-- [ ] minification and uglification of assets (including html) for obfuscation of output
-- [ ] express based web UI with live preview for quasar building
-- [ ] packaged as an electron application
+- [x] Express based web UI with live preview for quasar building
+- [ ] Bundler import (take a bunch of css, js, and html files and run them through webpack or rollup to get a single html, css, and js file on the other end -- probably shouldn't minify or uglify in this process)
+- [ ] Asset mutation on output (minification, tree shaking, code splitting, uglification)
+- [ ] Builder packaged as an electron application
