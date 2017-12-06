@@ -72,7 +72,7 @@ const getTaskNames = (dir) => {
 
 	// TODO: add the extension parameter
 	const filenames = fs.readdirSync(dir)
-		.filter(function(file){
+		.filter((file) => {
 			return !fs.statSync(path.join(dir, file)).isDirectory();
 		});
 
@@ -85,7 +85,7 @@ const getFilenamesInDirectory = (directory, extensions = [], removeExtension = f
 	if(fs.existsSync(directory))
 	{
 		filenames = fs.readdirSync(directory)
-			.filter(function(file) {
+			.filter((file) => {
 				const notADirectory = !fs.statSync(path.join(directory, file)).isDirectory();
 				if(notADirectory && extensions.length) {
 					let ext = path.extname(file);
@@ -196,12 +196,12 @@ const fromDir = (startPath, filter) => {
 }
 
 // This one has to be typehinted as a function for the async method
-const makePromptRequired = function (input) {
+const makePromptRequired = function(input) {
 	// Declare function as asynchronous, and save the done callback
 	var done = this.async();
 
 	// Do async stuff
-	setTimeout(function() {
+	setTimeout(function () {
 		if (!input.length) {
 			// Pass the return value in the done callback
 			done('This value is required');
@@ -210,11 +210,11 @@ const makePromptRequired = function (input) {
 		// Pass the return value in the done callback
 		done(null, true);
 	}, 100);
-	}
+}
 
-	const runTask = (task) => {
+const runTask = (task) => {
 	if(gulp.hasTask(task)) {
-		gulp.start(task);
+		return gulp.start(task);
 	} else {
 		logError(`Cannot find gulp task ${task}`);
 	}
@@ -301,7 +301,7 @@ const moveTargetFilesToRootOfSignalPath = (quasArgs) => {
 	if(targetFilePath !== signalPath) {
 		logInfo(`Moving files from deep folder structure to base signal path (${signalPath})`);
 		const baseDir = path.basename(targetFilePath);
-		mv(`${baseDir}`, `${signalPath}`, {mkdirp: true}, function(err) {
+		mv(`${baseDir}`, `${signalPath}`, {mkdirp: true}, (err) => {
 			logError(`Error moving files from ${baseDir} to ${signalPath}`);
 		});
 	}
@@ -352,7 +352,7 @@ const unpackFiles = (quasArgs) => {
 				logInfo(`overwriting files in ouput folder ${destinationPath}`);
 			}
 		}
-		unzip(zipFilePath, {dir: destinationPath}, function (err) {
+		unzip(zipFilePath, {dir: destinationPath}, (err) => {
 			// extraction is complete. make sure to handle the err
 			if(err) {
 				logError(err.Error || err, colors.red);
@@ -398,7 +398,6 @@ const injectCode = (quasArgs) => {
 
 				return contents;
 			}))
-			//.pipe(inject.before(quasArgs.cssInjectLocation, css))
 			// Add the default js injectionLocationString to the beginning of the document if the injectionLocationString was not found
 			.pipe(insert.transform((contents, file) => {
 				if (js) {
@@ -441,7 +440,7 @@ const uploadFileToS3 = (Bucket, Key, Body, callback, ACL = 'public-read') => {
 		ACL,
 		Body
 	};
-	s3.putObject(params, function (err, data) {
+	s3.putObject(params, (err, data) => {
 		if (err) {
 			logError("Error uploading image: ", err);
 		} else {
@@ -449,7 +448,7 @@ const uploadFileToS3 = (Bucket, Key, Body, callback, ACL = 'public-read') => {
 			if(callback) { callback(data); }
 		}
 	});
-};
+}
 
 // Upload resources to S3
 const uploadFiles = (quasArgs) => {
@@ -496,7 +495,7 @@ const outputToHtmlFile = (quasArgs) => {
 		}))
 		.pipe(gulp.dest(quasArgs.dirname))
 		.on('end', () => { 
-			if(quasArgs.cleanUpTargetFileTemplate) {
+			if(quasArgs.cleanUpTargetFileTemplate && (quasArgs.targetFilePath.indexOf(`${quasArgs.output}.${quasArgs.outputExt}`) == -1)) {
 				logInfo(`Removing templated file ${quasArgs.targetFilePath}`);
 				fs.unlink(quasArgs.targetFilePath);
 			}

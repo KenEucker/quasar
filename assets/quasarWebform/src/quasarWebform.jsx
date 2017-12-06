@@ -8,6 +8,7 @@ const log = (type) => console.log.bind(console, type);
 render((
     <Form 
         schema={window.quasarForm.schema}
+        uiSchema={window.quasarForm.uiSchema}
         onChange={log("changed")}
         onSubmit={log("submitted")}
         onError={log("errors")} />

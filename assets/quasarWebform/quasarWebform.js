@@ -1,20 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
 
-window.quasarForm = {};
-window.quasarForm.schema = {
-    title: "Todo",
-    type: "object",
-    required: ["title"],
-    properties: {
-        title: { type: "string", title: "Title", default: "A new task" },
-        done: { type: "boolean", title: "Done?", default: false }
-    }
-};
-},{}]},{},[1]);
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-"use strict";
-
 var _react = require("react");
 
 var _react2 = _interopRequireDefault(_react);
@@ -27,12 +13,16 @@ var _reactJsonschemaForm2 = _interopRequireDefault(_reactJsonschemaForm);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+window.quasarForm = { "schema": { "title": "Todo", "type": "object", "required": ["title"], "properties": { "title": { "type": "string", "title": "Title", "default": "A new task" }, "done": { "type": "boolean", "title": "Done?", "default": false } } }, "uiSchema": {} };;
+
+
 var log = function log(type) {
     return console.log.bind(console, type);
 };
 
 (0, _reactDom.render)(_react2.default.createElement(_reactJsonschemaForm2.default, {
     schema: window.quasarForm.schema,
+    uiSchema: window.quasarForm.uiSchema,
     onChange: log("changed"),
     onSubmit: log("submitted"),
     onError: log("errors") }), document.getElementById("app"));
