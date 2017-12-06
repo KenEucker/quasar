@@ -5,7 +5,11 @@ let gulp = require('gulp'),
 	concat = require('gulp-concat'),
 	babel = require('gulp-babel'),
 	file = require('gulp-file'),
+	flatmap = require('gulp-flatmap'),
+	fs = require('fs'),
 	runSequence = require('run-sequence'),
+	tap = require('gulp-tap'),
+	mustache = require('gulp-mustache'),
 	browserify = require('gulp-browserify');
 
 const config = require(`${process.cwd()}/config.js`);
@@ -43,6 +47,25 @@ const validateInitalArgs = (args = {}) => {
 	});
 };
 
+gulp.task(`${qType}:compile:html`, () => {
+	return gulp.src(`${quasArgs.assetsFolder}/src/**/*.mustache`)
+		// Compile mustache file
+		.pipe(flatmap( (stream, file) => {
+			const filename = `${file.path}.json`;
+
+			if(fs.existsSync(filename)) {
+				return stream.pipe(mustache(filename, {}, {}));
+			} else {
+				return stream.pipe(mustache());
+			}
+		}))
+		// Bundle source files
+		.pipe(concat(`${quasArgs.qType}.html`), { newLine: `\n<!-- Section -->\n` })
+		// Ouput single file in asset folder for use with build task
+		.pipe(gulp.dest(`${quasArgs.assetsFolder}`))
+		.on('error', (err) => { lib.logError(err) })
+		.on('end', () => { lib.logInfo(`Document files compiled into ${quasArgs.assetsFolder}/${qType}.html`); });
+});
 gulp.task(`${qType}:compile:css`, () => {
 	return gulp.src(`${quasArgs.assetsFolder}/src/**/*.scss`)
 		// Compile sass
@@ -50,7 +73,7 @@ gulp.task(`${qType}:compile:css`, () => {
 		// Bundle source files
 		.pipe(concat(`${quasArgs.qType}.css`))
 		// Ouput single file in asset folder for use with build task
-        .pipe(gulp.dest(`${quasArgs.assetsFolder}`))
+		.pipe(gulp.dest(`${quasArgs.assetsFolder}`))
 		.on('error', (err) => { lib.logError(err) })
 		.on('end', () => { lib.logInfo(`Style files compiled into ${quasArgs.assetsFolder}/${qType}.css`); });
 });
@@ -67,7 +90,7 @@ gulp.task(`${qType}:compile:js`, () => {
 		.on('error', (err) => { lib.logError(err) })
 		.on('end', () => { lib.logInfo(`Script files compiled into ${quasArgs.assetsFolder}/${qType}.js`); });
 });
-gulp.task(`${qType}:compile:sources`, [ `${qType}:compile:js`, `${qType}:compile:css` ]);
+gulp.task(`${qType}:compile:sources`, [ `${qType}:compile:js`, `${qType}:compile:css`, `${qType}:compile:html` ]);
 
 gulp.task(`${qType}:precompile`, () => {
 	let formData = {};
@@ -81,9 +104,11 @@ gulp.task(`${qType}:precompile`, () => {
 		}
 	};
 	formData.uiSchema = {};
-		
+	
+	// Stringify the formData and then put it into a template object to be consumed by the template engine and placed on the page as a JSON object
 	const formDataJsonString = JSON.stringify(formData);
-	return file('data.jsx', `window.quasarForm = ${formDataJsonString};`, { src: true })
+	const templateData = { quasarForm: formDataJsonString, hello: "hello world!"}
+	return file('quasarWebform.mustache.json', JSON.stringify(templateData), { src: true })
 		.pipe(gulp.dest(`${quasArgs.assetsFolder}/src`));
 });
 gulp.task(`${qType}:compile`, function(callback) {
