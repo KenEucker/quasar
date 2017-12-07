@@ -18,7 +18,8 @@ const qType = 'quasarWebform';
 
 const task = () => {
 	return lib.injectCode(quasArgs)
-	.then(() => { lib.outputToHtmlFile(quasArgs); });
+	.then(() => { lib.outputToHtmlFile(quasArgs); })
+	.then(() => { lib.copyFilesFromAssetsFolderToOutput(quasArgs, ['app.js', 'package.json']); });
 }
 
 const run = (args = {}) => {

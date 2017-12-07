@@ -28,7 +28,7 @@ const makeAsynCall = (uri, cb, method = 'GET', content = {}) => {
 }
 
 const onFormSubmitted = (e) => {
-    postData(`${window.location}:3720`, e.formData);
+    postData(`${window.location}`, e.formData);
 }
 
 const createForms = () => {
