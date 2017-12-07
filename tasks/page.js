@@ -9,13 +9,17 @@ const qType = 'page';
 const task = () => {
 	return lib.injectCode(quasArgs)
 	.then(() => { lib.outputToHtmlFile(quasArgs); });
-};
+}
 
 const run = () => {
-	return validateInitalArgs().then(task());
-};
+	return validateRequiredArgs().then(task());
+}
 
-const validateInitalArgs = (args = {}) => {
+const getQuasarPrompts = () => {
+	return quasArgs.requiredArgs;
+}
+
+const validateRequiredArgs = (args = {}) => {
 	return new Promise((resolve, reject) => {
 		// Merge options with passed in parameters
 		quasArgs = Object.assign(quasArgs, args);
@@ -35,7 +39,7 @@ const validateInitalArgs = (args = {}) => {
 
 		return resolve();
 	});
-};
+}
 
 gulp.task(`${qType}:build`, () => {
 	if(!quasArgs.noPrompt) {
@@ -43,22 +47,21 @@ gulp.task(`${qType}:build`, () => {
 	} else {
 		return run();
 	}
-});
+})
 gulp.task(`${qType}`, [`${qType}:build`]);
 
 let quasArgs = lib.getDefaultQuasArgs(qType);
-quasArgs = lib.registerRequiredQuasArgs(quasArgs, {
-	backgroundColor: '!! PASTE BACKGROUND COLOR HERE !!',
-	clickUrl: '!! PASTE CLICK URL HERE !!',
-	initalArgs: [{
-			type: 'input',
-			name: 'body',
-			message: 'Enter the body text'
-		}],
-		initalArgsValidation: validateInitalArgs
-	});
+quasArgs = lib.registerRequiredQuasArgs(quasArgs, [{
+		type: 'input',
+		name: 'body',
+		message: 'Enter the body text'
+	}],
+	{ 
+		outputExt: 'html',
+		requiredArgsValidation: validateRequiredArgs });
 
 module.exports = {
+	getQuasarPrompts,
 	qType,
 	run
 };

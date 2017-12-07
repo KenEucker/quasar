@@ -19,13 +19,17 @@ const qType = 'quasarWebform';
 const task = () => {
 	return lib.injectCode(quasArgs)
 	.then(() => { lib.outputToHtmlFile(quasArgs); });
-};
+}
 
 const run = (args = {}) => {
-	return validateInitalArgs(args).then(task());
-};
+	return validateRequiredArgs(args).then(task());
+}
 
-const validateInitalArgs = (args = {}) => {
+const getQuasarPrompts = () => {
+	return quasArgs.requiredArgs;
+}
+
+const validateRequiredArgs = (args = {}) => {
 	return new Promise((resolve, reject) => {
 		// Merge options with passed in parameters
 		quasArgs = Object.assign(quasArgs, args);
@@ -45,7 +49,23 @@ const validateInitalArgs = (args = {}) => {
 
 		return resolve();
 	});
-};
+}
+
+const convertPromptToJsonSchemaFormProperty = (prompt) => {
+	let title = prompt.message,
+		type = prompt.type;
+
+	switch(type) {
+		case 'input':
+			type = 'string';
+		break;
+	}
+
+	return {
+		type,
+		title
+	};
+}
 
 gulp.task(`${qType}:compile:html`, () => {
 	return gulp.src(`${quasArgs.assetsFolder}/src/**/*.mustache`)
@@ -93,21 +113,36 @@ gulp.task(`${qType}:compile:js`, () => {
 gulp.task(`${qType}:compile:sources`, [ `${qType}:compile:js`, `${qType}:compile:css`, `${qType}:compile:html` ]);
 
 gulp.task(`${qType}:precompile`, () => {
-	let formData = {};
-	formData.schema = {
-		title: "Todo",
-		type: "object",
-		required: ["title"],
-		properties: {
-		title: {type: "string", title: "Title", default: "A new task"},
-		done: {type: "boolean", title: "Done?", default: false}
-		}
-	};
-	formData.uiSchema = {};
+
+	const tasks = lib.getFilenamesInDirectory(`${quasArgs.dirname}/tasks/`, ['js'], true);
+	let formsData = [];
+	// format questions for react-jsonshcema-form
+	tasks.forEach((task) => {
+		const taskFile = require(`./${task}.js`)
+		const taskPrompts = taskFile.getQuasarPrompts();
+		let required = [], properties = {};
+
+		taskPrompts.forEach((prompt) => {
+			const name = prompt.name;
+			if(prompt.required) {
+				required.push(name);
+			}
+			properties[name] = convertPromptToJsonSchemaFormProperty(prompt);
+		});
+		const schema = {
+			title: `Quasar Configuration For ${task}`,
+			type: "object",
+			required: required,
+			properties: properties
+		};
+		const uiSchema = {};
+		formsData.push({ name: task, schema: schema, uiSchema: uiSchema });
+	});
+
+	const formDataJsonString = JSON.stringify(formsData);
 	
 	// Stringify the formData and then put it into a template object to be consumed by the template engine and placed on the page as a JSON object
-	const formDataJsonString = JSON.stringify(formData);
-	const templateData = { quasarForm: formDataJsonString, hello: "hello world!"}
+	const templateData = { quasarForms: formDataJsonString }
 	return file('quasarWebform.mustache.json', JSON.stringify(templateData), { src: true })
 		.pipe(gulp.dest(`${quasArgs.assetsFolder}/src`));
 });
@@ -118,18 +153,18 @@ gulp.task(`${qType}:compile`, function(callback) {
   });
 
 gulp.task(`${qType}:build`, [ `${qType}:compile` ], () => {
-	return run({ domain: 'quasar', signal: 'webUI', overwriteDestinationPath: true });
+	return run({ domain: 'quasar', signal: 'Webform', output: 'index.html', overwriteDestinationPath: true });
 });
 gulp.task(`${qType}`, [`${qType}:build`]);
 
 let quasArgs = lib.getDefaultQuasArgs(qType);
-quasArgs = lib.registerRequiredQuasArgs(quasArgs, {
+quasArgs = lib.registerRequiredQuasArgs(quasArgs, [], {
 	outputExt: 'html',
-	initalArgs: [],
-		initalArgsValidation: validateInitalArgs
-	});
+	requiredArgsValidation: validateRequiredArgs
+});
 
 module.exports = {
+	getQuasarPrompts,
 	qType,
 	run
 };

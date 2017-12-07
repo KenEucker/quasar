@@ -42,8 +42,7 @@ const getDefaultQuasArgs = (qType = null) => {
 			cleanUpTargetFileTemplate: true,
 			buildCompletedSuccessfully: false,
 			logToFile: '.log',
-			qType,
-			registerRequiredQuasArgs: (args) => { return registerRequiredQuasArgs(this, args) } },
+			qType},
 		yargs.argv);
 }
 
@@ -69,14 +68,6 @@ const spawnQuasarTask = (args) => {
 
 const getTaskNames = (dir) => {
 	return getFilenamesInDirectory(dir, ['js'], true);
-
-	// TODO: add the extension parameter
-	const filenames = fs.readdirSync(dir)
-		.filter((file) => {
-			return !fs.statSync(path.join(dir, file)).isDirectory();
-		});
-
-	return filenames.map( filename => filename.replace(path.extname(filename), '') );
 }
 
 const getFilenamesInDirectory = (directory, extensions = [], removeExtension = false) => {
@@ -195,23 +186,6 @@ const fromDir = (startPath, filter) => {
 	return found;
 }
 
-// This one has to be typehinted as a function for the async method
-const makePromptRequired = function(input) {
-	// Declare function as asynchronous, and save the done callback
-	var done = this.async();
-
-	// Do async stuff
-	setTimeout(function () {
-		if (!input.length) {
-			// Pass the return value in the done callback
-			done('This value is required');
-			return;
-		}
-		// Pass the return value in the done callback
-		done(null, true);
-	}, 100);
-}
-
 const runTask = (task) => {
 	if(gulp.hasTask(task)) {
 		return gulp.start(task);
@@ -240,37 +214,61 @@ const quasarSelectPrompt = (quasArgs) => {
 }
 
 const initialPrompt = (quasArgs) => {
-	let questions = !(hasQuasarInitialArgs(quasArgs)) ? getQuasarPromptQuestions() : [];
-	questions = questions.concat(quasArgs.initalArgs || []);
+	return promptConsole(quasArgs.requiredArgs, quasArgs.requiredArgsValidation);
+}
 
-	return promptConsole(questions, quasArgs.initalArgsValidation);
-	};
-
-	const promptConsole = (questions, getResults) => {
+const promptConsole = (questions, getResults) => {
 	return prompt.prompt(questions).then(getResults);
-	}
+}
 
-	const getQuasarPromptQuestions = () => {
+// This one has to be typehinted as a function for the async method
+const makePromptRequired = function(input) {
+	// Declare function as asynchronous, and save the done callback
+	var done = this.async();
+
+	// Do async stuff
+	setTimeout(function () {
+		if (!input.length) {
+			// Pass the return value in the done callback
+			done('This value is required');
+			return;
+		}
+		// Pass the return value in the done callback
+		done(null, true);
+	}, 100);
+}
+
+const getQuasarPromptQuestions = () => {
 	return [{
 		type: 'input',
 		name: 'domain',
 		message: 'Enter the name of the domain to be used in building assets:\n',
+		required: true,
 		validate: makePromptRequired
-	},
-	{
+	},{
 		type: 'input',
 		name: 'signal',
 		message: 'Enter the name of the signal to be used when compiling quasars:\n',
+		required: true,
 		validate: makePromptRequired
 	}];
+}
+
+// This method expects that the second parameter `requiredArgs` is an array of objects with the same structure as inquirer's .prompt questions parameter
+// https://www.npmjs.com/package/inquirer#questions
+const registerRequiredQuasArgs = (args, requiredArgs = [], nonRequiredArgs = {}, addDefaults = true) => {
+	args = Object.assign(args, nonRequiredArgs);
+
+	if(!args.requiredArgs) {
+		args.requiredArgs = getQuasarPromptQuestions().concat(requiredArgs);
+	} else {
+		// TODO: update two arrays of objects
 	}
+	args.requiredArgs.forEach((arg) => {
+		args[arg.name] = args[arg.name] || arg.default || '';
+	});
 
-	const registerRequiredQuasArgs = (args, registerArgs) => {
-	let quasArgs = Object.assign(args, registerArgs);
-
-	// TODO: more sophisticated registering
-
-	return quasArgs;
+	return args;
 }
 
 const hasQuasarInitialArgs = (quasArgs) => {
