@@ -60,11 +60,44 @@ const convertPromptToJsonSchemaFormProperty = (prompt) => {
 		case 'input':
 			type = 'string';
 		break;
+		case 'list':
+			if(prompt.name == 'source') {
+				type = 'string'
+				_default = prompt.choices
+			}
+		break;
+		default:
+		break;
 	}
 
 	return {
 		type,
 		title
+	};
+}
+
+const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
+	let title = prompt.message || '',
+		widget = prompt.type || 'input',
+		help = prompt.help || '';
+
+	switch(widget) {
+		case 'input':
+			widget = 'text';
+		break;
+
+		case 'list':
+			if(prompt.name == 'source') {
+				widget = 'file';
+			} else {
+				widget = 'checkboxes';
+			}
+		break;
+	}
+
+	return {
+		'ui:widget': widget,
+		help
 	};
 }
 
@@ -121,7 +154,7 @@ gulp.task(`${qType}:precompile`, () => {
 	tasks.forEach((task) => {
 		const taskFile = require(`./${task}.js`)
 		const taskPrompts = taskFile.getQuasarPrompts();
-		let required = [], properties = {};
+		let required = [], properties = {}, uiSchema = {};
 
 		taskPrompts.forEach((prompt) => {
 			const name = prompt.name;
@@ -129,6 +162,7 @@ gulp.task(`${qType}:precompile`, () => {
 				required.push(name);
 			}
 			properties[name] = convertPromptToJsonSchemaFormProperty(prompt);
+			uiSchema[name] = convertPromptToJsonSchemaUIFormProperty(prompt);
 		});
 		const schema = {
 			title: `Quasar Configuration For ${task}`,
@@ -136,7 +170,6 @@ gulp.task(`${qType}:precompile`, () => {
 			required: required,
 			properties: properties
 		};
-		const uiSchema = {};
 		formsData.push({ name: task, schema: schema, uiSchema: uiSchema });
 	});
 

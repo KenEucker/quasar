@@ -52,6 +52,11 @@ gulp.task(`${qType}`, [`${qType}:build`]);
 
 let quasArgs = lib.getDefaultQuasArgs(qType);
 quasArgs = lib.registerRequiredQuasArgs(quasArgs, [{
+		type: 'list',
+		name: 'source',
+		message: `Enter the source filename (default .zip):\n`,
+		choices: ['none'].concat(lib.getFilenamesInDirectory(quasArgs.sourceFolder, ['zip']))
+	}, {
 		type: 'input',
 		name: 'body',
 		message: 'Enter the body text'
