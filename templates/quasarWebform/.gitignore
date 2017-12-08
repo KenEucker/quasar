@@ -1,7 +1,7 @@
 .git
 .DS_Store
 package.json.lock
-src/quasarWebform.mustache.json
+quasarWebform.mustache.json
 quasarWebform.html
 quasarWebform.css
 quasarWebform.js
