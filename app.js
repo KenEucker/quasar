@@ -12,8 +12,6 @@ let gulp = require('gulp'),
 	lib = require('./lib'),
 	api = require('./api');
 
-let webForm;
-
 requireDir('./tasks/');
 
 
@@ -51,7 +49,11 @@ const runWebForm = () => {
 	if(fs.existsSync(webFormPath)) {
 		webForm = require(webFormPath);
 		lib.definitelyCallFunction(() => {
-			webForm.run(yargs.argv.runApi ? parseInt(api.PORT) + 1 : null, true);
+			if(yargs.argv.runApi) {
+				webForm.run(api.app, api.PORT);
+			} else {
+				webForm.run();
+			}
 		});
 
 		return true;

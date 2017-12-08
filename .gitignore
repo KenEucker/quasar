@@ -2,7 +2,7 @@
 .DS_Store
 .config
 .log
-package.json.lock
+package-lock.json
 
 assets
 public

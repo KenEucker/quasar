@@ -1,6 +1,6 @@
 .git
 .DS_Store
-package.json.lock
+package-lock.json
 quasarWebform.mustache.json
 quasarWebform.html
 quasarWebform.css

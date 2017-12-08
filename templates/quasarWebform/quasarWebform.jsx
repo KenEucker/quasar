@@ -2,33 +2,33 @@ import React, { Component } from "react";
 import { render } from "react-dom";
 
 import Form from "react-jsonschema-form";
+import Axios from "axios";
 
 let forms = [];
 
 const log = (type) => console.log.bind(console, type);
+const apiUri = `${window.location.protocol}/${window.location.hostname}:${window.location.port}`;
 
-const postData = (uri, data, success = null) => {
-    return makeAsynCall(uri, success ? success : (res) => { console.log(`post to ${uri} successful`, res) }, 'POST', data);
+const ensureData = (data) => {
+    let allData = {};
+
+    Object.keys(data).map((key) => {
+        allData[key] = data[key] || '';
+    });
+
+    return allData;
 }
 
-const makeAsynCall = (uri, cb, method = 'GET', content = {}) => {
-    return 
-        fetch(uri, {
-            method: method,
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(content) })
-        .then((response) => {
-            console.log('hello');
-            // TODO: More intelligence here around the response
-            cb(response);
-        });
+const postData = (uri, data, success = () => {}, error = err => { console.log(err) }) => {
+    Axios.post(uri, data).then(success).catch(error);
+}
+
+const getData = (uri, data, success = () => {}, error = err => { console.log(err) }) => {
+    Axios.get(uri).then(success).catch(error);
 }
 
 const onFormSubmitted = (e) => {
-    postData(`${window.location}`, e.formData);
+    postData(window.location.origin, ensureData(e.formData));
 }
 
 const createForms = () => {

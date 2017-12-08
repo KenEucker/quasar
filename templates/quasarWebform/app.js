@@ -1,10 +1,10 @@
 let express = require('express'),
-    app = express(),
     launcher = require( 'launch-browser' ),
     yargs = require('yargs'),
-    path = require('path');
+    path = require('path'),
+    bodyParser = require('body-parser');
 
-let PORT = '3720';
+let PORT = process.env.PORT || '3720', app = null;
 
 const staticOptions = {
     dotfiles: 'ignore',
@@ -18,19 +18,34 @@ const staticOptions = {
     }
 };
 
-const webForm = (port = null) => {
+const postedForm = (req, res) => {
+    console.log(`Got a thing! -->`, req.body);
+    res.send({message: "okay!"});
+}
+
+const webForm = (app, port = null, start = false) => {
     PORT = port || PORT;
+
+    app.use(bodyParser.urlencoded({ extended: true }));
+    app.use(bodyParser.json());
+
+    app.post('/', postedForm);
+
     app.get('/', function(req, res){
         res.sendFile(path.join(`${__dirname}/index.html`));
       });
+
     app.use(express.static(__dirname, staticOptions));
-    app.listen(PORT);
+
+    if (start) {
+        app.listen(PORT);
+    }
     console.log(`quasar webform running on port:${PORT} at http://localhost:${PORT}`);
 }
 
 const launchInBrowser = () => {
     launcher(`http://localhost:${PORT}`, { browser: ['chrome', 'firefox', 'safari'] }, (e, browser) => {
-        if(e) return console.log(e);
+        if (e) return console.log(e);
         
         browser.on('stop', (code) => {
             console.log( 'Browser closed with exit code:', code );
@@ -38,15 +53,21 @@ const launchInBrowser = () => {
     })
 }
 
-const run = (port = null, autoLaunchBrowser = false) => {
-    webForm(port);
-    if(autoLaunchBrowser) {
+const run = (app = null, port = null, autoLaunchBrowser = false, start = false) => {
+    if (!app) {
+        app = express();
+        start = true;
+    }
+
+    webForm(app, port, start);
+
+    if (autoLaunchBrowser) {
         launchInBrowser();
     }
 }
 
-if(yargs.argv.runWebFormStandalone) {
-    run(yargs.argv.webFormPort, yargs.argv.autoLaunchBrowser);
+if (yargs.argv.runWebFormStandalone) {
+    run(null, yargs.argv.webFormPort, yargs.argv.autoLaunchBrowser, true);
 }
 
 module.exports = {
