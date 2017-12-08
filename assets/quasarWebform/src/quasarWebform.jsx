@@ -45,7 +45,11 @@ const createForms = () => {
                 uiSchema={form.uiSchema}
                 onChange={log("changed")}
                 onSubmit={onFormSubmitted}
-                onError={log("errors")} />
+                onError={log("errors")}>
+                    <p>
+                        <button type="submit" class="btn btn-info">Generate</button>
+                    </p>
+                </Form>
         ), div);
 
         document.getElementById("app").appendChild(div);
@@ -57,6 +61,7 @@ const createDropdown = () => {
     var dropdown = document.createElement('select');
     const selectOption = document.createElement("option");
 
+    outer.id = "quasarSelector";
     selectOption.text = "Quasar To Build";
     selectOption.value = false;
     selectOption.setAttribute("disabled", 1);

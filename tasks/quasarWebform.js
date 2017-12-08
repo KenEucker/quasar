@@ -19,7 +19,7 @@ const qType = 'quasarWebform';
 const task = () => {
 	return lib.injectCode(quasArgs)
 	.then(() => { lib.outputToHtmlFile(quasArgs); })
-	.then(() => { lib.copyFilesFromAssetsFolderToOutput(quasArgs, ['app.js', 'package.json']); });
+	.then(() => { lib.copyFilesFromAssetsFolderToOutput(quasArgs, ['app.js', 'package.json', 'img/**', 'fonts/**']); });
 }
 
 const run = (args = {}) => {
@@ -165,7 +165,7 @@ gulp.task(`${qType}:precompile`, () => {
 			uiSchema[name] = convertPromptToJsonSchemaUIFormProperty(prompt);
 		});
 		const schema = {
-			title: `Quasar Configuration For ${task}`,
+			title: `Quasar::${task} -- ${taskFile.purpose}`,
 			type: "object",
 			required: required,
 			properties: properties
@@ -195,9 +195,13 @@ let quasArgs = lib.getDefaultQuasArgs(qType);
 quasArgs = lib.registerRequiredQuasArgs(quasArgs, [], {
 	outputExt: 'html',
 	requiredArgsValidation: validateRequiredArgs
-});
+}, false);
 
 module.exports = {
+	purpose: `
+		builds a form using react and the json schema pulled directly from the available quasars 
+		installed and allows you to run quasar build tasks with a web ui.
+	`,
 	getQuasarPrompts,
 	qType,
 	run

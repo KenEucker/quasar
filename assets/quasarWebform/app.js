@@ -5,27 +5,27 @@ let express = require('express'),
 
 let PORT = '3720';
 
-var staticOptions = {
+const staticOptions = {
     dotfiles: 'ignore',
     etag: false,
-    extensions: ['htm', 'html'],
+    extensions: ['htm', 'html', 'jpg'],
     index: false,
     maxAge: '1d',
     redirect: false,
     setHeaders: function (res, path, stat) {
       res.set('x-timestamp', Date.now())
     }
-}
+};
 
 const run = (port = null) => {
     PORT = port || PORT;
     app.get('/', function(req, res){
-        res.sendFile(path.join(__dirname + '/index.html'));
+        res.sendFile(path.join(`${__dirname}/index.html`));
       });
-    app.use(express.static('public', staticOptions));
+    app.use(express.static('./', staticOptions));
     app.listen(PORT);
     console.log(`quasar webform running on port:${PORT} at http://localhost:${PORT}`);
-};
+}
 
 const launchInBrowser = () => {
     launcher(`http://localhost:${PORT}`, { browser: ['chrome', 'firefox', 'safari'] }, (e, browser) => {

@@ -66,6 +66,10 @@ quasArgs = lib.registerRequiredQuasArgs(quasArgs, [{
 		requiredArgsValidation: validateRequiredArgs });
 
 module.exports = {
+	purpose: `
+		builds out a single html page from a set of singular assets: css, html, js 
+		with options to import files from an archived source
+	`,
 	getQuasarPrompts,
 	qType,
 	run

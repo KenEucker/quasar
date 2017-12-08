@@ -50,6 +50,10 @@ gulp.task(`watchJobs`, () => {
 });
 
 if(yargs.argv.watchJobs) {
+	if(yargs.argv.runApi) {
+		// TODO: spin up express application to take post variables and turn them into a json object for processing
+	}
+
 	lib.definitelyCallFunction(() => {
 		lib.runTask('watchJobs');
 	});

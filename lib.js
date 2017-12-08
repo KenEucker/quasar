@@ -306,11 +306,12 @@ const moveTargetFilesToRootOfSignalPath = (quasArgs) => {
 }
 
 const copyFilesFromAssetsFolderToOutput = (quasArgs, files) => {
-	logInfo(`copying files (${files.join()}) from ${quasArgs.assetsFolder}/`);
+	const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
+	logInfo(`copying files (${files.join()}) from ${quasArgs.assetsFolder}/ to ${destinationPath}`);
 
 	files = files.map(file => `${quasArgs.assetsFolder}/${file}`);
-	gulp.src(files)
-		.pipe(gulp.dest(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`));
+	gulp.src(files, { base: quasArgs.assetsFolder })
+		.pipe(gulp.dest(destinationPath));
 }
 
 const copyTargetFileToOutputPath = (quasArgs) => {
