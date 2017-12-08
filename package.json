@@ -40,6 +40,7 @@
     "gulp-transform": "^3.0.5",
     "gulp-watch": "^4.3.11",
     "inquirer": "^4.0.0",
+    "launch-browser": "^1.0.0",
     "mkdirp-sync": "0.0.2",
     "os": "^0.1.1",
     "phantom": "^4.0.9",

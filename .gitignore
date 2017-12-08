@@ -1,10 +1,10 @@
 .git
 .DS_Store
-./assets
-./public
-./jobs
-./source
 .config
 .log
 
+assets
+public
+jobs
+source
 node_modules

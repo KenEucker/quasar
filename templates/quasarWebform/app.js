@@ -38,9 +38,15 @@ const launchInBrowser = () => {
     })
 }
 
-if(yargs.argv.runWebForm) {
-    run(yargs.argv.webFormPort);
-    launchInBrowser();
+const run = (port = null, autoLaunchBrowser = false) => {
+    webForm(port);
+    if(autoLaunchBrowser) {
+        launchInBrowser();
+    }
+}
+
+if(yargs.argv.runWebFormStandalone) {
+    run(yargs.argv.webFormPort, yargs.argv.autoLaunchBrowser);
 }
 
 module.exports = {

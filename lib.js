@@ -187,9 +187,10 @@ const fromDir = (startPath, filter) => {
 	return found;
 }
 
-const runTask = (task) => {
+const runTask = (task, end) => {
 	if(gulp.hasTask(task)) {
-		return gulp.start(task);
+		return gulp.start(task)
+			.on("end", () => { end(); });
 	} else {
 		logError(`Cannot find gulp task ${task}`);
 	}
@@ -387,7 +388,7 @@ const unpackFiles = (quasArgs) => {
 
 		if (fs.existsSync(findTargetFile(quasArgs))) {
 			if(!quasArgs.overwriteUnpackDestination) {
-				logError(`files have already been unpacked, run again with option --overwriteUnpackDestination=true .`);
+				logError(`files have already been unpacked, run again with option --overwriteUnpackDestination=true to overwite files.`);
 				return resolve();
 			} else {
 				logInfo(`overwriting files in ouput folder ${destinationPath}`);
