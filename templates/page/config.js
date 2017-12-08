@@ -9,7 +9,7 @@ dirname = split.join('/');
 const config = {
 	dirname:			`${dirname}`,
 	outputFolder:		`${dirname}/public`,
-	sourceFolder:		`${dirname}/source`,
+	sourceFolder:		`${dirname}/sources`,
 	assetsFolder:		`${dirname}/assets`,
 	node_modules:		`${dirname}/node_modules/`,
 };

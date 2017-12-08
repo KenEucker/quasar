@@ -26,10 +26,11 @@ const getDefaultQuasArgs = (qType = null) => {
 			outputFolder: config.outputFolder,
 			sourceFolder: config.sourceFolder,
 			assetsFolder: qType ? `${config.assetsFolder}/${qType}` : undefined,
-			stylesAsset: qType ? `${qType}.css` : undefined,
-			scriptsAsset: qType ? `${qType}.js` : undefined,
-			target: qType ? `${qType}.html` : undefined,
+			templatesFolder: qType ? `${config.templatesFolder}/${qType}` : undefined,
 			targetFilePath: qType ? `${config.assetsFolder}/${qType}/${qType}.html` : undefined,
+			stylesAsset: qType ? `${config.assetsFolder}/${qType}/${qType}.css` : undefined,
+			scriptsAsset: qType ? `${config.assetsFolder}/${qType}/${qType}.js` : undefined,
+			target: qType ? `${qType}.html` : undefined,
 			bucket: '%AWS%',
 			outputExt: 'txt',
 			cdnUrlStart: 'https://cdn.com/',
@@ -39,7 +40,7 @@ const getDefaultQuasArgs = (qType = null) => {
 			cssInjectLocation: '</head>',
 			jsInjectLocation: '</body>',
 			overwriteUnpackDestination: false,
-			cleanUpTargetFileTemplate: true,
+			cleanUpTargetFileTemplate: false,
 			buildCompletedSuccessfully: false,
 			logToFile: '.log',
 			qType},
@@ -260,7 +261,7 @@ const registerRequiredQuasArgs = (args, requiredArgs = [], nonRequiredArgs = {},
 	args = Object.assign(args, nonRequiredArgs);
 
 	if(!args.requiredArgs) {
-		args.requiredArgs = getQuasarPromptQuestions().concat(requiredArgs);
+		args.requiredArgs = addDefaults? getQuasarPromptQuestions().concat(requiredArgs) : requiredArgs;
 	} else {
 		// TODO: update two arrays of objects
 	}
@@ -292,17 +293,25 @@ const findTargetFile = (quasArgs) => {
 	return targetFilePath;
 }
 
-const moveTargetFilesToRootOfSignalPath = (quasArgs) => {
+const moveTargetFilesToRootOfAssetsPath = (quasArgs) => {
 	const targetFilePath = findTargetFile(quasArgs);
-	const signalPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
 
-	if(targetFilePath !== signalPath) {
-		logInfo(`Moving files from deep folder structure to base signal path (${signalPath})`);
+	if(targetFilePath !== `${quasArgs.assetsFolder}/${target}`) {
+		logInfo(`Moving files from deep folder structure to base assets path (${signalPath})`);
 		const baseDir = path.basename(targetFilePath);
-		mv(`${baseDir}`, `${signalPath}`, {mkdirp: true}, (err) => {
-			logError(`Error moving files from ${baseDir} to ${signalPath}`);
+		mv(`${baseDir}`, `${quasArgs.assetsFolder}`, {mkdirp: true}, (err) => {
+			logError(`Error moving files from ${baseDir} to ${quasArgs.assetsFolder}`);
 		});
 	}
+}
+
+const copyFilesFromTemplatesFolderToOutput = (quasArgs, files) => {
+	const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
+	logInfo(`copying files (${files.join()}) from ${quasArgs.templatesFolder}/ to ${destinationPath}`);
+
+	files = files.map(file => `${quasArgs.templatesFolder}/${file}`);
+	gulp.src(files, { base: quasArgs.templatesFolder })
+		.pipe(gulp.dest(destinationPath));
 }
 
 const copyFilesFromAssetsFolderToOutput = (quasArgs, files) => {
@@ -314,25 +323,50 @@ const copyFilesFromAssetsFolderToOutput = (quasArgs, files) => {
 		.pipe(gulp.dest(destinationPath));
 }
 
-const copyTargetFileToOutputPath = (quasArgs) => {
-	const signalPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
+const copyTemplateFilesToAssetsPath = (quasArgs) => {
 	const targetFilePath = findTargetFile(quasArgs);
-	const outputFilePath = fromDir(signalPath, quasArgs.target) || path.resolve(`${signalPath}/${quasArgs.target}`);
+	const cssAssetPath = path.resolve(`${quasArgs.templatesFolder}/${quasArgs.qType}.css`);
+	const jsAssetPath = path.resolve(`${quasArgs.templatesFolder}/${quasArgs.qType}.js`);
 
+	mkdir(quasArgs.assetsFolder);
 	if(fs.existsSync(targetFilePath)) {
-		log(`copying target file to output path: ${outputFilePath}`);
-		const outfile = fs.readFileSync(targetFilePath, 'utf-8');
-		
-		mkdir(signalPath);
-		if(!outfile) {
-			return targetFilePath;
+		const outfile1 = fs.readFileSync(targetFilePath, 'utf-8');
+		const outputTargetFilePath = `${quasArgs.assetsFolder}/${quasArgs.target}`;
+
+		if(!outfile1) {
+			quasArgs.targetFilePath = targetFilePath;
 		}
 
-		fs.writeFileSync(outputFilePath, outfile);
-		return outputFilePath;
+		log(`copying target file to assets path: ${outputTargetFilePath}`);
+		fs.writeFileSync(outputTargetFilePath, outfile1);
+		quasArgs.targetFilePath = outputTargetFilePath;
+	}
+	if(fs.existsSync(cssAssetPath)) {
+		const outfile2 = fs.readFileSync(cssAssetPath, 'utf-8');
+		const outputCssAssetPath = `${quasArgs.assetsFolder}/${quasArgs.qType}.css`;
+
+		if(!outfile2) {
+			quasArgs.stylesAsset = cssAssetPath;
+		}
+
+		log(`copying css asset file to assets path: ${outputCssAssetPath}`);
+		fs.writeFileSync(outputCssAssetPath, outfile2);
+		quasArgs.stylesAsset = outputCssAssetPath;
+	}
+	if(fs.existsSync(jsAssetPath)) {
+		const outfile3 = fs.readFileSync(jsAssetPath, 'utf-8');
+		const outputJsAssetPath = `${quasArgs.assetsFolder}/${quasArgs.qType}.js`;
+
+		if(!outfile3) {
+			quasArgs.scriptsAsset = jsAssetPath;
+		}
+
+		log(`copying js asset file to assets path: ${outputJsAssetPath}`);
+		fs.writeFileSync(outputJsAssetPath, outfile3);
+		quasArgs.scriptsAsset = outputJsAssetPath;
 	}
 
-	return outputFilePath;
+	return quasArgs;
 }
 
 // Unpack input files
@@ -367,7 +401,7 @@ const unpackFiles = (quasArgs) => {
 			}
 
 			logSuccess(`files successfully unziped to ${destinationPath}`);
-			// moveTargetFilesToRootOfSignalPath(quasArgs);
+			// moveTargetFilesToRootOfAssetsPath(quasArgs);
 
 			resolve(quasArgs);
 		});
@@ -379,23 +413,23 @@ const injectCode = (quasArgs) => {
 	return new promise((resolve, reject) => {
 		const urlToPrependCDNLink = quasArgs.target ? quasArgs.target.replace('.html','') : quasArgs.targetFilePath.split('/').pop().replace('.html','');
 		const cdnTemplate = `<%= cdnUrlStart %><%= bucketPath %>/`;
-		let css = (quasArgs.stylesAsset && quasArgs.stylesAsset.length) ? `${quasArgs.assetsFolder}/${quasArgs.stylesAsset}` : null;
-		let js = (quasArgs.scriptsAsset && quasArgs.scriptsAsset.length) ? `${quasArgs.assetsFolder}/${quasArgs.scriptsAsset}` : null;
-		
+		const css = fs.existsSync(quasArgs.stylesAsset) ? quasArgs.stylesAsset : false;
+		const js = fs.existsSync(quasArgs.scriptsAsset) ? quasArgs.scriptsAsset : false;
+
 		log('injecting public code prior to applying template parameters');
 		log(`getting assets from (${quasArgs.assetsFolder})`);
-		log(`getting template file (${quasArgs.targetFilePath}) and assets(css:${css ? quasArgs.stylesAsset : 'none'}   js: ${js ? quasArgs.scriptsAsset  : 'none'})`);
+		log(`getting template file (${quasArgs.targetFilePath}) and assets(css:${css ? quasArgs.stylesAsset.replace(quasArgs.assetsFolder, '') : 'none'}   js: ${js ? quasArgs.scriptsAsset.replace(quasArgs.assetsFolder, '')  : 'none'})`);
 
 		return gulp.src(quasArgs.targetFilePath, { base: quasArgs.dirname })
 			.pipe(inject.before(`${urlToPrependCDNLink}.`, cdnTemplate))
 			// Add the default css injectionLocationString to the beginning of the document if the injectionLocationString was not found
 			.pipe(insert.transform((contents, file) => {
 				if (css) {
-					let cssContents = fs.existsSync(css) ? fs.readFileSync(css, 'utf8') : '';
+					let cssContents = fs.readFileSync(css, 'utf8');
 					const injectionLocation = contents.search(quasArgs.cssInjectLocation);
 					cssContents = cssContents.length ? `<style>\n${cssContents}\n</style>\n` : ``;
 
-					if (cssContents && injectionLocation == -1) {
+					if (injectionLocation == -1) {
 						logInfo(`css injection location not found: '${quasArgs.cssInjectLocation}', using default location of prepending to document`);
 						return `${cssContents}\n<!-- End Of Automatic Css Injection -->\n${contents}`;
 					} else if (cssContents) {
@@ -408,11 +442,11 @@ const injectCode = (quasArgs) => {
 			// Add the default js injectionLocationString to the beginning of the document if the injectionLocationString was not found
 			.pipe(insert.transform((contents, file) => {
 				if (js) {
-					let jsContents = fs.existsSync(js) ? fs.readFileSync(js, 'utf8') : '';
+					let jsContents = fs.readFileSync(js, 'utf8');
 					jsContents = jsContents.length ? `<script>\n${jsContents}\n</script>\n` : ``;
 					const injectionLocation = contents.search(quasArgs.jsInjectLocation);
 
-					if (jsContents && injectionLocation == -1) {
+					if (injectionLocation == -1) {
 						logInfo(`js injection location not found: '${quasArgs.jsInjectLocation}', using default location of prepending to document`);
 						return `${contents}\n${jsContents}\n<!-- End Of Automatic Js Injection -->\n`;
 					} else if (jsContents) {
@@ -481,7 +515,7 @@ const uploadFiles = (quasArgs) => {
 				.on('end', () => { logSuccess(`Files successfully uploaded to S3 under the path: /${quasArgs.bucketPath}`); resolve(); });
 		} else {
 			logError(`Could not find AWS configuration, aborting upload.`);
-			return resolve();
+			return resolve(quasArgs);
 		}
 	});
 }
@@ -490,7 +524,7 @@ const uploadFiles = (quasArgs) => {
 const outputToHtmlFile = (quasArgs) => {
 	return new promise((resolve, reject) => {
 		const outputPath = `${quasArgs.outputFolder.replace(quasArgs.dirname, '')}/${quasArgs.domain}/${quasArgs.signal}`;
-		log('Applying the following parameters to the template and building output');
+		log(`Applying the following parameters to the template (${quasArgs.targetFilePath}) and building output`);
 		// logData(quasArgs);
 
 		return gulp.src(quasArgs.targetFilePath) 
@@ -501,12 +535,13 @@ const outputToHtmlFile = (quasArgs) => {
 			extname: `.${quasArgs.outputExt}`
 		}))
 		.pipe(gulp.dest(quasArgs.dirname))
+		.on('error', (err) => { logError(`Error outputing file (${quasArgs.targetFilePath})`, err); })
 		.on('end', () => { 
 			if(quasArgs.cleanUpTargetFileTemplate && (quasArgs.targetFilePath.indexOf(`${quasArgs.output}.${quasArgs.outputExt}`) == -1)) {
 				logInfo(`Removing templated file ${quasArgs.targetFilePath}`);
 				fs.unlink(quasArgs.targetFilePath);
 			}
-			logSuccess(`Output file saved as: ${outputPath}/${quasArgs.output}.${quasArgs.outputExt}`);
+			logSuccess(`Output file saved as: ${quasArgs.dirname}${outputPath}/${quasArgs.output}.${quasArgs.outputExt}`);
 			quasArgs.buildCompletedSuccessfully = true;
 			resolve(quasArgs);
 		});
@@ -515,7 +550,8 @@ const outputToHtmlFile = (quasArgs) => {
 
 module.exports = {
 	copyFilesFromAssetsFolderToOutput,
-	copyTargetFileToOutputPath,
+	copyFilesFromTemplatesFolderToOutput,
+	copyTemplateFilesToAssetsPath,
 	definitelyCallFunction,
 	findTargetFile,
 	fromDir,
@@ -531,6 +567,7 @@ module.exports = {
 	logInfo,
 	logError,
 	logFin,
+	logSuccess,
 	makePromptRequired,
 	outputToHtmlFile,
 	promptConsole,

@@ -1,6 +1,7 @@
 let express = require('express'),
     app = express(),
     launcher = require( 'launch-browser' ),
+    yargs = require('yargs'),
     path = require('path');
 
 let PORT = '3720';
@@ -22,7 +23,7 @@ const run = (port = null) => {
     app.get('/', function(req, res){
         res.sendFile(path.join(`${__dirname}/index.html`));
       });
-    app.use(express.static('./', staticOptions));
+    app.use(express.static(__dirname, staticOptions));
     app.listen(PORT);
     console.log(`quasar webform running on port:${PORT} at http://localhost:${PORT}`);
 }
@@ -37,8 +38,10 @@ const launchInBrowser = () => {
     })
 }
 
-run();
-launchInBrowser();
+if(yargs.argv.runWebForm) {
+    run(yargs.argv.webFormPort);
+    launchInBrowser();
+}
 
 module.exports = {
     PORT,

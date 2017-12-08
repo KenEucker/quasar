@@ -35,7 +35,7 @@ const validateRequiredArgs = (args = {}) => {
 			//Default the output filename to the signal
 			quasArgs.output = `${quasArgs.signal}_${quasArgs.qType}`;
 		}
-		quasArgs.targetFilePath = lib.copyTargetFileToOutputPath(quasArgs);
+		quasArgs = lib.copyTemplateFilesToAssetsPath(quasArgs);
 
 		return resolve();
 	});

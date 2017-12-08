@@ -9,7 +9,10 @@ let gulp = require('gulp'),
 	jsonTransform = require('gulp-json-transform'),
 	del = require('del'),
 	vinylPaths = require('vinyl-paths'),
-	lib = require('./lib');
+	lib = require('./lib'),
+	api = require('./api');
+
+let webForm;
 
 requireDir('./tasks/');
 
@@ -43,21 +46,38 @@ const transformToProcessArgs = (data, file) => {
 };
 
 gulp.task(`watchJobs`, () => {
+	lib.logSuccess(`watching folder /jobs/ for new or changed files to build from`);
+
 	return watch('jobs/*.json', { ignoreInitial: true })
 		.pipe(jsonTransform(transformToProcessArgs))
 		.pipe(vinylPaths(del))
 		.pipe(gulp.dest('jobs/archived'));
 });
 
-if(yargs.argv.watchJobs) {
-	if(yargs.argv.runApi) {
-		// TODO: spin up express application to take post variables and turn them into a json object for processing
+if(yargs.argv.runAsProcess) {
+	if (yargs.argv.runApi) {
+		lib.definitelyCallFunction(() => {
+			api.run();
+		});
 	}
 
-	lib.definitelyCallFunction(() => {
-		lib.runTask('watchJobs');
-	});
-} else if(yargs.argv.qType) {
+	if (yargs.argv.runWebForm) {
+		// TODO: use more intelligent path
+		const webFormPath = path.resolve(`./public/quasar/Webform/app.js`);
+		if(fs.existsSync(webFormPath)) {
+			webForm = require(webFormPath);
+			lib.definitelyCallFunction(() => {
+				webForm.run();
+			});
+		}
+	}
+
+	if (yargs.argv.watchJobs) {
+		lib.definitelyCallFunction(() => {
+			lib.runTask('watchJobs');
+		});
+	}
+} else if (yargs.argv.qType) {
 	lib.logInfo('automated quasar build from quasArgs')
 	lib.definitelyCallFunction(() => {
 		lib.runTask(yargs.argv.qType);

@@ -8,7 +8,8 @@ QUASAR framework - a gulp based framework that imports html web files which inje
 1. install nodejs
 2. run `npm install`
 3. run `bin/build`
-* optionally run `build/watch` to autoload json files to build quasars.
+* optionally run `build/watch` to autoload json files to build quasars
+* optionally run `build/app` to run quasar as a process with a web api and form
 
 ## Templating with the files in the /assets folder
 Files located in the /assets folder are used in build tasks for quasar ouput. The default target of a quasar is `${qType}.hml`, so if the quasar is of type 'page' then the default target would be `page.html`. Similarly, css and js assets are defaulted to `${qType}.css` and `${qType}.js` respectively. These default values can be overriden at runtime.

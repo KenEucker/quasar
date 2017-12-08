@@ -1,2 +1,2 @@
 #!/bin/bash 
-gulp --gulpfile app.js --watchJobs=true "$@"
+gulp --gulpfile app.js --runAsProcess=true --watchJobs=true "$@"
