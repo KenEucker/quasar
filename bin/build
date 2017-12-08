@@ -1,4 +1,4 @@
 #!/bin/bash 
 
 echo "Building QUASAR app"
-gulp --gulpfile app.js "$@"
+gulp --gulpfile cli.js "$@"

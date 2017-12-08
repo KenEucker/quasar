@@ -14,6 +14,8 @@ let gulp = require('gulp'),
 
 requireDir('./tasks/');
 
+let PORT = process.env.PORT || '3720';
+
 
 const initialPrompt = () => {
 	const tasksPath = path.resolve('./tasks/');
@@ -43,13 +45,13 @@ const transformToProcessArgs = (data, file) => {
 	return args;
 };
 
-const runWebForm = () => {
+const spawnWebForm = (runningApi) => {
 	const webFormPath = path.resolve(`./public/quasar/Webform/app.js`);
 
 	if(fs.existsSync(webFormPath)) {
 		webForm = require(webFormPath);
 		lib.definitelyCallFunction(() => {
-			if(yargs.argv.runApi) {
+			if(runningApi) {
 				webForm.run(api.app, api.PORT);
 			} else {
 				webForm.run();
@@ -71,44 +73,60 @@ gulp.task(`watchJobs`, () => {
 		.pipe(gulp.dest('jobs/archived'));
 });
 
-if(yargs.argv.runAsProcess) {
-	if (yargs.argv.runApi) {
-		lib.definitelyCallFunction(() => {
-			api.run();
-		});
-	}
+const run = (port = PORT, runAsProcess = yargs.argv.runAsProcess, runApi = yargs.argv.runApi, runWebForm = yargs.argv.runWebForm, 
+			watchJobs = yargs.argv.watchJobs, qType = yargs.argv.qType, runStandalone = yargs.argv.runStandalone, 
+			autoBuildWebForm = yargs.argv.autoBuildWebForm) => {
+	PORT = port;
 
-	if (yargs.argv.runWebForm) {
-		// TODO: use more intelligent path
-		if(!runWebForm()) { 
-			if(yargs.argv.autoBuildWebForm) {
-				lib.logInfo('automated quasar build of `quasarWebform`');
-				lib.definitelyCallFunction(() => {
-					lib.runTask('quasarWebform', () => {
-						lib.logInfo('attempting another run of the quasarWebform');
-						if(!runWebForm()) {
-							lib.logError(`Can't do that!`);
-						}
+	if(runAsProcess) {
+		if (runApi) {
+			lib.definitelyCallFunction(() => {
+				api.run(PORT);
+			});
+		}
+
+		if (runWebForm) {
+			// TODO: use more intelligent path
+			if(!spawnWebForm(runApi)) { 
+				if(autoBuildWebForm) {
+					lib.logInfo('automated quasar build of `quasarWebform`');
+					lib.definitelyCallFunction(() => {
+						lib.runTask('quasarWebform', () => {
+							lib.logInfo('attempting another run of the quasarWebform');
+							if(!spawnWebForm(runApi)) {
+								lib.logError(`Can't do that!`);
+							}
+						});
 					});
-				});
-			} else {
-				lib.logError(`cannot run webform because ${webFormPath} has not been built yet, run again with option --autoBuildWebForm=true to auto build the webform.`);
+				} else {
+					lib.logError(`cannot run webform because ${webFormPath} has not been built yet, run again with option --autoBuildWebForm=true to auto build the webform.`);
+				}
 			}
 		}
-	}
 
-	if (yargs.argv.watchJobs) {
+		if (watchJobs) {
+			lib.definitelyCallFunction(() => {
+				lib.runTask('watchJobs');
+			});
+		}
+	} else if (qType) {
+		lib.logInfo('automated quasar build from quasArgs');
 		lib.definitelyCallFunction(() => {
-			lib.runTask('watchJobs');
+			lib.runTask(qType);
+		});
+	} else if(runStandalone){
+		lib.definitelyCallFunction(() => {
+			initialPrompt();
 		});
 	}
-} else if (yargs.argv.qType) {
-	lib.logInfo('automated quasar build from quasArgs');
-	lib.definitelyCallFunction(() => {
-		lib.runTask(yargs.argv.qType);
-	});
-} else {
-	lib.definitelyCallFunction(() => {
-		initialPrompt();
-	});
 }
+
+if(yargs.argv.runStandalone || yargs.argv.runAsProcess) {
+	run();
+}
+
+module.exports = {
+	app: api,
+	PORT,
+	run
+};

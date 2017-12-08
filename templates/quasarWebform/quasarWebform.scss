@@ -43,6 +43,10 @@ body {
 
         > p {
             text-align: center;
+            button[type=submit] {
+                font-family: space_age;
+                font-size: 2em;
+            }
         }
     }
     

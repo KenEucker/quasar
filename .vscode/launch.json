@@ -19,7 +19,7 @@
 			"request": "launch",
 			"protocol": "inspector",
 			"name": "Build",
-			"program": "${workspaceFolder}/app.js",
+			"program": "${workspaceFolder}/cli.js",
 			"args": [
 				"--dev=true",
 				"--overwriteUnpackDestination=true"

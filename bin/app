@@ -1,3 +1,3 @@
 #!/bin/bash 
 
-node app.js --runAsProcess=true --runApi=true --runWebForm=true --watchJobs=true --webFormPort=3721 "$@"
+node cli.js --runAsProcess=true --runApi=true --runWebForm=true --watchJobs=true --webFormPort=3721 "$@"
