@@ -55,7 +55,8 @@
   "scripts": {
     "build": "bin/run",
     "deploy": "bin/deploy",
-    "watch": "bin/watch"
+    "watch": "bin/watch",
+    "clean": "bin/clean"
   },
   "author": "keneucker@gmail.com"
 }

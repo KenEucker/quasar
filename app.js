@@ -82,7 +82,7 @@ if(yargs.argv.runAsProcess) {
 			if(yargs.argv.autoBuildWebForm) {
 				lib.logInfo('automated quasar build of `quasarWebform`');
 				lib.definitelyCallFunction(() => {
-					lib.runTask(`quasarWebform`, () => {
+					lib.runTask('quasarWebform', () => {
 						lib.logInfo('attempting another run of the quasarWebform');
 						if(!runWebForm()) {
 							lib.logError(`Can't do that!`);

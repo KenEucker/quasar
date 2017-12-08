@@ -5,6 +5,7 @@ let gulp = require('gulp'),
 	insert = require('gulp-insert'),
 	prompt = require('inquirer'),
 	gulpS3 = require('gulp-s3-upload'),
+	runSequence = require('run-sequence'),
 	aws = require('aws-sdk'),
 	unzip = require("extract-zip"),
 	path = require('path'),
@@ -187,10 +188,9 @@ const fromDir = (startPath, filter) => {
 	return found;
 }
 
-const runTask = (task, end) => {
+const runTask = (task, end = () => {}) => {
 	if(gulp.hasTask(task)) {
-		return gulp.start(task)
-			.on("end", () => { end(); });
+		runSequence(task, end);
 	} else {
 		logError(`Cannot find gulp task ${task}`);
 	}
@@ -307,21 +307,31 @@ const moveTargetFilesToRootOfAssetsPath = (quasArgs) => {
 }
 
 const copyFilesFromTemplatesFolderToOutput = (quasArgs, files) => {
-	const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
-	logInfo(`copying files (${files.join()}) from ${quasArgs.templatesFolder}/ to ${destinationPath}`);
+	return new promise((resolve, reject) => {
+		const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
+		logInfo(`copying files (${files.join()}) from ${quasArgs.templatesFolder}/ to ${destinationPath}`);
 
-	files = files.map(file => `${quasArgs.templatesFolder}/${file}`);
-	gulp.src(files, { base: quasArgs.templatesFolder })
-		.pipe(gulp.dest(destinationPath));
+		files = files.map(file => `${quasArgs.templatesFolder}/${file}`);
+		gulp.src(files, { base: quasArgs.templatesFolder })
+			.pipe(gulp.dest(destinationPath))
+			.on('end', () => { 
+				return resolve(quasArgs);
+			});
+	});
 }
 
 const copyFilesFromAssetsFolderToOutput = (quasArgs, files) => {
-	const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
-	logInfo(`copying files (${files.join()}) from ${quasArgs.assetsFolder}/ to ${destinationPath}`);
+	return new promise((resolve, reject) => {
+		const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
+		logInfo(`copying files (${files.join()}) from ${quasArgs.assetsFolder}/ to ${destinationPath}`);
 
-	files = files.map(file => `${quasArgs.assetsFolder}/${file}`);
-	gulp.src(files, { base: quasArgs.assetsFolder })
-		.pipe(gulp.dest(destinationPath));
+		files = files.map(file => `${quasArgs.assetsFolder}/${file}`);
+		return gulp.src(files, { base: quasArgs.assetsFolder })
+			.pipe(gulp.dest(destinationPath))
+			.on('end', () => { 
+				return resolve(quasArgs);
+			});
+	});
 }
 
 const copyTemplateFilesToAssetsPath = (quasArgs) => {
@@ -544,7 +554,7 @@ const outputToHtmlFile = (quasArgs) => {
 			}
 			logSuccess(`Output file saved as: ${quasArgs.dirname}${outputPath}/${quasArgs.output}.${quasArgs.outputExt}`);
 			quasArgs.buildCompletedSuccessfully = true;
-			resolve(quasArgs);
+			return resolve(quasArgs);
 		});
 	});
 }

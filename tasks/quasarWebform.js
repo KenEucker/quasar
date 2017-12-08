@@ -18,12 +18,12 @@ const qType = 'quasarWebform';
 
 const task = () => {
 	return lib.injectCode(quasArgs)
-	.then(() => { lib.copyFilesFromTemplatesFolderToOutput(quasArgs, ['app.js', 'package.json', 'img/**', 'fonts/**']); })
-	.then(() => { lib.outputToHtmlFile(quasArgs); });
+		.then(() => { return lib.copyFilesFromTemplatesFolderToOutput(quasArgs, ['app.js', 'package.json', 'img/**', 'fonts/**'])})
+		.then(() => { return lib.outputToHtmlFile(quasArgs) });
 }
 
 const run = (args = {}) => {
-	return validateRequiredArgs(args).then(task());
+	return validateRequiredArgs(args).then(task);
 }
 
 const getQuasarPrompts = () => {
@@ -186,7 +186,7 @@ gulp.task(`${qType}:compile`, function(callback) {
 				callback);
   });
 
-gulp.task(`${qType}:build`, [ `${qType}:compile` ], () => {
+gulp.task(`${qType}:build`, [ `${qType}:compile` ], (done) => {
 	return run({ domain: 'quasar', signal: 'Webform', output: 'index.html', overwriteDestinationPath: true });
 });
 gulp.task(`${qType}`, [`${qType}:build`]);

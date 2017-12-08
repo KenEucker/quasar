@@ -8,11 +8,11 @@ const qType = 'page';
 
 const task = () => {
 	return lib.injectCode(quasArgs)
-	.then(() => { lib.outputToHtmlFile(quasArgs); });
+		.then(() => { return lib.outputToHtmlFile(quasArgs)});
 }
 
-const run = () => {
-	return validateRequiredArgs().then(task());
+const run = (args = {}) => {
+	return validateRequiredArgs(args).then(task);
 }
 
 const getQuasarPrompts = () => {
@@ -43,7 +43,8 @@ const validateRequiredArgs = (args = {}) => {
 
 gulp.task(`${qType}:build`, () => {
 	if(!quasArgs.noPrompt) {
-		return lib.initialPrompt(quasArgs).then(task);
+		return lib.initialPrompt(quasArgs)
+			.then(task);
 	} else {
 		return run();
 	}

@@ -1,0 +1,5 @@
+#!/bin/bash 
+
+echo "cleaning QUASAR folders"
+rm -rf ./assets/
+rm -rf ./public/
