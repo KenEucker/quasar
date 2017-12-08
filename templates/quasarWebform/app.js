@@ -18,7 +18,7 @@ const staticOptions = {
     }
 };
 
-const run = (port = null) => {
+const webForm = (port = null) => {
     PORT = port || PORT;
     app.get('/', function(req, res){
         res.sendFile(path.join(`${__dirname}/index.html`));
