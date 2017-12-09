@@ -76,7 +76,7 @@ gulp.task(`watchJobs`, () => {
 });
 
 const run = (args = {}) => {
-	let _args = {
+	let defaults = {
 		port: PORT,
 		runAsProcess: false,
 		runStandalone: false,
@@ -85,7 +85,7 @@ const run = (args = {}) => {
 		runWebForm: false,
 		autoBuildWebForm: false,
 		runApi: false };
-	args = Object.assign(_args, yargs.argv, args);
+	args = Object.assign(defaults, yargs.argv, args);
 	PORT = args.port;
 
 	lib.logInfo(`Running the qausar cli under the process: ${process.title}`);

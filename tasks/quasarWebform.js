@@ -1,16 +1,8 @@
 let gulp = require('gulp'),
 	promise = require('bluebird'),
 	colors = require('colors'),
-	sass = require('dart-sass')
-	concat = require('gulp-concat'),
-	babel = require('gulp-babel'),
 	file = require('gulp-file'),
-	flatmap = require('gulp-flatmap'),
-	fs = require('fs'),
-	runSequence = require('run-sequence'),
-	mustache = require('gulp-mustache'),
-	browserify = require('gulp-browserify'),
-	through = require('through2');
+	runSequence = require('run-sequence');
 
 const config = require(`${process.cwd()}/config.js`);
 const lib = require(`${config.dirname}/lib.js`);
@@ -25,30 +17,6 @@ const task = () => {
 const run = (args = {}) => {
 	return validateRequiredArgs(args).then(task);
 }
-
-// NOW USING DART-SASS TO BE COMPATIBLE WITH ELECTRON
-function sassify(options) {
-	return through.obj((file, enc, cb) => {
-	  options = options || {};
-	  options.file = file.path;
-	  // if (file.sourceMap) {
-		// options.sourceMap = true;
-		// options.outFile = output.path('css');
-	  // }
-	  sass.render(options, (err, result) => {
-		if (err) {
-		  console.error("Sass Error: " + err.message);
-		}
-		else {
-		  file.contents = result.css;
-		  // if (file.sourceMap) {
-			// applySourceMap(file, result.map);
-		  // }
-		}
-		cb(err, file);
-	  });
-	});
-  }
 
 const getQuasarPrompts = () => {
 	return quasArgs.requiredArgs;
@@ -126,47 +94,13 @@ const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
 }
 
 gulp.task(`${qType}:compile:html`, () => {
-	return gulp.src(`${quasArgs.templatesFolder}/**/*.mustache`)
-		// Compile mustache file
-		.pipe(flatmap( (stream, file) => {
-			const filename = `${file.path}.json`;
-
-			if(fs.existsSync(filename)) {
-				return stream.pipe(mustache(filename, {}, {}));
-			} else {
-				return stream.pipe(mustache());
-			}
-		}))
-		// Bundle source files
-		.pipe(concat(`${quasArgs.qType}.html`), { newLine: `\n<!-- Section -->\n` })
-		// Ouput single file in asset folder for use with build task
-		.pipe(gulp.dest(`${quasArgs.assetsFolder}`))
-		.on('error', (err) => { lib.logError(err) })
-		.on('end', () => { lib.logInfo(`Document files compiled into ${quasArgs.assetsFolder}/${qType}.html`); });
+	return lib.compileTargetFileToAssetsFolder(quasArgs);
 });
 gulp.task(`${qType}:compile:css`, () => {
-	return gulp.src(`${quasArgs.templatesFolder}/**/*.scss`)
-		// Compile sass
-		.pipe(sassify())
-		// Bundle source files
-		.pipe(concat(`${quasArgs.qType}.css`))
-		// Ouput single file in asset folder for use with build task
-		.pipe(gulp.dest(`${quasArgs.assetsFolder}`))
-		.on('error', (err) => { lib.logError(err) })
-		.on('end', () => { lib.logInfo(`Style files compiled into ${quasArgs.assetsFolder}/${qType}.css`); });
+	return lib.compileStylesToAssetsFolder(quasArgs);
 });
 gulp.task(`${qType}:compile:js`, () => {
-	return gulp.src(`${quasArgs.templatesFolder}/**/*.jsx`)
-		// Bundle source files
-		.pipe(concat(`${quasArgs.qType}.js`, { newLine: `;\n` }))
-		// Make it useful
-		.pipe(babel({ presets: ['env', 'react'] }))
-		// Make it compatible
-		.pipe(browserify())
-		// Ouput single file in asset folder for use with build task
-		.pipe(gulp.dest(`${quasArgs.assetsFolder}`))
-		.on('error', (err) => { lib.logError(err) })
-		.on('end', () => { lib.logInfo(`Script files compiled into ${quasArgs.assetsFolder}/${qType}.js`); });
+	return lib.compileScriptsToAssetsFolder(quasArgs);
 });
 gulp.task(`${qType}:compile:sources`, [ `${qType}:compile:js`, `${qType}:compile:css`, `${qType}:compile:html` ]);
 

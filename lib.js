@@ -4,9 +4,16 @@ let gulp = require('gulp'),
 	inject = require('gulp-inject-string'),
 	insert = require('gulp-insert'),
 	prompt = require('inquirer'),
+	sass = require('dart-sass')
+	concat = require('gulp-concat'),
+	flatmap = require('gulp-flatmap'),
+	babel = require('gulp-babel'),
 	gulpS3 = require('gulp-s3-upload'),
 	runSequence = require('run-sequence'),
 	aws = require('aws-sdk'),
+	through = require('through2'),
+	mustache = require('gulp-mustache'),
+	browserify = require('gulp-browserify'),
 	unzip = require("extract-zip"),
 	path = require('path'),
 	colors = require('colors'),
@@ -58,10 +65,33 @@ const definitelyCallFunction = (cb) => {
 	}
 }
 
+const sassify = (options) => {
+	return through.obj((file, enc, cb) => {
+	  options = options || {};
+	  options.file = file.path;
+	  // if (file.sourceMap) {
+		// options.sourceMap = true;
+		// options.outFile = output.path('css');
+	  // }
+	  sass.render(options, (err, result) => {
+		if (err) {
+		  console.error("Sass Error: " + err.message);
+		}
+		else {
+		  file.contents = result.css;
+		  // if (file.sourceMap) {
+			// applySourceMap(file, result.map);
+		  // }
+		}
+		cb(err, file);
+	  });
+	});
+}
+
 const spawnQuasarTask = (args) => {
 	const command = `node`;
 	args.unshift('gulpfile.js');
-	lib.log(`Running command ${command} ${args.join(' ')}`);
+	log(`Running command ${command} ${args.join(' ')}`);
 	spawn.spawn(command, args)
 		.on("error", (error) => { console.log(`ERROR:`, error); })
 		.on("data", (data) => { console.log("DATA: ", data); })
@@ -419,6 +449,52 @@ const unpackFiles = (quasArgs) => {
 	});
 }
 
+const compileStylesToAssetsFolder = (quasArgs) => {
+	return gulp.src(`${quasArgs.templatesFolder}/**/*.scss`)
+		// Compile sass
+		.pipe(sassify())
+		// Bundle source files
+		.pipe(concat(`${quasArgs.qType}.css`))
+		// Ouput single file in asset folder for use with build task
+		.pipe(gulp.dest(`${quasArgs.assetsFolder}`))
+		.on('error', (err) => { logError(err) })
+		.on('end', () => { logInfo(`Style files compiled into ${quasArgs.assetsFolder}/${quasArgs.qType}.css`); });
+}
+
+const compileScriptsToAssetsFolder= (quasArgs) => {
+	return gulp.src(`${quasArgs.templatesFolder}/**/*.jsx`)
+		// Bundle source files
+		.pipe(concat(`${quasArgs.qType}.js`, { newLine: `;\n` }))
+		// Make it useful
+		.pipe(babel({ presets: ['env', 'react'] }))
+		// Make it compatible
+		.pipe(browserify())
+		// Ouput single file in asset folder for use with build task
+		.pipe(gulp.dest(`${quasArgs.assetsFolder}`))
+		.on('error', (err) => { logError(err) })
+		.on('end', () => { logInfo(`Script files compiled into ${quasArgs.assetsFolder}/${quasArgs.qType}.js`); });
+}
+
+const compileTargetFileToAssetsFolder = (quasArgs) => {
+	return gulp.src(`${quasArgs.templatesFolder}/**/*.mustache`)
+		// Compile mustache file
+		.pipe(flatmap( (stream, file) => {
+			const filename = `${file.path}.json`;
+
+			if(fs.existsSync(filename)) {
+				return stream.pipe(mustache(filename, {}, {}));
+			} else {
+				return stream.pipe(mustache());
+			}
+		}))
+		// Bundle source files
+		.pipe(concat(`${quasArgs.qType}.html`), { newLine: `\n<!-- Section -->\n` })
+		// Ouput single file in asset folder for use with build task
+		.pipe(gulp.dest(`${quasArgs.assetsFolder}`))
+		.on('error', (err) => { logError(err) })
+		.on('end', () => { logInfo(`Document files compiled into ${quasArgs.assetsFolder}/${quasArgs.qType}.html`); });
+}
+
 // Inject the code into the html file before applying template vars
 const injectCode = (quasArgs) => {
 	return new promise((resolve, reject) => {
@@ -560,6 +636,9 @@ const outputToHtmlFile = (quasArgs) => {
 }
 
 module.exports = {
+	compileStylesToAssetsFolder,
+	compileScriptsToAssetsFolder,
+	compileTargetFileToAssetsFolder,
 	copyFilesFromAssetsFolderToOutput,
 	copyFilesFromTemplatesFolderToOutput,
 	copyTemplateFilesToAssetsPath,
