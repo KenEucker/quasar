@@ -4,7 +4,7 @@ import { render } from "react-dom";
 import Form from "react-jsonschema-form";
 import Axios from "axios";
 
-let forms = [];
+let forms = [], selectedForm = '';
 
 const log = (type) => console.log.bind(console, type);
 const apiUri = `${window.location.protocol}/${window.location.hostname}:${window.location.port}`;
@@ -15,6 +15,7 @@ const ensureData = (data) => {
     Object.keys(data).map((key) => {
         allData[key] = data[key] || '';
     });
+    allData.qType = selectedForm;
 
     return allData;
 }
@@ -77,6 +78,7 @@ const createDropdown = () => {
         forms.forEach((form) => {
             const formEl = document.getElementById(form);
             if(form == t.target.value) {
+                selectedForm = form;
                 formEl.style.display = "block";
             } else {
                 formEl.style.display = "none";

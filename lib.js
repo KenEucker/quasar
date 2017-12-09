@@ -8,6 +8,7 @@ let gulp = require('gulp'),
 	concat = require('gulp-concat'),
 	flatmap = require('gulp-flatmap'),
 	babel = require('gulp-babel'),
+	spawn = require("child_process"),
 	gulpS3 = require('gulp-s3-upload'),
 	runSequence = require('run-sequence'),
 	aws = require('aws-sdk'),
@@ -35,7 +36,7 @@ const getDefaultQuasArgs = (qType = null) => {
 			sourceFolder: config.sourceFolder,
 			assetsFolder: qType ? `${config.assetsFolder}/${qType}` : undefined,
 			templatesFolder: qType ? `${config.templatesFolder}/${qType}` : undefined,
-			targetFilePath: qType ? `${config.assetsFolder}/${qType}/${qType}.html` : undefined,
+			targetFilePath: qType ? `${config.templatesFolder}/${qType}/${qType}.html` : undefined,
 			stylesAsset: qType ? `${config.assetsFolder}/${qType}/${qType}.css` : undefined,
 			scriptsAsset: qType ? `${config.assetsFolder}/${qType}/${qType}.js` : undefined,
 			target: qType ? `${qType}.html` : undefined,
@@ -88,9 +89,10 @@ const sassify = (options) => {
 	});
 }
 
-const spawnQuasarTask = (args) => {
+const spawnQuasarTask = (argsFile, args = []) => {
 	const command = `node`;
-	args.unshift('gulpfile.js');
+	args.unshift(`cli.js`);
+
 	log(`Running command ${command} ${args.join(' ')}`);
 	spawn.spawn(command, args)
 		.on("error", (error) => { console.log(`ERROR:`, error); })
@@ -270,7 +272,7 @@ const makePromptRequired = function(input) {
 	}, 100);
 }
 
-const getQuasarPromptQuestions = () => {
+const getQuasarPromptQuestions = (quasArgs) => {
 	return [{
 		type: 'input',
 		name: 'domain',
@@ -286,21 +288,70 @@ const getQuasarPromptQuestions = () => {
 	}];
 }
 
+const convertPromptToJsonSchemaFormProperty = (prompt) => {
+	let title = prompt.message,
+		type = prompt.type;
+
+	switch(type) {
+		case 'input':
+			type = 'string';
+		break;
+		case 'list':
+			if(prompt.name == 'source') {
+				type = 'string'
+				_default = prompt.choices
+			}
+		break;
+		default:
+		break;
+	}
+
+	return {
+		type,
+		title
+	};
+}
+
+const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
+	let title = prompt.message || '',
+		widget = prompt.type || 'input',
+		help = prompt.help || '';
+
+	switch(widget) {
+		case 'input':
+			widget = 'text';
+		break;
+
+		case 'list':
+			if(prompt.name == 'source') {
+				widget = 'file';
+			} else {
+				widget = 'checkboxes';
+			}
+		break;
+	}
+
+	return {
+		'ui:widget': widget,
+		help
+	};
+}
+
 // This method expects that the second parameter `requiredArgs` is an array of objects with the same structure as inquirer's .prompt questions parameter
 // https://www.npmjs.com/package/inquirer#questions
-const registerRequiredQuasArgs = (args, requiredArgs = [], nonRequiredArgs = {}, addDefaults = true) => {
-	args = Object.assign(args, nonRequiredArgs);
+const registerRequiredQuasArgs = (quasArgs, requiredArgs = [], nonRequiredArgs = {}, addDefaults = true) => {
+	quasArgs = Object.assign(quasArgs, nonRequiredArgs);
 
-	if(!args.requiredArgs) {
-		args.requiredArgs = addDefaults? getQuasarPromptQuestions().concat(requiredArgs) : requiredArgs;
+	if(!quasArgs.requiredArgs) {
+		quasArgs.requiredArgs = addDefaults? getQuasarPromptQuestions(quasArgs).concat(requiredArgs) : requiredArgs;
 	} else {
 		// TODO: update two arrays of objects
 	}
-	args.requiredArgs.forEach((arg) => {
-		args[arg.name] = args[arg.name] || arg.default || '';
+	quasArgs.requiredArgs.forEach((arg) => {
+		quasArgs[arg.name] = quasArgs[arg.name] || quasArgs.default || '';
 	});
 
-	return args;
+	return quasArgs;
 }
 
 const hasQuasarInitialArgs = (quasArgs) => {
@@ -313,7 +364,7 @@ const findTargetFile = (quasArgs) => {
 
 	if (!fs.existsSync(targetFilePath)) {
 		const oldTargetFilePath = targetFilePath;
-		targetFilePath = fromDir(`${signalPath}`, `${quasArgs.target}`);
+		targetFilePath = fromDir(`${quasArgs.assetsFolder}`, `${quasArgs.target}`);
 		
 		if(targetFilePath) {
 			log(`couldnt find file at ${oldTargetFilePath}, corrected path is: ${targetFilePath}`, colors.yellow);
@@ -365,7 +416,7 @@ const copyFilesFromAssetsFolderToOutput = (quasArgs, files) => {
 }
 
 const copyTemplateFilesToAssetsPath = (quasArgs) => {
-	const targetFilePath = findTargetFile(quasArgs);
+	const targetFilePath = fs.existsSync(quasArgs.targetFilePath) ? quasArgs.targetFilePath : findTargetFile(quasArgs);
 	const cssAssetPath = path.resolve(`${quasArgs.templatesFolder}/${quasArgs.qType}.css`);
 	const jsAssetPath = path.resolve(`${quasArgs.templatesFolder}/${quasArgs.qType}.js`);
 
@@ -636,6 +687,8 @@ const outputToHtmlFile = (quasArgs) => {
 }
 
 module.exports = {
+	convertPromptToJsonSchemaFormProperty,
+	convertPromptToJsonSchemaUIFormProperty,
 	compileStylesToAssetsFolder,
 	compileScriptsToAssetsFolder,
 	compileTargetFileToAssetsFolder,

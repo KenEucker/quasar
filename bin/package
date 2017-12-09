@@ -1,0 +1,3 @@
+#!/bin/bash 
+
+node cli.js --runAsProcess=true --runApi=true --runWebForm=true --watchJobs=true "$@"

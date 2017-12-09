@@ -52,6 +52,6 @@ defaults = {
 ### Features 
 - [x] Upload to AWS buckets
 - [x] Express based web UI with live preview for quasar building
-- [ ] Bundler import (take a bunch of css, js, and html files and run them through webpack or rollup to get a single html, css, and js file on the other end -- probably shouldn't minify or uglify in this process)
-- [ ] Asset mutation on output (minification, tree shaking, code splitting, uglification)
+- [x] Asset compiler and bundler
 - [x] Builder packaged as an electron application
+- [ ] Asset mutation on output (minification, tree shaking, code splitting, uglification)

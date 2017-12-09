@@ -62,7 +62,7 @@ quasArgs = lib.registerRequiredQuasArgs(quasArgs, [{
 		name: 'body',
 		message: 'Enter the body text'
 	}],
-	{ 
+	{
 		outputExt: 'html',
 		requiredArgsValidation: validateRequiredArgs });
 

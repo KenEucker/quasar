@@ -1,6 +1,7 @@
 let gulp = require('gulp'),
 	requireDir = require('require-dir'),
 	fs = require('fs'),
+	rename = require('gulp-rename'),
 	path = require('path'),
 	promise = require('bluebird'),
 	yargs = require('yargs'),
@@ -33,16 +34,24 @@ const initialPrompt = () => {
 
 const transformToProcessArgs = (data, file) => {
 	lib.log(`processing file (${file.path})`);
+
+	// For the logs
 	let args = [];
-	data.noPrompt = true;
 	Object.keys(data).forEach(key => {
 		let val = data[key];
 		args.push(`--${key}=${val}`);
 	});
+	let cliArgs = [
+		`--qType=${data.qType}`,
+		`--noPrompt=true`,
+		`--runAsProcess=true`,
+		`--argsFile=${file.path}`
+	];
 
-	lib.spawnQuasarTask(args);
+	let result = lib.spawnQuasarTask(file.path, cliArgs);
 
-	return args;
+	// Return the args as the log so that the command can be analyzed or rerun
+	return `[${result}] --> node ${cliArgs.concat(args).join(' ')}`;
 };
 
 const spawnWebForm = (runningApi) => {
@@ -72,6 +81,10 @@ gulp.task(`watchJobs`, () => {
 	return watch('jobs/*.json', { ignoreInitial: true })
 		.pipe(jsonTransform(transformToProcessArgs))
 		.pipe(vinylPaths(del))
+		.pipe(rename({
+			suffix: `_${Date.now()}`,
+			extname: `.log`
+		}))
 		.pipe(gulp.dest('jobs/archived'));
 });
 
@@ -87,7 +100,7 @@ const run = (args = {}) => {
 		runApi: false };
 	args = Object.assign(defaults, yargs.argv, args);
 	PORT = args.port;
-
+	
 	lib.logInfo(`Running the qausar cli under the process: ${process.title}`);
 	if(args.runAsProcess) {
 		if (args.runApi) {
@@ -120,19 +133,21 @@ const run = (args = {}) => {
 				lib.runTask('watchJobs');
 			});
 		}
-	} else if (args.qType) {
+	}
+	if (args.qType) {
 		lib.logInfo('automated quasar build from quasArgs');
-		lib.definitelyCallFunction(() => {
+		return lib.definitelyCallFunction(() => {
 			lib.runTask(args.qType);
 		});
-	} else if(args.runStandalone){
-		lib.definitelyCallFunction(() => {
+	}
+	if (args.runStandalone) {
+		return lib.definitelyCallFunction(() => {
 			initialPrompt();
 		});
 	}
 }
 
-if( yargs.argv.runStandalone || yargs.argv.runAsProcess ) {
+if ( yargs.argv.runStandalone || yargs.argv.runAsProcess ) {
 	run();
 } else if (process.title == 'gulp') {
 	run({ runStandalone: true });

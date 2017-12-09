@@ -56,6 +56,7 @@
   "scripts": {
     "build": "bin/run",
     "deploy": "bin/deploy",
+    "deploy": "bin/package",
     "watch": "bin/watch",
     "clean": "bin/clean"
   },

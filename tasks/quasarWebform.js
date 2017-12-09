@@ -44,55 +44,6 @@ const validateRequiredArgs = (args = {}) => {
 	});
 }
 
-const convertPromptToJsonSchemaFormProperty = (prompt) => {
-	let title = prompt.message,
-		type = prompt.type;
-
-	switch(type) {
-		case 'input':
-			type = 'string';
-		break;
-		case 'list':
-			if(prompt.name == 'source') {
-				type = 'string'
-				_default = prompt.choices
-			}
-		break;
-		default:
-		break;
-	}
-
-	return {
-		type,
-		title
-	};
-}
-
-const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
-	let title = prompt.message || '',
-		widget = prompt.type || 'input',
-		help = prompt.help || '';
-
-	switch(widget) {
-		case 'input':
-			widget = 'text';
-		break;
-
-		case 'list':
-			if(prompt.name == 'source') {
-				widget = 'file';
-			} else {
-				widget = 'checkboxes';
-			}
-		break;
-	}
-
-	return {
-		'ui:widget': widget,
-		help
-	};
-}
-
 gulp.task(`${qType}:compile:html`, () => {
 	return lib.compileTargetFileToAssetsFolder(quasArgs);
 });
@@ -119,8 +70,8 @@ gulp.task(`${qType}:precompile`, () => {
 			if(prompt.required) {
 				required.push(name);
 			}
-			properties[name] = convertPromptToJsonSchemaFormProperty(prompt);
-			uiSchema[name] = convertPromptToJsonSchemaUIFormProperty(prompt);
+			properties[name] = lib.convertPromptToJsonSchemaFormProperty(prompt);
+			uiSchema[name] = lib.convertPromptToJsonSchemaUIFormProperty(prompt);
 		});
 		const schema = {
 			title: `Quasar::${task} -- ${taskFile.purpose}`,
