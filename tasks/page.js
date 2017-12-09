@@ -6,6 +6,8 @@ const config = require(`${process.cwd()}/config.js`);
 const lib = require(`${config.dirname}/lib.js`);
 const qType = 'page';
 
+let quasArgs = {};
+
 const task = () => {
 	return lib.injectCode(quasArgs)
 		.then(() => { return lib.outputToHtmlFile(quasArgs)});
@@ -51,21 +53,23 @@ gulp.task(`${qType}:build`, () => {
 })
 gulp.task(`${qType}`, [`${qType}:build`]);
 
-let quasArgs = lib.getDefaultQuasArgs(qType);
-quasArgs = lib.registerRequiredQuasArgs(quasArgs, [{
-		type: 'list',
-		name: 'source',
-		message: `Enter the source filename (default .zip):\n`,
-		choices: ['none'].concat(lib.getFilenamesInDirectory(quasArgs.sourceFolder, ['zip']))
-	}, {
-		type: 'input',
-		name: 'body',
-		message: 'Enter the body text'
-	}],
-	{
-		outputExt: 'html',
-		requiredArgsValidation: validateRequiredArgs });
+const init = () => {
+	quasArgs = lib.getQuasArgs(qType, [{
+			type: 'list',
+			name: 'source',
+			message: `Enter the source filename (default .zip):\n`,
+			choices: ['none'].concat(lib.getFilenamesInDirectory(quasArgs.sourceFolder, ['zip']))
+		}, {
+			type: 'input',
+			name: 'body',
+			message: 'Enter the body text'
+		}],
+		{
+			outputExt: 'html',
+			requiredArgsValidation: validateRequiredArgs });
+}
 
+init();
 module.exports = {
 	purpose: `
 		builds out a single html page from a set of singular assets: css, html, js 

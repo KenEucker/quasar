@@ -11,6 +11,7 @@ let gulp = require('gulp'),
 	del = require('del'),
 	vinylPaths = require('vinyl-paths'),
 	lib = require('./lib'),
+	mkdir = require('mkdirp-sync'),
 	api = require('./api');
 
 requireDir('./tasks/');
@@ -51,7 +52,7 @@ const transformToProcessArgs = (data, file) => {
 	let result = lib.spawnQuasarTask(file.path, cliArgs);
 
 	// Return the args as the log so that the command can be analyzed or rerun
-	return `[${result}] --> node ${cliArgs.concat(args).join(' ')}`;
+	return `[${result}] --> node ${cliArgs.join(' ')}`;
 };
 
 const spawnWebForm = (runningApi) => {
@@ -77,15 +78,16 @@ const spawnWebForm = (runningApi) => {
 
 gulp.task(`watchJobs`, () => {
 	lib.logSuccess(`watching folder /jobs/ for new or changed files to build from`);
-
+	mkdir(path.resolve(lib.config.dirname, 'jobs'));
+	
 	return watch('jobs/*.json', { ignoreInitial: true })
 		.pipe(jsonTransform(transformToProcessArgs))
-		.pipe(vinylPaths(del))
+		//.pipe(vinylPaths(del))
 		.pipe(rename({
 			suffix: `_${Date.now()}`,
 			extname: `.log`
 		}))
-		.pipe(gulp.dest('jobs/archived'));
+		.pipe(gulp.dest('jobs/logs'));
 });
 
 const run = (args = {}) => {

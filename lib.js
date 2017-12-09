@@ -29,31 +29,45 @@ let logToFile = false;
 
 const config = require(`${process.cwd()}/config.js`);
 
-const getDefaultQuasArgs = (qType = null) => { 
-	return Object.assign({ 
-			dirname: config.dirname,
-			outputFolder: config.outputFolder,
-			sourceFolder: config.sourceFolder,
-			assetsFolder: qType ? `${config.assetsFolder}/${qType}` : undefined,
-			templatesFolder: qType ? `${config.templatesFolder}/${qType}` : undefined,
-			targetFilePath: qType ? `${config.templatesFolder}/${qType}/${qType}.html` : undefined,
-			stylesAsset: qType ? `${config.assetsFolder}/${qType}/${qType}.css` : undefined,
-			scriptsAsset: qType ? `${config.assetsFolder}/${qType}/${qType}.js` : undefined,
-			target: qType ? `${qType}.html` : undefined,
-			bucket: '%AWS%',
-			outputExt: 'txt',
-			cdnUrlStart: 'https://cdn.com/',
-			clickUrl: '!! PASTE CLICK URL HERE !!',
-			uploadToS3: false,
-			unpackFiles: true,
-			cssInjectLocation: '</head>',
-			jsInjectLocation: '</body>',
-			overwriteUnpackDestination: false,
-			cleanUpTargetFileTemplate: false,
-			buildCompletedSuccessfully: false,
-			logToFile: '.log',
-			qType},
-		yargs.argv);
+const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addDefaultRequiredArgs = true) => {
+	let fromFile = {};
+
+	// If the argsFile parameter is set and the file exists, load parameters from file
+	if(yargs.argv.argsFile && fs.existsSync(yargs.argv.argsFile)) {
+		fromFile = JSON.parse(fs.readFileSync(yargs.argv.argsFile));
+	}
+
+	const quasArgs = Object.assign(
+			// Defaults
+			{ 
+				dirname: config.dirname,
+				outputFolder: config.outputFolder,
+				sourceFolder: config.sourceFolder,
+				assetsFolder: qType ? `${config.assetsFolder}/${qType}` : undefined,
+				templatesFolder: qType ? `${config.templatesFolder}/${qType}` : undefined,
+				targetFilePath: qType ? `${config.templatesFolder}/${qType}/${qType}.html` : undefined,
+				stylesAsset: qType ? `${config.assetsFolder}/${qType}/${qType}.css` : undefined,
+				scriptsAsset: qType ? `${config.assetsFolder}/${qType}/${qType}.js` : undefined,
+				target: qType ? `${qType}.html` : undefined,
+				bucket: '%AWS%',
+				outputExt: 'txt',
+				cdnUrlStart: 'https://cdn.com/',
+				clickUrl: '!! PASTE CLICK URL HERE !!',
+				uploadToS3: false,
+				unpackFiles: true,
+				cssInjectLocation: '</head>',
+				jsInjectLocation: '</body>',
+				overwriteUnpackDestination: false,
+				cleanUpTargetFileTemplate: false,
+				buildCompletedSuccessfully: false,
+				logToFile: '.log',
+				qType },
+			// CLI args
+			yargs.argv, 
+			// Loaded from file with arg --argsFile
+			fromFile);
+
+		return registerRequiredQuasArgs(quasArgs, requiredArgs, nonRequiredArgs, addDefaultRequiredArgs);
 }
 
 const definitelyCallFunction = (cb) => {
@@ -339,11 +353,11 @@ const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
 
 // This method expects that the second parameter `requiredArgs` is an array of objects with the same structure as inquirer's .prompt questions parameter
 // https://www.npmjs.com/package/inquirer#questions
-const registerRequiredQuasArgs = (quasArgs, requiredArgs = [], nonRequiredArgs = {}, addDefaults = true) => {
+const registerRequiredQuasArgs = (quasArgs, requiredArgs = [], nonRequiredArgs = {}, addDefaultRequiredArgs = true) => {
 	quasArgs = Object.assign(quasArgs, nonRequiredArgs);
 
 	if(!quasArgs.requiredArgs) {
-		quasArgs.requiredArgs = addDefaults? getQuasarPromptQuestions(quasArgs).concat(requiredArgs) : requiredArgs;
+		quasArgs.requiredArgs = addDefaultRequiredArgs? getQuasarPromptQuestions(quasArgs).concat(requiredArgs) : requiredArgs;
 	} else {
 		// TODO: update two arrays of objects
 	}
@@ -698,7 +712,7 @@ module.exports = {
 	definitelyCallFunction,
 	findTargetFile,
 	fromDir,
-	getDefaultQuasArgs,
+	getQuasArgs,
 	getFilenamesInDirectory,
 	getTaskNames,
 	getQuasarPromptQuestions,
@@ -721,5 +735,6 @@ module.exports = {
 	unpackFiles,
 	uploadFiles,
 	// Externally controlled values
-	logToFile
+	logToFile,
+	config
 }

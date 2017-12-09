@@ -2,6 +2,7 @@ let express = require('express'),
     launcher = require( 'launch-browser' ),
     yargs = require('yargs'),
     path = require('path'),
+    fs = require('fs'),
     bodyParser = require('body-parser');
 
 let PORT = process.env.PORT || '3720', app = null;
@@ -18,9 +19,40 @@ const staticOptions = {
     }
 };
 
+const findOutputDirectory = (startPath, outputDirectory = 'jobs', maxLevels = 5) => {
+	if (!fs.existsSync(startPath)){
+		return;
+    }
+    
+    // If the startPath is the one we are looking for
+    let stat = fs.lstatSync(startPath);
+    console.log(`comparator:${startPath.split('/').pop()}`);
+    if(stat.isDirectory() && startPath.split('/').pop() == outputDirectory) {
+        return startPath;
+    }
+
+    // If the path we are looking for is a sybling of the startPath
+    const files=fs.readdirSync(startPath);
+	for (let i=0; i < files.length; i++) {
+        const pathname = path.join( startPath, files[i]);
+
+		stat = fs.lstatSync(pathname);
+        if(stat.isDirectory() && pathname.split('/').pop() == outputDirectory) {
+            return pathname;
+        }
+    }
+
+    if(maxLevels > 0) {
+        return findOutputDirectory(path.resolve(startPath, '../'), outputDirectory, maxLevels - 1);
+    } else {
+        return;
+    }
+}
+
 const postedForm = (req, res) => {
-    console.log(`Got a thing! -->`, req.body);
-    res.send({message: "okay!"});
+    let data = req.body;
+    const outputDirectory = findOutputDirectory(path.resolve(__dirname));
+    fs.writeFileSync(`${outputDirectory}/${data.qType}_${Date.now()}.json`, JSON.stringify(data));
 }
 
 const webForm = (app, port = null, start = false) => {

@@ -8,6 +8,8 @@ const config = require(`${process.cwd()}/config.js`);
 const lib = require(`${config.dirname}/lib.js`);
 const qType = 'quasarWebform';
 
+let quasArgs = {};
+
 const task = () => {
 	return lib.injectCode(quasArgs)
 		.then(() => { return lib.copyFilesFromTemplatesFolderToOutput(quasArgs, ['app.js', 'package.json', 'img/**', 'fonts/**'])})
@@ -100,12 +102,14 @@ gulp.task(`${qType}:build`, [ `${qType}:compile` ], (done) => {
 });
 gulp.task(`${qType}`, [`${qType}:build`]);
 
-let quasArgs = lib.getDefaultQuasArgs(qType);
-quasArgs = lib.registerRequiredQuasArgs(quasArgs, [], {
-	outputExt: 'html',
-	requiredArgsValidation: validateRequiredArgs
-}, false);
+const init = () => {
+	quasArgs = lib.getQuasArgs(qType, [], {
+		outputExt: 'html',
+		requiredArgsValidation: validateRequiredArgs
+	}, false);
+}
 
+init();
 module.exports = {
 	purpose: `
 		builds a form using react and the json schema pulled directly from the available quasars 
@@ -113,5 +117,6 @@ module.exports = {
 	`,
 	getQuasarPrompts,
 	qType,
+	init,
 	run
 };
