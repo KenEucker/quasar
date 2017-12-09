@@ -1,16 +1,16 @@
 let gulp = require('gulp'),
 	promise = require('bluebird'),
 	colors = require('colors'),
-	sass = require('gulp-sass'),
+	sass = require('dart-sass')
 	concat = require('gulp-concat'),
 	babel = require('gulp-babel'),
 	file = require('gulp-file'),
 	flatmap = require('gulp-flatmap'),
 	fs = require('fs'),
 	runSequence = require('run-sequence'),
-	tap = require('gulp-tap'),
 	mustache = require('gulp-mustache'),
-	browserify = require('gulp-browserify');
+	browserify = require('gulp-browserify'),
+	through = require('through2');
 
 const config = require(`${process.cwd()}/config.js`);
 const lib = require(`${config.dirname}/lib.js`);
@@ -25,6 +25,30 @@ const task = () => {
 const run = (args = {}) => {
 	return validateRequiredArgs(args).then(task);
 }
+
+// NOW USING DART-SASS TO BE COMPATIBLE WITH ELECTRON
+function sassify(options) {
+	return through.obj((file, enc, cb) => {
+	  options = options || {};
+	  options.file = file.path;
+	  // if (file.sourceMap) {
+		// options.sourceMap = true;
+		// options.outFile = output.path('css');
+	  // }
+	  sass.render(options, (err, result) => {
+		if (err) {
+		  console.error("Sass Error: " + err.message);
+		}
+		else {
+		  file.contents = result.css;
+		  // if (file.sourceMap) {
+			// applySourceMap(file, result.map);
+		  // }
+		}
+		cb(err, file);
+	  });
+	});
+  }
 
 const getQuasarPrompts = () => {
 	return quasArgs.requiredArgs;
@@ -123,7 +147,7 @@ gulp.task(`${qType}:compile:html`, () => {
 gulp.task(`${qType}:compile:css`, () => {
 	return gulp.src(`${quasArgs.templatesFolder}/**/*.scss`)
 		// Compile sass
-		.pipe(sass())
+		.pipe(sassify())
 		// Bundle source files
 		.pipe(concat(`${quasArgs.qType}.css`))
 		// Ouput single file in asset folder for use with build task

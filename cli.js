@@ -49,6 +49,8 @@ const spawnWebForm = (runningApi) => {
 	const webFormPath = path.resolve(`./public/quasar/Webform/app.js`);
 
 	if(fs.existsSync(webFormPath)) {
+		lib.logInfo(`loading the webform file ${webFormPath}`);
+
 		webForm = require(webFormPath);
 		lib.definitelyCallFunction(() => {
 			if(runningApi) {
@@ -73,60 +75,71 @@ gulp.task(`watchJobs`, () => {
 		.pipe(gulp.dest('jobs/archived'));
 });
 
-const run = (port = PORT, runAsProcess = yargs.argv.runAsProcess, runApi = yargs.argv.runApi, runWebForm = yargs.argv.runWebForm, 
-			watchJobs = yargs.argv.watchJobs, qType = yargs.argv.qType, runStandalone = yargs.argv.runStandalone, 
-			autoBuildWebForm = yargs.argv.autoBuildWebForm) => {
-	PORT = port;
+const run = (args = {}) => {
+	let _args = {
+		port: PORT,
+		runAsProcess: false,
+		runStandalone: false,
+		watchJobs: false,
+		qType: false,
+		runWebForm: false,
+		autoBuildWebForm: false,
+		runApi: false };
+	args = Object.assign(_args, yargs.argv, args);
+	PORT = args.port;
 
-	if(runAsProcess) {
-		if (runApi) {
+	lib.logInfo(`Running the qausar cli under the process: ${process.title}`);
+	if(args.runAsProcess) {
+		if (args.runApi) {
 			lib.definitelyCallFunction(() => {
-				api.run(PORT);
+				api.run(args.port);
 			});
 		}
 
-		if (runWebForm) {
+		if (args.runWebForm) {
 			// TODO: use more intelligent path
-			if(!spawnWebForm(runApi)) { 
-				if(autoBuildWebForm) {
+			if(!spawnWebForm(args.runApi)) { 
+				if(args.autoBuildWebForm) {
 					lib.logInfo('automated quasar build of `quasarWebform`');
 					lib.definitelyCallFunction(() => {
 						lib.runTask('quasarWebform', () => {
 							lib.logInfo('attempting another run of the quasarWebform');
-							if(!spawnWebForm(runApi)) {
+							if(!spawnWebForm(args.runApi)) {
 								lib.logError(`Can't do that!`);
 							}
 						});
 					});
 				} else {
-					lib.logError(`cannot run webform because ${webFormPath} has not been built yet, run again with option --autoBuildWebForm=true to auto build the webform.`);
+					lib.logError(`cannot run webform because ${path.resolve(`./public/quasar/Webform/app.js`)} has not been built yet, run again with option --autoBuildWebForm=true to auto build the webform.`);
 				}
 			}
 		}
 
-		if (watchJobs) {
+		if (args.watchJobs) {
 			lib.definitelyCallFunction(() => {
 				lib.runTask('watchJobs');
 			});
 		}
-	} else if (qType) {
+	} else if (args.qType) {
 		lib.logInfo('automated quasar build from quasArgs');
 		lib.definitelyCallFunction(() => {
-			lib.runTask(qType);
+			lib.runTask(args.qType);
 		});
-	} else if(runStandalone){
+	} else if(args.runStandalone){
 		lib.definitelyCallFunction(() => {
 			initialPrompt();
 		});
 	}
 }
 
-if(yargs.argv.runStandalone || yargs.argv.runAsProcess) {
+if( yargs.argv.runStandalone || yargs.argv.runAsProcess ) {
 	run();
+} else if (process.title == 'gulp') {
+	run({ runStandalone: true });
 }
 
 module.exports = {
-	app: api,
+	app: api.app,
 	PORT,
 	run
 };

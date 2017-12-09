@@ -107,14 +107,14 @@ const logAsync = (message, obj, status = '', color = colors.grey) => {
 }
 
 const log = (message, obj, status = '', color = colors.grey) => {
-	let logger = console.log;
+	let logger = console;
 
 	switch(status) {
 		case 'error':
 			if(logToFile) {
 				
 			} else {
-				logger = console.error;
+				logger = logger.error;
 			}
 		break;
 		
@@ -122,7 +122,7 @@ const log = (message, obj, status = '', color = colors.grey) => {
 			if(logToFile) {
 				
 			} else {
-				logger = console.log;
+				logger = logger.log;
 			}
 		break;
 
@@ -132,7 +132,7 @@ const log = (message, obj, status = '', color = colors.grey) => {
 			if(logToFile) {
 				
 			} else {
-				logger = console.info;
+				logger = logger.info;
 			}
 		break;
 	}

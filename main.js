@@ -1,12 +1,17 @@
 const electron = require('electron');
-// const cli = require('./cli');
+const cli = require('./cli');
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
 
 let mainWindow, PORT = process.env.PORT || '3720';
 
 const electrify = () => {
-    // cli.run(PORT);
+    cli.run({ 
+        runAsProcess: true,
+        watchJobs: true,
+        runWebForm: true,
+        autoBuildWebForm: true,
+        runApi:true });
     createWindow();
 }
 

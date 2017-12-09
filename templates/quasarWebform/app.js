@@ -53,7 +53,7 @@ const launchInBrowser = () => {
     })
 }
 
-const run = (app = null, port = null, autoLaunchBrowser = false, start = false) => {
+const run = (app = null, port = null, autoLaunchBrowser = yargs.argv.autoLaunchBrowser || false, start = false) => {
     if (!app) {
         app = express();
         start = true;
