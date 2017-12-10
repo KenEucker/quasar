@@ -60,7 +60,8 @@ const init = () => {
 	dtAdsArgs = lib.getQuasArgs(qType, lib.getCampaignPromptQuestions().concat([{
 			type: 'input',
 			name: 'imageUrl',
-			message: 'Bigtop URL:'
+			message: 'Bigtop URL:',
+			default: '!! PASTE BIGTOP IMAGE URL HERE!!'
 		},
 		{
 			type: 'input',
@@ -71,7 +72,6 @@ const init = () => {
 			qType: qType,
 			clickUrl: '!! PASTE CLICK URL HERE !!',
 			windowTarget: '_blank',
-			imageUrl: '!! PASTE BIGTOP IMAGE URL HERE!!',
 			requiredArgsValidation: validateRequiredArgs }, false);
 }
 

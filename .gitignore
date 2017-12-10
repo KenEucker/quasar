@@ -8,6 +8,6 @@ assets
 public
 jobs
 node_modules
-source
+sources
 .config
 .log

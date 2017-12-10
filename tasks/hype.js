@@ -12,10 +12,12 @@ let dtAdsArgs = {};
 
 const task = () => {
 	return lib.unpackFiles(dtAdsArgs)
+		.then(() => { return lib.moveTargetFilesToRootOfAssetsPath(dtAdsArgs) })
 		.then(() => { return parseFiles() })
 		.then(() => { return confirmationPrompt() })
 		.then(() => { return lib.injectCode(dtAdsArgs) })
 		.then(() => { return injectHypeAdCode() })
+		.then(() => { return lib.moveFilesFromAssetsFolderToOutput(dtAdsArgs, [ '**' ] ) })
 		.then(() => { return lib.uploadFiles(dtAdsArgs) })
 		.then(() => { return lib.outputToHtmlFile(dtAdsArgs) })
 		.finally(() => {
@@ -24,14 +26,14 @@ const task = () => {
 			} else {
 				lib.logInfo('build finished unexpectedly');
 			}
-			// resolve();
+
 			process.exit();
 		});
-};
+}
 
 const run = (args = {}) => {
 	return validateRequiredArgs(args).then(task);
-};
+}
 
 const validateRequiredArgs = (args = {}) => {
 	return new Promise((resolve, reject) => {
@@ -72,10 +74,10 @@ const validateRequiredArgs = (args = {}) => {
 
 		const datetime = new Date(Date.now());
 		dtAdsArgs.bucketPath = `${dtAdsArgs.bucket}/${dtAdsArgs.client}/${datetime.getFullYear()}/${datetime.getMonth() + 1}/${dtAdsArgs.campaign}`;
-		dtAdsArgs.targetFilePath = lib.findTargetFile(dtAdsArgs);
+
 		return resolve();
 	});
-};
+}
 
 const getQuasarPrompts = () => {
 	return dtAdsArgs.requiredArgs;
@@ -113,42 +115,46 @@ const parseFiles = () => {
 		});
 
 		dtAdsArgs.hypeElements = hypeElements;
-		resolve(dtAdsArgs);
+		return resolve(dtAdsArgs);
 	});
-};
+}
 
 // Confirm parsing results and get final ad unit parameters
 const confirmationPrompt = () => {
 	return new promise((resolve, reject) => {
-		lib.log('confirming parameters');
+		if (!dtAdsArgs.noPrompt) {
+			lib.log('confirming parameters');
 
-		lib.promptConsole([{
-			type: 'checkbox',
-			name: 'hypeElements',
-			message: `Select the ids of the clickable HYPE elements to attach click events. The following ${dtAdsArgs.hypeElements.length} HYPE elements were found:`,
-			choices: dtAdsArgs.hypeElements.map(c => { return { name: c, checked: true } })
-		},{
-			type: 'confirm',
-			name: 'uploadToS3',
-			message: `Upload assets to S3? ${colors.yellow('(optional)')}`,
-			default: false
-		}], (res) => {
-			dtAdsArgs = Object.assign(dtAdsArgs, res);
+			lib.promptConsole([{
+				type: 'checkbox',
+				name: 'hypeElements',
+				message: `Select the ids of the clickable HYPE elements to attach click events. The following ${dtAdsArgs.hypeElements.length} HYPE elements were found:`,
+				choices: dtAdsArgs.hypeElements.map(c => { return { name: c, checked: true } })
+			},{
+				type: 'confirm',
+				name: 'uploadToS3',
+				message: `Upload assets to S3? ${colors.yellow('(optional)')}`,
+				default: false
+			}], (res) => {
+				dtAdsArgs = Object.assign(dtAdsArgs, res);
 
-			resolve(dtAdsArgs);
-		});
+				return resolve(dtAdsArgs);
+			});
+		} else {
+			return resolve(dtAdsArgs);
+		}
 	});
-};
+}
 
 // Inject the ad code into the html file before applying template vars
 const injectHypeAdCode = () => {
 	return new promise((resolve, reject) => {
-		dtAdsArgs.hypeElements = dtAdsArgs.hypeElements.map(el => { return `'${el}'` }).join(',');
 		// Nothing actually needs to be done here except for transforming the hypeElements object for output
 		lib.log(`injecting HYPE specific adcode`);
-		resolve(dtAdsArgs);
+		dtAdsArgs.hypeElements = dtAdsArgs.hypeElements.map(el => { return `'${el}'` }).join(',');
+		return resolve(dtAdsArgs);
 	});
-};
+}
 
 // Test HYPE Ad Unit 
 

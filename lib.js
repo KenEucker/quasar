@@ -215,8 +215,13 @@ const logFin = (message = 'FiN!', obj, color = colors.green) => {
 	log(`<!-- end: ${message} -->`, obj, 'fin', color);
 }
 
-const fromDir = (startPath, filter) => {
+const fromDir = (startPath, filter, extension = '') => {
 	let found = '';
+
+	if(!extension.length) {
+		extension = `.${filter.split('.').pop()}`;
+		filter = filter.replace(extension, '');
+	}
 
 	if (!fs.existsSync(startPath)){
 		return;
@@ -227,9 +232,10 @@ const fromDir = (startPath, filter) => {
 		var filename=path.join(startPath,files[i]);
 		var stat = fs.lstatSync(filename);
 		if (stat.isDirectory()){
-			found = fromDir(filename,filter); //recurse
-		}
-		else if (filename.indexOf(filter)>=0) {
+			found = fromDir(filename,filter,extension); //recurse
+		} else if (!filter.length && `.${filename.split('.').pop()}` == extension) {
+			return filename;
+		} else if (filename.indexOf(filter)>=0) {
 			return filename;
 		};
 	};
@@ -383,10 +389,10 @@ const findTargetFile = (quasArgs) => {
 
 	if (!fs.existsSync(targetFilePath)) {
 		const oldTargetFilePath = targetFilePath;
-		targetFilePath = fromDir(`${quasArgs.assetsFolder}`, `${quasArgs.target}`);
+		targetFilePath = fromDir(`${quasArgs.assetsFolder}`, `${quasArgs.target}`, `.html`);
 		
 		if(targetFilePath) {
-			log(`couldnt find file at ${oldTargetFilePath}, corrected path is: ${targetFilePath}`);
+			log(`did not find file at ${oldTargetFilePath}, corrected path is: ${targetFilePath}`);
 			targetFilePath = path.resolve(targetFilePath);
 		}
 	}
@@ -395,29 +401,40 @@ const findTargetFile = (quasArgs) => {
 }
 
 const moveTargetFilesToRootOfAssetsPath = (quasArgs) => {
-	let targetFilePath = findTargetFile(quasArgs);
+	return new promise((resolve, reject) => {
+		let targetFilePath = findTargetFile(quasArgs);
+		
+		if(!targetFilePath) {
+			logInfo(`did not find a templated target file, using first available html file that matches the target (${quasArgs.target}) in the assets path: ${quasArgs.assetsFolder}`);
+			targetFilePath = fromDir(quasArgs.assetsFolder, quasArgs.target);
+		}
 
-	if(!targetFilePath) {
-		logInfo(`Couldn't find a templated target file, using first available html file that matches the target (${quasArgs.target}) in the assets path: ${quasArgs.assetsFolder}`);
-		targetFilePath = fromDir(quasArgs.assetsFolder, quasArgs.target);
-	}
+		// Error
+		if(!targetFilePath) {
+			return resolve(quasArgs);
+		}
 
-	// Error
-	if(!targetFilePath) {
-		return quasArgs;
-	}
+		if(targetFilePath !== `${quasArgs.assetsFolder}/${quasArgs.target}`) {
+			const baseDir = path.dirname(targetFilePath);
+			// logInfo(`Moving files from deep folder structure (${baseDir}) to base assets path (${quasArgs.assetsFolder})`);
+			gulp.src(`${baseDir}/**`)
+				.pipe(gulp.dest(quasArgs.assetsFolder))
+				.on('error', (err) => { 
+					logError(`error copying files: ${err}`);
+					return reject(quasArgs); })
+				.on('end', () => { 
+					logInfo(`files moved from deep folder structure (${baseDir}) to base assets path (${quasArgs.assetsFolder})`);
+					quasArgs.targetFilePath = targetFilePath;
+					let remove = baseDir.replace(quasArgs.assetsFolder, '').substr(1).split('/');
+					remove = path.resolve(`${quasArgs.assetsFolder}/${remove[0]}`);
+					del(path.resolve(remove));
 
-	if(targetFilePath !== `${quasArgs.assetsFolder}/${quasArgs.target}`) {
-		logInfo(`Moving files from deep folder structure to base assets path (${quasArgs.assetsFolder})`);
-		const baseDir = path.basename(targetFilePath);
-		mv(`${baseDir}`, `${quasArgs.assetsFolder}`, {mkdirp: true}, (err) => {
-			logError(`Error moving files from ${baseDir} to ${quasArgs.assetsFolder}`);
-		});
+					return resolve(quasArgs);
+			});
+		}
 
-		quasArgs.targetFilePath = targetFilePath;
-	}
-
-	return quasArgs;
+		return resolve(quasArgs);
+	});
 }
 
 const copyFilesFromTemplatesFolderToOutput = (quasArgs, files) => {
@@ -436,6 +453,7 @@ const copyFilesFromTemplatesFolderToOutput = (quasArgs, files) => {
 
 const moveFilesFromAssetsFolderToOutput = (quasArgs, files, excludeFiles = null) => {
 	return new promise((resolve, reject) => {
+		console.log("one");
 		const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
 		if(!excludeFiles) {
 			excludeFiles = [ `${quasArgs.qType}.html`, `${quasArgs.qType}.css`, `${quasArgs.qType}.js` ];
@@ -443,16 +461,17 @@ const moveFilesFromAssetsFolderToOutput = (quasArgs, files, excludeFiles = null)
 
 		files = files.map(file => `${quasArgs.assetsFolder}/${file}`);
 		excludeFiles = excludeFiles.map(excludeFile => `!${quasArgs.assetsFolder}/${excludeFile}`);
+		logInfo(`moving files (${files.join()}) from ${quasArgs.assetsFolder}/ to ${destinationPath}`);
 
 		return gulp.src(files.concat(excludeFiles), { base: quasArgs.assetsFolder })
 			.pipe(gulp.dest(destinationPath))
-			//.pipe(vinylPaths(del))
 			.on('error', (err) => { 
 				logError(`error copying files: ${err}`);
 				return reject(quasArgs);
 			})
 			.on('end', () => { 
-				logInfo(`files copied (${files.join()}) from ${quasArgs.assetsFolder}/ to ${destinationPath}`);
+				logInfo(`files moved (${files.join()}) from ${quasArgs.assetsFolder}/ to ${destinationPath}`);
+				del(files);
 				return resolve(quasArgs);
 			});
 	});
@@ -544,8 +563,10 @@ const unpackFiles = (quasArgs) => {
 				return resolve(quasArgs);
 			} else {
 				logInfo(`overwriting files in assets folder ${destinationPath}`);
+				del(quasArgs.assetsFolder);
 			}
 		}
+
 		unzip(zipFilePath, {dir: destinationPath}, (err) => {
 			// extraction is complete. make sure to handle the err
 			if(err) {
@@ -554,8 +575,6 @@ const unpackFiles = (quasArgs) => {
 			}
 
 			logSuccess(`files successfully unziped to ${destinationPath}`);
-			quasArgs = moveTargetFilesToRootOfAssetsPath(quasArgs);
-
 			return resolve(quasArgs);
 		});
 	});
@@ -588,11 +607,13 @@ const compileScriptsToAssetsFolder= (quasArgs) => {
 }
 
 const compileTargetFileToAssetsFolder = (quasArgs) => {
+	console.log('who wants a mustache ride?');
 	return gulp.src(`${quasArgs.templatesFolder}/**/*.mustache`)
 		// Compile mustache file
 		.pipe(flatmap( (stream, file) => {
 			const filename = `${file.path}.json`;
-
+			console.log(`${filename} does!`);
+			console.log(`${filename} does!`);
 			if(fs.existsSync(filename)) {
 				return stream.pipe(mustache(filename, {}, {}));
 			} else {
@@ -617,7 +638,7 @@ const injectCode = (quasArgs) => {
 
 		log('injecting public code prior to applying template parameters');
 		log(`getting assets from (${quasArgs.assetsFolder})`);
-		log(`getting template file (${quasArgs.targetFilePath}) and assets(css:${css ? quasArgs.stylesAsset.replace(quasArgs.assetsFolder, '') : 'none'}   js: ${js ? quasArgs.scriptsAsset.replace(quasArgs.assetsFolder, '')  : 'none'})`);
+		log(`getting template file (${quasArgs.targetFilePath.replace(quasArgs.assetsFolder, '')}) and assets(css:${css ? quasArgs.stylesAsset.replace(quasArgs.assetsFolder, '') : 'none'}   js: ${js ? quasArgs.scriptsAsset.replace(quasArgs.assetsFolder, '')  : 'none'})`);
 
 		return gulp.src(quasArgs.targetFilePath, { base: quasArgs.dirname })
 			.pipe(inject.before(`${urlToPrependCDNLink}.`, cdnTemplate))
@@ -724,7 +745,7 @@ const outputToHtmlFile = (quasArgs) => {
 	return new promise((resolve, reject) => {
 		const outputPath = `${quasArgs.outputFolder.replace(quasArgs.dirname, '')}/${quasArgs.domain}/${quasArgs.signal}`;
 		log(`Applying the following parameters to the template (${quasArgs.targetFilePath}) and building output`);
-		// logData(quasArgs);
+		log(`data:`, quasArgs);
 
 		return gulp.src(quasArgs.targetFilePath) 
 		.pipe(template(quasArgs))
@@ -774,6 +795,7 @@ module.exports = {
 	logSuccess,
 	makePromptRequired,
 	moveFilesFromAssetsFolderToOutput,
+	moveTargetFilesToRootOfAssetsPath,
 	outputToHtmlFile,
 	promptConsole,
 	quasarSelectPrompt,
