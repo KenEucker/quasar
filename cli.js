@@ -120,7 +120,7 @@ const run = (args = {}) => {
 
 			if (args.runWebForm) {
 				// TODO: use more intelligent path
-				if(!spawnWebForm(args.runApi)) { 
+				if(!spawnWebForm(args.runApi)) {
 					if(args.autoBuildWebForm) {
 						lib.logInfo('automated quasar build of `quasarWebform`');
 						lib.definitelyCallFunction(() => {
@@ -159,8 +159,8 @@ const run = (args = {}) => {
 			});
 		} else if (args.packageApp) {
 			lib.logInfo('packaging into an application');
-			return lib.definitelyCallFunction(() => { 
-				packageElectronApp(); 
+			return lib.definitelyCallFunction(() => {
+				packageElectronApp();
 				return resolve();
 			});
 		}

@@ -1,5 +1,6 @@
 #!/bin/bash 
 
 # Check for electron and install it if need be
+npm update
 npm list -g electron || npm install -g electron
 electron .
