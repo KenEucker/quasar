@@ -23,6 +23,7 @@ Files located in the /assets folder are used in build tasks for quasar ouput. Th
 
 # Development
 Usefule commands:
+* `bin/dev` will run `bin/clean` and then `bin/web` so you can test quasar output
 * `bin/clean` will delete the assets and output folders. Use this if you want to do lib testing or new quasar development.
 * `bin/app` takes the has the following default arguments that you can override the cli with --[arg]=[val] _(eg: --runAsProcess=true --runApi=true )_:
 ```

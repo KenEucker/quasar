@@ -3,6 +3,7 @@
 .config
 .log
 
+quasar-darwin-x64
 assets
 public
 jobs

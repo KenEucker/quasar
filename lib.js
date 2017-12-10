@@ -386,7 +386,7 @@ const findTargetFile = (quasArgs) => {
 		targetFilePath = fromDir(`${quasArgs.assetsFolder}`, `${quasArgs.target}`);
 		
 		if(targetFilePath) {
-			log(`couldnt find file at ${oldTargetFilePath}, corrected path is: ${targetFilePath}`, colors.yellow);
+			log(`couldnt find file at ${oldTargetFilePath}, corrected path is: ${targetFilePath}`);
 			targetFilePath = path.resolve(targetFilePath);
 		}
 	}

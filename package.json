@@ -1,8 +1,9 @@
 {
   "name": "quasar",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "description": "A light version of the quasi app runtime",
   "main": "main.js",
+  "productName": "quasar",
   "dependencies": {
     "aws-sdk": "^2.156.0",
     "axios": "^0.17.1",
@@ -18,7 +19,7 @@
     "colors": "^1.1.2",
     "dart-sass": "^1.0.0-beta.3",
     "del": "^3.0.0",
-    "electron": "1.7.9",
+    "electron": "^1.7.9",
     "express": "^4.16.2",
     "extract-zip": "^1.6.6",
     "fs": "0.0.1-security",
@@ -55,7 +56,7 @@
     "yargs": "^10.0.3"
   },
   "scripts": {
-    "build": "bin/run",
+    "build": "bin/cli",
     "deploy": "bin/package",
     "watch": "bin/watch",
     "clean": "bin/clean"

@@ -12,6 +12,7 @@ let gulp = require('gulp'),
 	vinylPaths = require('vinyl-paths'),
 	lib = require('./lib'),
 	mkdir = require('mkdirp-sync'),
+	// packager = require('electron-packager'),
 	api = require('./api');
 
 requireDir('./tasks/');
@@ -90,6 +91,10 @@ gulp.task(`watchJobs`, () => {
 		.pipe(gulp.dest('jobs/logs'));
 });
 
+const packageElectronApp = () => {
+	packager({ executableName: 'quasar', platform: 'all' });
+}
+
 const run = (args = {}) => {
 	return new promise((resolve, reject) => {
 
@@ -124,40 +129,47 @@ const run = (args = {}) => {
 								if(!spawnWebForm(args.runApi)) {
 									lib.logError(`Can't do that!`);
 								}
-								resolve();
 							});
 						});
 					} else {
 						lib.logError(`cannot run webform because ${path.resolve(`./public/quasar/Webform/app.js`)} has not been built yet, run again with option --autoBuildWebForm=true to auto build the webform.`);
+						return reject();
 					}
 				}
 			}
 
 			if (args.watchJobs) {
-				lib.definitelyCallFunction(() => {
+				return lib.definitelyCallFunction(() => {
 					lib.runTask('watchJobs');
+					return resolve();
 				});
 			}
 		}
+		
 		if (args.qType) {
 			lib.logInfo('automated quasar build from quasArgs');
 			return lib.definitelyCallFunction(() => {
 				lib.runTask(args.qType);
+				return resolve();
 			});
-		}
-		if (args.runStandalone) {
+		} else if (args.runStandalone) {
 			return lib.definitelyCallFunction(() => {
 				initialPrompt();
+				return resolve();
+			});
+		} else if (args.packageApp) {
+			lib.logInfo('packaging into an application');
+			return lib.definitelyCallFunction(() => { 
+				packageElectronApp(); 
+				return resolve();
 			});
 		}
 
-		if(!args.autoBuildWebForm) {
-			return resolve();
-		}
+		return resolve();
 	});
 }
 
-if ( yargs.argv.runStandalone || yargs.argv.runAsProcess ) {
+if ( yargs.argv.runStandalone || yargs.argv.runAsProcess || yargs.argv.packageApp) {
 	run();
 } else if (process.title == 'gulp') {
 	run({ runStandalone: true });
