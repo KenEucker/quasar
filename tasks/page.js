@@ -9,8 +9,16 @@ const qType = 'page';
 let quasArgs = {};
 
 const task = () => {
-	return lib.injectCode(quasArgs)
-		.then(() => { return lib.outputToHtmlFile(quasArgs)});
+	return lib.unpackFiles(quasArgs)
+	.then(() => { 
+		console.log("injecting assets!");
+		return lib.injectCode(quasArgs) })
+	.then(() => { 
+		console.log("moving files!");
+		return lib.moveFilesFromAssetsFolderToOutput(quasArgs, [ '**' ] ) })
+	.then(() => { 
+		console.log("output!");
+		return lib.outputToHtmlFile(quasArgs) });
 }
 
 const run = (args = {}) => {
@@ -26,12 +34,16 @@ const validateRequiredArgs = (args = {}) => {
 		// Merge options with passed in parameters
 		quasArgs = Object.assign(quasArgs, args);
 		
+		if(quasArgs.source == 'none') {
+			quasArgs.source = null;
+		}
+
 		if(quasArgs.output && quasArgs.output.length) {
 			const split = quasArgs.output.split('.');
 
 			if(split.length > 1) {
-				quasArgs.outputExt = split.pop();
-				quasArgs.output = quasArgs.output.substr(0, quasArgs.output.length - quasArgs.outputExt.length - 1);
+				quasArgs.outputExt = `.${split.pop()}`;
+				quasArgs.output = quasArgs.output.substr(0, quasArgs.output.length - quasArgs.outputExt.length);
 			}
 		} else {
 			//Default the output filename to the signal
@@ -65,7 +77,7 @@ const init = () => {
 			message: 'Enter the body text'
 		}],
 		{
-			outputExt: 'html',
+			outputExt: '.html',
 			requiredArgsValidation: validateRequiredArgs });
 }
 
@@ -77,5 +89,6 @@ module.exports = {
 	`,
 	getQuasarPrompts,
 	qType,
+	init,
 	run
 };

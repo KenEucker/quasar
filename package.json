@@ -50,6 +50,7 @@
     "require-dir": "^0.3.2",
     "run-sequence": "^2.2.0",
     "through2": "^2.0.3",
+    "unzip": "^0.1.11",
     "vinyl-paths": "^2.1.0",
     "yargs": "^10.0.3"
   },

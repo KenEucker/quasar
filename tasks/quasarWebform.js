@@ -28,13 +28,13 @@ const validateRequiredArgs = (args = {}) => {
 	return new Promise((resolve, reject) => {
 		// Merge options with passed in parameters
 		quasArgs = Object.assign(quasArgs, args);
-		
+	
 		if(quasArgs.output && quasArgs.output.length) {
 			const split = quasArgs.output.split('.');
 
 			if(split.length > 1) {
-				quasArgs.outputExt = split.pop();
-				quasArgs.output = quasArgs.output.substr(0, quasArgs.output.length - quasArgs.outputExt.length - 1);
+				quasArgs.outputExt = `.${split.pop()}`;
+				quasArgs.output = quasArgs.output.substr(0, quasArgs.output.length - quasArgs.outputExt.length);
 			}
 		} else {
 			//Default the output filename to the signal
@@ -104,7 +104,7 @@ gulp.task(`${qType}`, [`${qType}:build`]);
 
 const init = () => {
 	quasArgs = lib.getQuasArgs(qType, [], {
-		outputExt: 'html',
+		outputExt: '.html',
 		requiredArgsValidation: validateRequiredArgs
 	}, false);
 }

@@ -21,11 +21,23 @@ const ensureData = (data) => {
 }
 
 const postData = (uri, data, success = () => {}, error = err => { console.log(err) }) => {
-    Axios.post(uri, data).then(success).catch(error);
+    const config = {}; //{ headers: { 'Content-Type': 'multipart/form-data' } };
+    // if (document.querySelector('input[type=file]').files.length) {
+    //     data.file = document.querySelector('input[type=file]').files[0];
+    // }
+    Axios.post(uri, data, config).then(success).catch(error);
 }
 
 const getData = (uri, data, success = () => {}, error = err => { console.log(err) }) => {
     Axios.get(uri).then(success).catch(error);
+}
+
+const onFormChanged = (e) => {
+    const formData = e.formData;
+
+    if(formData.source) {
+        console.log(formData.source);
+    }
 }
 
 const onFormSubmitted = (e) => {
@@ -44,7 +56,7 @@ const createForms = () => {
             <Form 
                 schema={form.schema}
                 uiSchema={form.uiSchema}
-                onChange={log("changed")}
+                onChange={onFormChanged}
                 onSubmit={onFormSubmitted}
                 onError={log("errors")}>
                     <p>
@@ -90,5 +102,11 @@ const createDropdown = () => {
     document.body.prepend(outer);
 }
 
+const finalTouches = () => {
+    const file = document.querySelector('input[type=file]');
+    file.setAttribute('accept', 'application/zip');
+}
+
 createForms();
 createDropdown();
+finalTouches();

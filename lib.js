@@ -15,6 +15,8 @@ let gulp = require('gulp'),
 	through = require('through2'),
 	mustache = require('gulp-mustache'),
 	browserify = require('gulp-browserify'),
+	del = require('del'),
+	vinylPaths = require('vinyl-paths'),
 	unzip = require("extract-zip"),
 	path = require('path'),
 	colors = require('colors'),
@@ -50,14 +52,14 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 				scriptsAsset: qType ? `${config.assetsFolder}/${qType}/${qType}.js` : undefined,
 				target: qType ? `${qType}.html` : undefined,
 				bucket: '%AWS%',
-				outputExt: 'txt',
+				outputExt: '.txt',
 				cdnUrlStart: 'https://cdn.com/',
 				clickUrl: '!! PASTE CLICK URL HERE !!',
 				uploadToS3: false,
 				unpackFiles: true,
 				cssInjectLocation: '</head>',
 				jsInjectLocation: '</body>',
-				overwriteUnpackDestination: false,
+				overwriteUnpackDestination: true,
 				cleanUpTargetFileTemplate: false,
 				buildCompletedSuccessfully: false,
 				logToFile: '.log',
@@ -330,6 +332,8 @@ const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
 	let title = prompt.message || '',
 		widget = prompt.type || 'input',
 		help = prompt.help || '';
+		options = {},
+		ui = {};
 
 	switch(widget) {
 		case 'input':
@@ -347,6 +351,7 @@ const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
 
 	return {
 		'ui:widget': widget,
+		'ui:options': options,
 		help
 	};
 }
@@ -415,13 +420,41 @@ const copyFilesFromTemplatesFolderToOutput = (quasArgs, files) => {
 	});
 }
 
-const copyFilesFromAssetsFolderToOutput = (quasArgs, files) => {
+const moveFilesFromAssetsFolderToOutput = (quasArgs, files, excludeFiles = null) => {
 	return new promise((resolve, reject) => {
 		const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
+		if(!excludeFiles) {
+			excludeFiles = [ `${quasArgs.qType}.html`, `${quasArgs.qType}.css`, `${quasArgs.qType}.js` ];
+		}
+
+		files = files.map(file => `${quasArgs.assetsFolder}/${file}`);
+		excludeFiles = excludeFiles.map(excludeFile => `!${quasArgs.assetsFolder}/${excludeFile}`);
+		console.log(files);
+		return gulp.src(files.concat(excludeFiles), { base: quasArgs.assetsFolder })
+			.pipe(gulp.dest(destinationPath))
+			//.pipe(vinylPaths(del))
+			.on('error', (err) => { 
+				logError(`error copying files: ${err}`);
+				return reject(quasArgs);
+			})
+			.on('end', () => { 
+				logInfo(`files copied (${files.join()}) from ${quasArgs.assetsFolder}/ to ${destinationPath}`);
+				return resolve(quasArgs);
+			});
+	});
+}
+
+const copyFilesFromAssetsFolderToOutput = (quasArgs, files, excludeFiles = null) => {
+	return new promise((resolve, reject) => {
+		const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
+		if(!excludeFiles) {
+			excludeFiles = [ `${quasArgs.qType}.html`, `${quasArgs.qType}.css`, `${quasArgs.qType}.js` ];
+		}
 		logInfo(`copying files (${files.join()}) from ${quasArgs.assetsFolder}/ to ${destinationPath}`);
 
 		files = files.map(file => `${quasArgs.assetsFolder}/${file}`);
-		return gulp.src(files, { base: quasArgs.assetsFolder })
+		excludeFiles = excludeFiles.map(excludeFile => `!${quasArgs.assetsFolder}/${excludeFile}`);
+		return gulp.src(excludeFiles.concat(files), { base: quasArgs.assetsFolder })
 			.pipe(gulp.dest(destinationPath))
 			.on('end', () => { 
 				return resolve(quasArgs);
@@ -478,12 +511,12 @@ const copyTemplateFilesToAssetsPath = (quasArgs) => {
 // Unpack input files
 const unpackFiles = (quasArgs) => {
 	return new promise((resolve, reject) => {
-		if(!quasArgs.unpackFiles) {
-			resolve();
+		if(!quasArgs.unpackFiles || !quasArgs.source) {
+			return resolve(quasArgs);
 		}
 
-		const zipFilePath = path.resolve(`${quasArgs.sourceFolder}/${quasArgs.source}.${quasArgs.sourceExt}`);
-		const destinationPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
+		const zipFilePath = path.resolve(`${quasArgs.sourceFolder}/${quasArgs.source}${quasArgs.sourceExt}`);
+		const destinationPath = path.resolve(`${quasArgs.assetsFolder}`);
 		log(`unpacking source files from (${zipFilePath}) to the public folder (${destinationPath})`);
 
 		if (!fs.existsSync(zipFilePath)) {
@@ -494,9 +527,9 @@ const unpackFiles = (quasArgs) => {
 		if (fs.existsSync(findTargetFile(quasArgs))) {
 			if(!quasArgs.overwriteUnpackDestination) {
 				logError(`files have already been unpacked, run again with option --overwriteUnpackDestination=true to overwite files.`);
-				return resolve();
+				return resolve(quasArgs);
 			} else {
-				logInfo(`overwriting files in ouput folder ${destinationPath}`);
+				logInfo(`overwriting files in assets folder ${destinationPath}`);
 			}
 		}
 		unzip(zipFilePath, {dir: destinationPath}, (err) => {
@@ -507,9 +540,9 @@ const unpackFiles = (quasArgs) => {
 			}
 
 			logSuccess(`files successfully unziped to ${destinationPath}`);
-			// moveTargetFilesToRootOfAssetsPath(quasArgs);
+			// moveTargetFilesToRootOfSignalPath(quasArgs);
 
-			resolve(quasArgs);
+			return resolve(quasArgs);
 		});
 	});
 }
@@ -613,11 +646,11 @@ const injectCode = (quasArgs) => {
 			.pipe(gulp.dest(quasArgs.dirname))
 			.on('error', (err) => { 
 				logError('error on injection pipeline ', err); 
-				reject(err);
+				return reject(err);
 			})
 			.on('end', (msg) => { 
 				logSuccess('injection pipeline ended successfully');
-				resolve(quasArgs); 
+				return resolve(quasArgs); 
 			});
 	});
 }
@@ -664,7 +697,7 @@ const uploadFiles = (quasArgs) => {
 				}, {
 					maxRetries: 5
 				}))
-				.on('end', () => { logSuccess(`Files successfully uploaded to S3 under the path: /${quasArgs.bucketPath}`); resolve(); });
+				.on('end', () => { logSuccess(`Files successfully uploaded to S3 under the path: /${quasArgs.bucketPath}`); return resolve(); });
 		} else {
 			logError(`Could not find AWS configuration, aborting upload.`);
 			return resolve(quasArgs);
@@ -684,16 +717,16 @@ const outputToHtmlFile = (quasArgs) => {
 		.pipe(rename({
 			dirname: outputPath,
 			basename: quasArgs.output,
-			extname: `.${quasArgs.outputExt}`
+			extname: `${quasArgs.outputExt}`
 		}))
 		.pipe(gulp.dest(quasArgs.dirname))
 		.on('error', (err) => { logError(`Error outputing file (${quasArgs.targetFilePath})`, err); })
 		.on('end', () => { 
-			if(quasArgs.cleanUpTargetFileTemplate && (quasArgs.targetFilePath.indexOf(`${quasArgs.output}.${quasArgs.outputExt}`) == -1)) {
+			if(quasArgs.cleanUpTargetFileTemplate && (quasArgs.targetFilePath.indexOf(`${quasArgs.output}${quasArgs.outputExt}`) == -1)) {
 				logInfo(`Removing templated file ${quasArgs.targetFilePath}`);
 				fs.unlink(quasArgs.targetFilePath);
 			}
-			logSuccess(`Output file saved as: ${quasArgs.dirname}${outputPath}/${quasArgs.output}.${quasArgs.outputExt}`);
+			logSuccess(`Output file saved as: ${quasArgs.dirname}${outputPath}/${quasArgs.output}${quasArgs.outputExt}`);
 			quasArgs.buildCompletedSuccessfully = true;
 			return resolve(quasArgs);
 		});
@@ -726,6 +759,7 @@ module.exports = {
 	logFin,
 	logSuccess,
 	makePromptRequired,
+	moveFilesFromAssetsFolderToOutput,
 	outputToHtmlFile,
 	promptConsole,
 	quasarSelectPrompt,

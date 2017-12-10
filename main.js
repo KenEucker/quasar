@@ -11,8 +11,10 @@ const electrify = () => {
         watchJobs: true,
         runWebForm: true,
         autoBuildWebForm: true,
-        runApi:true });
-    createWindow();
+        runApi:true })
+        .then(() => {
+          console.log('Loading electron app...');
+          return createWindow(); });
 }
 
 const createWindow = () => {

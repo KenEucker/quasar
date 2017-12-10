@@ -1,3 +1,4 @@
 #!/bin/bash 
 
-node cli.js --runAsProcess=true --runApi=true --runWebForm=true --watchJobs=true "$@"
+# Check for electron and install it if need be
+electron .

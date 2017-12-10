@@ -6,18 +6,20 @@ QUASAR framework - a gulp based framework that imports html web files which inje
 
 # Install it
 1. install nodejs
-2. run `npm install`
-3. run `bin/build`
+2. run `npm install` to install dependencies
+
+# Use it
+run `bin/cli` to use the cli of quasar
+run `bin/watch` to automate jobs using json files in the /json folder
+run `bin/web` to run an api and web server with form @ http://localhost:3720
+run `bin/app` to run the entire application in an electron app complete with api and webserver
 
 # Run as a process
-* optionally run `build/watch` to autoload json files to build quasars
+* optionally run `bin/watch` to autoload json files to build quasars
 * optionally run `bin/app --autoBuildWebForm=true` to run quasar as a process with a web api and form
 
 ## Templating with the files in the /assets folder
 Files located in the /assets folder are used in build tasks for quasar ouput. The default target of a quasar is `${qType}.hml`, so if the quasar is of type 'page' then the default target would be `page.html`. Similarly, css and js assets are defaulted to `${qType}.css` and `${qType}.js` respectively. These default values can be overriden at runtime.
-
-# Build
-There is a build process for copying the assets to the ouput folder and then injecting files from the code folder into the output. Run `build` on the project to create the folder `build/public` to be served by the app.
 
 # Development
 Usefule commands:
