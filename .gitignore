@@ -1,5 +1,10 @@
 .git
 .DS_Store
+.config
+.log
+
+quasar-darwin-x64
+assets
 public
 jobs
 node_modules

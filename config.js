@@ -5,8 +5,9 @@ const config = {
 	dirname,
 	node_modules:		`${dirname}/node_modules/`,
 	outputFolder:		`${dirname}/public`,
-	sourceFolder:		`${dirname}/source`,
-	assetsFolder:		`${dirname}/assets`
+	sourceFolder:		`${dirname}/sources`,
+	assetsFolder:		`${dirname}/assets`,
+	templatesFolder:	`${dirname}/templates`
 };
 
 module.exports = config;

@@ -1,7 +1,7 @@
 {
-  "name": "dt-ads",
+  "name": "quasar--page",
   "version": "1.0.0",
-  "description": "DT adunit template generator",
+  "description": "Automated package build by quasar https://github.com/KenEucker/quasar",
   "main": "gulpfile.js",
   "dependencies": {
     "aws-sdk": "^2.156.0",
@@ -28,5 +28,5 @@
     "build": "gulp",
     "quasar": "../../run"
   },
-  "author": "keucker@digitaltrends.com"
+  "author": "git@github.com:KenEucker/quasar.git"
 }

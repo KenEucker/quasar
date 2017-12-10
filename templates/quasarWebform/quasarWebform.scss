@@ -1,0 +1,62 @@
+@font-face {
+    font-family: space_age;
+    src: url('fonts/space_age.ttf');
+}
+
+body {
+    background-image: url('img/quasars-disappear-head.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+
+    #quasarHeading {
+        font-family: space_age;
+        display: inline-block;
+        color: white;
+        font-size: 4em;
+        text-shadow: 0px 3px black;
+    }
+
+    #quasarSelector {
+        text-align: center;
+        font-size: 2em;
+        padding: 1em;
+        font-family: space_age;
+        display: inline-block;
+
+        select {
+            max-width: 400px
+        }
+    }
+
+    form.rjsf {
+        max-width: 50em;
+        position: relative;
+        margin-left: 1em;
+        margin-right: 1em;
+        background-color: rgba(255,255,255,0.75);
+        padding: 1em;
+        border-radius: 1em;
+
+        .form-control {
+            max-width: 50%;
+        }
+
+        > p {
+            text-align: center;
+            button[type=submit] {
+                font-family: space_age;
+                font-size: 2em;
+            }
+        }
+    }
+    
+    @media screen and (max-width: 420px){
+        padding-left: 0;
+        margin-left: 2px;
+    }
+
+    @media screen and (min-width: 800px){
+        margin-left: 20vh;
+        margin-right: 20vh;
+    }
+}

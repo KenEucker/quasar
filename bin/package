@@ -1,0 +1,6 @@
+#!/bin/bash 
+
+rm -rf quasar-darwin-x64
+npm list -g electron-packager || npm install -g electron-packager
+electron-packager .
+#node cli.js --packageApp=true "$@"
