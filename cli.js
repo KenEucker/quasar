@@ -54,7 +54,7 @@ const transformToProcessArgs = (data, file) => {
 
 	// Return the args as the log so that the command can be analyzed or rerun
 	return `[${result}] --> node ${cliArgs.join(' ')}`;
-};
+}
 
 const spawnWebForm = (runningApi) => {
 	const webFormPath = path.resolve(`./public/quasar/Webform/app.js`);
@@ -170,9 +170,9 @@ const run = (args = {}) => {
 }
 
 if ( yargs.argv.runStandalone || yargs.argv.runAsProcess || yargs.argv.packageApp) {
-	run();
+	return run();
 } else if (process.title == 'gulp') {
-	run({ runStandalone: true });
+	return run({ runStandalone: true });
 }
 
 module.exports = {
