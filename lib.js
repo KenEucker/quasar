@@ -142,13 +142,15 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 		return registerRequiredQuasArgs(quasArgs, requiredArgs, nonRequiredArgs, addDefaultRequiredArgs);
 }
 
-const definitelyCallFunction = (cb) => {
+const definitelyCallFunction = (cb, resolve = null) => {
 	if(process.title == 'gulp') {
 		gulp.task('default', () => {
 			cb();
+			if(resolve) { resolve() }
 		});
 	} else {
 		cb();
+		if(resolve) { resolve() }
 	}
 }
 
@@ -249,11 +251,15 @@ const fromDir = (startPath, filter, extension = '') => {
 }
 
 const runTask = (task, end = () => {}) => {
-	if(gulp.hasTask(task)) {
-		runSequence(task, end);
-	} else {
-		logError(`Cannot find gulp task ${task}`);
-	}
+	return new promise((resolve, reject) => {
+		if(gulp.hasTask(task)) {
+			runSequence(task, end);
+			return resolve();
+		} else {
+			logError(`Cannot find gulp task ${task}`);
+			return reject();
+		}
+	})
 }
 
 const quasarSelectPrompt = (quasArgs) => {

@@ -97,7 +97,6 @@ const packageElectronApp = () => {
 
 const run = (args = {}) => {
 	return new promise((resolve, reject) => {
-
 		let defaults = {
 			port: PORT,
 			runAsProcess: false,
@@ -124,24 +123,27 @@ const run = (args = {}) => {
 					if(args.autoBuildWebForm) {
 						lib.logInfo('automated quasar build of `quasarWebform`');
 						lib.definitelyCallFunction(() => {
-							lib.runTask('quasarWebform', () => {
-								lib.logInfo('attempting another run of the quasarWebform');
-								if(!spawnWebForm(args.runApi)) {
-									lib.logError(`Can't do that!`);
-								}
+							return lib.runTask('quasarWebform', () => {
+									lib.logInfo('attempting another run of the quasarWebform');
+									if(!spawnWebForm(args.runApi)) {
+										lib.logError(`Can't do that!`);
+									} else {
+										return resolve();
+									}
 							});
 						});
 					} else {
 						lib.logError(`cannot run webform because ${path.resolve(`./public/quasar/Webform/app.js`)} has not been built yet, run again with option --autoBuildWebForm=true to auto build the webform.`);
 						return reject();
 					}
+				} else {
+					return resolve();
 				}
 			}
 
 			if (args.watchJobs) {
-				return lib.definitelyCallFunction(() => {
+				lib.definitelyCallFunction(() => {
 					lib.runTask('watchJobs');
-					return resolve();
 				});
 			}
 		}
@@ -164,8 +166,6 @@ const run = (args = {}) => {
 				return resolve();
 			});
 		}
-
-		return resolve();
 	});
 }
 

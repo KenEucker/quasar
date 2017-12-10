@@ -1,6 +1,9 @@
 #!/bin/bash 
 
 # Check for electron and install it if need be
+echo "Updating node modules"
 npm update
+echo "Checking for electron installed globally"
 npm list -g electron || npm install -g electron
+echo "Starting electron"
 electron .
