@@ -4,18 +4,18 @@ let express = require('express'),
     path = require('path'),
     fs = require('fs'),
     multer  = require('multer'),
-	mkdir = require('mkdirp-sync'),
+    mkdir = require('mkdirp-sync'),
     bodyParser = require('body-parser');
 
 const findOutputDirectory = (startPath, outputDirectory = 'jobs', maxLevels = 5) => {
     if (!fs.existsSync(startPath)){
         return;
     }
-    
+
     // If the startPath is the one we are looking for
     let stat = fs.lstatSync(startPath);
-    if(stat.isDirectory() && startPath.split('/').pop() == outputDirectory) {
-        return startPath;
+        if(stat.isDirectory() && startPath.split('/').pop() == outputDirectory) {
+            return startPath;
     }
 
     // If the path we are looking for is a sybling of the startPath
@@ -36,7 +36,7 @@ const findOutputDirectory = (startPath, outputDirectory = 'jobs', maxLevels = 5)
     }
 }
 
-let PORT = process.env.PORT || '3720', app = null, sourcesDirectory = findOutputDirectory(path.resolve(__dirname), `sources`);;
+let PORT = process.env.PORT || '3720', app = null, sourcesDirectory = null;
 
 const staticOptions = {
     dotfiles: 'ignore',
@@ -46,7 +46,7 @@ const staticOptions = {
     maxAge: '1d',
     redirect: false,
     setHeaders: function (res, path, stat) {
-      res.set('x-timestamp', Date.now())
+    res.set('x-timestamp', Date.now())
     }
 };
 
@@ -115,7 +115,7 @@ const webForm = (app, port = null, start = false) => {
             console.log(`could not find quasar Webform, sending loading page`);
             res.send(loadingPage());
         }
-      });
+    });
 
     app.use(express.static(__dirname, staticOptions));
 
@@ -146,13 +146,17 @@ const run = (app = null, port = null, autoLaunchBrowser = yargs.argv.autoLaunchB
     if (autoLaunchBrowser) {
         launchInBrowser();
     }
+    }
+
+    if (yargs.argv.runWebFormStandalone) {
+    run(null, yargs.argv.webFormPort, yargs.argv.autoLaunchBrowser, true);
 }
 
-if (yargs.argv.runWebFormStandalone) {
-    run(null, yargs.argv.webFormPort, yargs.argv.autoLaunchBrowser, true);
+const init = () => {
+    sourcesDirectory = findOutputDirectory(path.resolve(__dirname), `sources`);
 }
 
 module.exports = {
     PORT,
-    run
-};
+    init,
+    run }

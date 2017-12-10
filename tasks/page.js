@@ -19,15 +19,15 @@ const task = () => {
 		return lib.copyFilesFromAssetsFolderToOutput(quasArgs, [ '**' ] ) })
 	.then(() => { 
 		console.log("output!");
-		return lib.outputToHtmlFile(quasArgs) });
+		return lib.outputToHtmlFile(quasArgs) })
 }
 
 const run = (args = {}) => {
-	return validateRequiredArgs(args).then(task);
+	return validateRequiredArgs(args).then(task)
 }
 
 const getQuasarPrompts = () => {
-	return quasArgs.requiredArgs;
+	return quasArgs.requiredArgs
 }
 
 const validateRequiredArgs = (args = {}) => {
@@ -52,7 +52,7 @@ const validateRequiredArgs = (args = {}) => {
 		}
 
 		return resolve(quasArgs);
-	});
+	})
 }
 
 gulp.task(`${qType}:build`, () => {
@@ -62,7 +62,7 @@ gulp.task(`${qType}:build`, () => {
 	} else {
 		return run();
 	}
-})
+});
 gulp.task(`${qType}`, [`${qType}:build`]);
 
 const init = () => {
