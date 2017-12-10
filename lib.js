@@ -362,7 +362,7 @@ const registerRequiredQuasArgs = (quasArgs, requiredArgs = [], nonRequiredArgs =
 	quasArgs = Object.assign(quasArgs, nonRequiredArgs);
 
 	if(!quasArgs.requiredArgs) {
-		quasArgs.requiredArgs = addDefaultRequiredArgs? getQuasarPromptQuestions(quasArgs).concat(requiredArgs) : requiredArgs;
+		quasArgs.requiredArgs = addDefaultRequiredArgs ? getQuasarPromptQuestions(quasArgs).concat(requiredArgs) : requiredArgs;
 	} else {
 		// TODO: update two arrays of objects
 	}

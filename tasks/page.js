@@ -4,7 +4,7 @@ let gulp = require('gulp'),
 
 const config = require(`${process.cwd()}/config.js`);
 const lib = require(`${config.dirname}/lib.js`);
-const qType = 'page';
+const qType = path.basename(__filename).split('.')[0];
 
 let quasArgs = {};
 

@@ -7,21 +7,26 @@ let gulp = require('gulp'),
 	yargs = require('yargs'),
 	fs = require('fs');
 
-const adType = 'bigtop';
+const qType = path.basename(__filename).split('.')[0];
 const shim = 'dt-lib-shim.js';
 const config = require(`${process.cwd()}/config.js`);
 const lib = fs.existsSync(`${config.assetsFolder}/${shim}`) ? require(`${config.assetsFolder}/${shim}`) : require(`${config.dirname}/lib.js`);
+let dtAdsArgs = {};
 
 const task = () => {
 	return lib.injectCode(dtAdsArgs)
 	.then(() => { lib.outputToHtmlFile(dtAdsArgs); });
 };
 
-const run = () => {
-	return validateInitalArgs().then(task());
+const run = (args = {}) => {
+	return validateRequiredArgs(args).then(task);
 };
 
-const validateInitalArgs = (args) => {
+const getQuasarPrompts = () => {
+	return dtAdsArgs.requiredArgs;
+}
+
+const validateRequiredArgs = (args) => {
 	return new Promise((resolve, reject) => {
 		dtAdsArgs = lib.resolveQuasArgs(dtAdsArgs, args);
 
@@ -30,34 +35,29 @@ const validateInitalArgs = (args) => {
 
 			if(split.length > 1) {
 				dtAdsArgs.outputExt = split.pop();
-				dtAdsArgs.output = dtAdsArgs.output.substr(0, dtAdsArgs.output.length - dtAdsArgs.outputExt.length - 1);
+				dtAdsArgs.output = dtAdsArgs.output.substr(0, dtAdsArgs.output.length - dtAdsArgs.outputExt.length);
 			}
 		} else {
 			//Default the output filename to the campaign
-			dtAdsArgs.output = `${dtAdsArgs.campaign}_${dtAdsArgs.adType}`;
+			dtAdsArgs.output = `${dtAdsArgs.campaign}_${dtAdsArgs.qType}`;
 		}
 
-		dtAdsArgs.targetFilePath = lib.copyTargetFileToOutputPath(dtAdsArgs);
-		return resolve();
+		dtAdsArgs = lib.copyTemplateFilesToAssetsPath(dtAdsArgs);
+		return resolve(dtAdsArgs);
 	});
 };
 
-gulp.task(`${adType}:build`, () => {
+gulp.task(`${qType}:build`, () => {
 	if(!dtAdsArgs.noPrompt) {
 		return lib.initialPrompt(dtAdsArgs).then(task);
 	} else {
 		return run();
 	}
 });
-gulp.task(`${adType}`, [`${adType}:build`]);
+gulp.task(`${qType}`, [`${qType}:build`]);
 
-let dtAdsArgs = lib.getDefaultQuasArgs(adType);
-dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
-	adType: adType,
-	clickUrl: '!! PASTE CLICK URL HERE !!',
-	windowTarget: '_blank',
-	imageUrl: '!! PASTE BIGTOP IMAGE URL HERE!!',
-	initalArgs: [{
+const init = () => {
+	dtAdsArgs = lib.getQuasArgs(qType, lib.getCampaignPromptQuestions().concat([{
 			type: 'input',
 			name: 'imageUrl',
 			message: 'Bigtop URL:'
@@ -66,12 +66,23 @@ dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
 			type: 'input',
 			name: 'output',
 			message: `Enter the output filename postfix (default extension .${dtAdsArgs.outputExt} ${colors.yellow('(optional)')}):\n`
-		}],
-		initalArgsValidation: validateInitalArgs
-});
+		}]),
+		{
+			qType: qType,
+			clickUrl: '!! PASTE CLICK URL HERE !!',
+			windowTarget: '_blank',
+			imageUrl: '!! PASTE BIGTOP IMAGE URL HERE!!',
+			requiredArgsValidation: validateRequiredArgs }, false);
+}
 
+init();
 module.exports = {
-	qType: adType,
-	run,
-	validateInitalArgs
+	purpose: `
+		builds out a single html page from a set of singular assets: css, html, js 
+		with options to import files from an archived source
+	`,
+	getQuasarPrompts,
+	qType,
+	init,
+	run
 };

@@ -54,7 +54,7 @@ const transformToProcessArgs = (data, file) => {
 
 	// Return the args as the log so that the command can be analyzed or rerun
 	return `[${result}] --> node ${cliArgs.join(' ')}`;
-};
+}
 
 const spawnWebForm = (runningApi) => {
 	const webFormPath = path.resolve(`./public/quasar/Webform/app.js`);
@@ -80,7 +80,7 @@ const spawnWebForm = (runningApi) => {
 gulp.task(`watchJobs`, () => {
 	lib.logSuccess(`watching folder /jobs/ for new or changed files to build from`);
 	mkdir(path.resolve(lib.config.dirname, 'jobs'));
-	
+
 	return watch('jobs/*.json', { ignoreInitial: true })
 		.pipe(jsonTransform(transformToProcessArgs))
 		//.pipe(vinylPaths(del))
@@ -171,7 +171,7 @@ const run = (args = {}) => {
 
 if ( yargs.argv.runStandalone || yargs.argv.runAsProcess || yargs.argv.packageApp) {
 	run();
-} else if (process.title == 'gulp') {
+	} else if (process.title == 'gulp') {
 	run({ runStandalone: true });
 }
 

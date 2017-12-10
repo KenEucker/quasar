@@ -4,10 +4,11 @@ let gulp = require('gulp'),
 	promise = require('bluebird'),
 	fs = require('fs');
 
-const adType = 'hype';
+const qType = path.basename(__filename).split('.')[0];
 const shim = 'dt-lib-shim.js';
 const config = require(`${process.cwd()}/config.js`);
 const lib = fs.existsSync(`${config.assetsFolder}/${shim}`) ? require(`${config.assetsFolder}/${shim}`) : require(`${config.dirname}/lib.js`);
+let dtAdsArgs = {};
 
 const task = () => {
 	return lib.unpackFiles(dtAdsArgs)
@@ -28,11 +29,11 @@ const task = () => {
 		});
 };
 
-const run = () => {
-	return validateInitalArgs().then(task());
+const run = (args = {}) => {
+	return validateRequiredArgs(args).then(task);
 };
 
-const validateInitalArgs = (args = {}) => {
+const validateRequiredArgs = (args = {}) => {
 	return new Promise((resolve, reject) => {
 		dtAdsArgs = lib.resolveQuasArgs(dtAdsArgs, args);
 		
@@ -53,11 +54,11 @@ const validateInitalArgs = (args = {}) => {
 
 			if(split.length > 1) {
 				dtAdsArgs.outputExt = split.pop();
-				dtAdsArgs.output = dtAdsArgs.output.substr(0, dtAdsArgs.output.length - dtAdsArgs.outputExt.length - 1);
+				dtAdsArgs.output = dtAdsArgs.output.substr(0, dtAdsArgs.output.length - dtAdsArgs.outputExt.length);
 			}
 		} else {
 			//Default the output filename to the campaign
-			dtAdsArgs.output =`${dtAdsArgs.campaign}_${dtAdsArgs.adType}`;
+			dtAdsArgs.output =`${dtAdsArgs.campaign}_${dtAdsArgs.qType}`;
 		}
 
 		if(!dtAdsArgs.target || !dtAdsArgs.target.length) {
@@ -76,12 +77,16 @@ const validateInitalArgs = (args = {}) => {
 	});
 };
 
+const getQuasarPrompts = () => {
+	return dtAdsArgs.requiredArgs;
+}
+
 // Parse html input file for params
 const parseFiles = () => {
 	return new promise(async (resolve, reject) => {
 		const instance = await phantom.create();
 		const page = await instance.createPage();
-		dtAdsArgs.targetFilePath = lib.copyTargetFileToOutputPath(dtAdsArgs);
+		dtAdsArgs = lib.copyTemplateFilesToAssetsPath(dtAdsArgs);
 
 		lib.log(`rendering target file (${dtAdsArgs.targetFilePath}) and learning parameters`);
 		
@@ -147,39 +152,45 @@ const injectHypeAdCode = () => {
 
 // Test HYPE Ad Unit 
 
-gulp.task(`${adType}:build`, () => {
+gulp.task(`${qType}:build`, () => {
 	if(!dtAdsArgs.noPrompt) {
 		return lib.initialPrompt(dtAdsArgs).then(task);
 	} else {
 		return run();
 	}
 });
-gulp.task(`${adType}`, [`${adType}:build`]);
+gulp.task(`${qType}`, [`${qType}:build`]);
 
-let dtAdsArgs = lib.getDefaultQuasArgs(adType);
-dtAdsArgs = lib.registerRequiredQuasArgs(dtAdsArgs, {
-	adType: adType,
-	sourceExt: 'zip',
-	googleAnalyticsID: 'UA-82208-8',
-	initalArgs: [{
-		type: 'list',
-		name: 'source',
-		message: `Enter the input archive filename (default .zip):\n`,
-		choices: lib.getFilenamesInDirectory(dtAdsArgs.sourceFolder, ['zip'])
-	},{
-		type: 'input',
-		name: 'target',
-		message: `Enter the target html filename ${colors.yellow('(optional)')}:\n`
-	},{
-		type: 'input',
-		name: 'output',
-		message: `Enter the output filename postfix (default extension .${dtAdsArgs.outputExt} ${colors.yellow('(optional)')}):\n`
-	}],
-	initalArgsValidation: validateInitalArgs
-});
+const init = () => {
+	dtAdsArgs = lib.getQuasArgs(qType, lib.getCampaignPromptQuestions().concat([{
+			type: 'list',
+			name: 'source',
+			message: `Enter the input archive filename (default .zip):\n`,
+			choices: lib.getFilenamesInDirectory(dtAdsArgs.sourceFolder, ['zip'])
+		},{
+			type: 'input',
+			name: 'target',
+			message: `Enter the target html filename ${colors.yellow('(optional)')}:\n`
+		},{
+			type: 'input',
+			name: 'output',
+			message: `Enter the output filename postfix (default extension .${dtAdsArgs.outputExt} ${colors.yellow('(optional)')}):\n`
+		}]),
+		{
+			qType: qType,
+			sourceExt: '.zip',
+			googleAnalyticsID: 'UA-82208-8',
+			requiredArgsValidation: validateRequiredArgs }, false);
+}
 
+init();
 module.exports = {
-	qType: adType,
-	run,
-	validateInitalArgs
+	purpose: `
+		builds out a single html page from a set of singular assets: css, html, js 
+		with options to import files from an archived source
+	`,
+	getQuasarPrompts,
+	qType,
+	init,
+	run
 };
