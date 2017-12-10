@@ -5,7 +5,8 @@ let express = require('express'),
     fs = require('fs'),
     multer  = require('multer'),
     mkdir = require('mkdirp-sync'),
-    bodyParser = require('body-parser');
+    bodyParser = require('body-parser'),
+    jsonPromise = require('express-json-promise');
 
 const findOutputDirectory = (startPath, outputDirectory = 'jobs', maxLevels = 5) => {
     if (!fs.existsSync(startPath)){
@@ -69,29 +70,32 @@ const loadingPage = () => {
 }
 
 const postedForm = (req, res) => {
-    let data = req.body;
-    const outputDirectory = findOutputDirectory(path.resolve(__dirname));
-    const outputFile = `${data.qType}_${Date.now()}`;
+    return res.json(() => {
+        return new Promise((resolve, reject) => {
+            let data = req.body;
+            const outputDirectory = findOutputDirectory(path.resolve(__dirname));
+            const outputFile = `${data.qType}_${Date.now()}`;
 
-    if(data.source && data.source.length) {
-        let removeUntil = data.source.indexOf(',');
-        removeUntil = removeUntil > 0 ? removeUntil + 1 : removeUntil;
+            if(data.source && data.source.length) {
+                let removeUntil = data.source.indexOf(',');
+                removeUntil = removeUntil > 0 ? removeUntil + 1 : removeUntil;
 
-        const sourceExt = `.zip`;
-        // TODO: WTF THIS HACK?!
-        let name = data.source.substr(0, removeUntil - 1).split('name=').pop().split(';');
-        name = name[0].replace('.zip','');
+                const sourceExt = `.zip`;
+                // TODO: WTF THIS HACK?!
+                let name = data.source.substr(0, removeUntil - 1).split('name=').pop().split(';');
+                name = name[0].replace('.zip','');
 
-        const base64 = data.source.substr(removeUntil);
-        const sourceFile = `${sourcesDirectory}/${name}`;
+                const base64 = data.source.substr(removeUntil);
+                const sourceFile = `${sourcesDirectory}/${name}`;
 
-        fs.writeFileSync(`${sourceFile}${sourceExt}`, base64, 'base64'); 
-        data.source = name;
-        data.sourceExt = sourceExt;
-        // console.log(`storing args in ${outputDirectory} for quasar loading and saving source to ${sourcesDirectory}/${sourceFile}${sourceExt}`);
-    }
-    fs.writeFileSync(`${outputDirectory}/${outputFile}.json`, JSON.stringify(data));
-
+                fs.writeFileSync(`${sourceFile}${sourceExt}`, base64, 'base64'); 
+                data.source = name;
+                data.sourceExt = sourceExt;
+                // console.log(`storing args in ${outputDirectory} for quasar loading and saving source to ${sourcesDirectory}/${sourceFile}${sourceExt}`);
+            }
+            fs.writeFileSync(`${outputDirectory}/${outputFile}.json`, JSON.stringify(data));
+        })
+    })
 }
 
 const webForm = (app, port = null, start = false) => {
@@ -104,6 +108,8 @@ const webForm = (app, port = null, start = false) => {
 
     app.use(bodyParser.json({limit:'50mb'}));
     app.use(bodyParser.urlencoded({ extended: true, limit:'50mb' }));
+
+    app.use(jsonPromise());
 
     app.post('/', postedForm);
 
