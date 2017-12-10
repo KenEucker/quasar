@@ -19,6 +19,7 @@ let gulp = require('gulp'),
 	vinylPaths = require('vinyl-paths'),
 	unzip = require("extract-zip"),
 	path = require('path'),
+	mv = require('mv')
 	colors = require('colors'),
 	os = require('os'),
 	promise = require('bluebird'),
@@ -378,8 +379,7 @@ const hasQuasarInitialArgs = (quasArgs) => {
 }
 
 const findTargetFile = (quasArgs) => {
-	const signalPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
-	let targetFilePath = quasArgs.targetFilePath || path.resolve(`${signalPath}/${quasArgs.target}`);
+	let targetFilePath = quasArgs.targetFilePath || path.resolve(`${quasArgs.assetsFolder}/${quasArgs.target}`);
 
 	if (!fs.existsSync(targetFilePath)) {
 		const oldTargetFilePath = targetFilePath;
@@ -395,15 +395,29 @@ const findTargetFile = (quasArgs) => {
 }
 
 const moveTargetFilesToRootOfAssetsPath = (quasArgs) => {
-	const targetFilePath = findTargetFile(quasArgs);
+	let targetFilePath = findTargetFile(quasArgs);
 
-	if(targetFilePath !== `${quasArgs.assetsFolder}/${target}`) {
-		logInfo(`Moving files from deep folder structure to base assets path (${signalPath})`);
+	if(!targetFilePath) {
+		logInfo(`Couldn't find a templated target file, using first available html file that matches the target (${quasArgs.target}) in the assets path: ${quasArgs.assetsFolder}`);
+		targetFilePath = fromDir(quasArgs.assetsFolder, quasArgs.target);
+	}
+
+	// Error
+	if(!targetFilePath) {
+		return quasArgs;
+	}
+
+	if(targetFilePath !== `${quasArgs.assetsFolder}/${quasArgs.target}`) {
+		logInfo(`Moving files from deep folder structure to base assets path (${quasArgs.assetsFolder})`);
 		const baseDir = path.basename(targetFilePath);
 		mv(`${baseDir}`, `${quasArgs.assetsFolder}`, {mkdirp: true}, (err) => {
 			logError(`Error moving files from ${baseDir} to ${quasArgs.assetsFolder}`);
 		});
+
+		quasArgs.targetFilePath = targetFilePath;
 	}
+
+	return quasArgs;
 }
 
 const copyFilesFromTemplatesFolderToOutput = (quasArgs, files) => {
@@ -540,7 +554,7 @@ const unpackFiles = (quasArgs) => {
 			}
 
 			logSuccess(`files successfully unziped to ${destinationPath}`);
-			// moveTargetFilesToRootOfSignalPath(quasArgs);
+			quasArgs = moveTargetFilesToRootOfAssetsPath(quasArgs);
 
 			return resolve(quasArgs);
 		});

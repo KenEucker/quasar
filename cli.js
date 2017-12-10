@@ -170,9 +170,9 @@ const run = (args = {}) => {
 }
 
 if ( yargs.argv.runStandalone || yargs.argv.runAsProcess || yargs.argv.packageApp) {
-	run();
-	} else if (process.title == 'gulp') {
-	run({ runStandalone: true });
+	return run();
+} else if (process.title == 'gulp') {
+	return run({ runStandalone: true });
 }
 
 module.exports = {

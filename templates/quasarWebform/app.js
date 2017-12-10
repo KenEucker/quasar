@@ -74,14 +74,16 @@ const postedForm = (req, res) => {
     const outputFile = `${data.qType}_${Date.now()}`;
 
     if(data.source && data.source.length) {
-        const sourceExt = `.zip`;
-        const sourceFile = `${sourcesDirectory}/${outputFile}`;
         let removeUntil = data.source.indexOf(',');
         removeUntil = removeUntil > 0 ? removeUntil + 1 : removeUntil;
-        const removed = data.source.substr(0, removeUntil);
-        var base64 = data.source.substr(removeUntil);
+
+        const sourceExt = `.zip`;
+        const name = data.source.substr(0, removeUntil - 1).split('name=').pop();
+        const base64 = data.source.substr(removeUntil);
+        const sourceFile = `${sourcesDirectory}/${name}`;
+
         fs.writeFileSync(`${sourceFile}${sourceExt}`, base64, 'base64'); 
-        data.source = outputFile;
+        data.source = name;
         data.sourceExt = sourceExt;
         // console.log(`storing args in ${outputDirectory} for quasar loading and saving source to ${sourcesDirectory}/${sourceFile}${sourceExt}`);
     }
