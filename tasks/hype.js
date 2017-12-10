@@ -113,7 +113,8 @@ const parseFiles = () => {
 
 			return hypeElementIds;
 		});
-
+		page.close();
+		
 		dtAdsArgs.hypeElements = hypeElements;
 		return resolve(dtAdsArgs);
 	});
