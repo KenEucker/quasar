@@ -33,11 +33,6 @@ const getData = (uri, data, success = () => {}, error = err => { console.log(err
 }
 
 const onFormChanged = (e) => {
-    const formData = e.formData;
-
-    if(formData.source) {
-        console.log(formData.source);
-    }
 }
 
 const onFormSubmitted = (e) => {

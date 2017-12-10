@@ -38,19 +38,6 @@ const findOutputDirectory = (startPath, outputDirectory = 'jobs', maxLevels = 5)
 
 let PORT = process.env.PORT || '3720', app = null, sourcesDirectory = findOutputDirectory(path.resolve(__dirname), `sources`);;
 
-
-// const storage = multer.diskStorage({
-//     destination: function (req, file, cb) {
-//         cb(null, sourcesDirectory)
-//     },
-//     filename: function (req, file, cb) {
-//         const outputExt = `.zip`;
-//         const outputFile = `${req.body ? req.body.qType : `unknown`}_${Date.now()}${outputExt}`;
-//         console.log(`storing source at ${sourcesDirectory}/${sourceFile}${sourceExt}`);
-//         cb(null, outputFile);
-//     }
-// });
-
 const staticOptions = {
     dotfiles: 'ignore',
     etag: false,
@@ -108,15 +95,12 @@ const webForm = (app, port = null, start = false) => {
         sourcesDirectory = path.resolve(`${process.cwd()}/sources/`);
         mkdir(sourcesDirectory);
     }
-      
-    //let upload = multer({ storage: storage });
     PORT = port || PORT;
 
     app.use(bodyParser.json({limit:'50mb'}));
     app.use(bodyParser.urlencoded({ extended: true, limit:'50mb' }));
 
     app.post('/', postedForm);
-    //app.post('/', upload.single('file'), postedForm);
 
     app.get('/', function(req, res){
         const webFormPath = path.resolve(path.join(`${__dirname}/index.html`));
