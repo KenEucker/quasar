@@ -1,8 +1,11 @@
 .git
 .DS_Store
-public
-jobs
-node_modules
-source
 .config
 .log
+
+quasar-darwin-x64
+assets
+public
+jobs
+sources
+node_modules
