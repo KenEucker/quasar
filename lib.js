@@ -429,7 +429,7 @@ const moveFilesFromAssetsFolderToOutput = (quasArgs, files, excludeFiles = null)
 
 		files = files.map(file => `${quasArgs.assetsFolder}/${file}`);
 		excludeFiles = excludeFiles.map(excludeFile => `!${quasArgs.assetsFolder}/${excludeFile}`);
-		console.log(files);
+
 		return gulp.src(files.concat(excludeFiles), { base: quasArgs.assetsFolder })
 			.pipe(gulp.dest(destinationPath))
 			//.pipe(vinylPaths(del))
