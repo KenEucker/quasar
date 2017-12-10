@@ -17,7 +17,7 @@ const task = () => {
 		.then(() => { return confirmationPrompt() })
 		.then(() => { return lib.injectCode(dtAdsArgs) })
 		.then(() => { return injectHypeAdCode() })
-		.then(() => { return lib.moveFilesFromAssetsFolderToOutput(dtAdsArgs, [ '**' ] ) })
+		.then(() => { return lib.copyFilesFromAssetsFolderToOutput(dtAdsArgs, [ '**' ] ) })
 		.then(() => { return lib.uploadFiles(dtAdsArgs) })
 		.then(() => { return lib.outputToHtmlFile(dtAdsArgs) })
 		.finally(() => {
@@ -93,7 +93,7 @@ const parseFiles = () => {
 		lib.log(`rendering target file (${dtAdsArgs.targetFilePath}) and learning parameters`);
 		
 		await page.on('onResourceRequested', function(requestData) {
-			lib.log('Requesting', requestData.url);
+			lib.log(`Requesting ${requestData.url}`);
 		});
 	
 		const status = await page.open(dtAdsArgs.targetFilePath);

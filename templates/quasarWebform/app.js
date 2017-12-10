@@ -78,7 +78,10 @@ const postedForm = (req, res) => {
         removeUntil = removeUntil > 0 ? removeUntil + 1 : removeUntil;
 
         const sourceExt = `.zip`;
-        const name = data.source.substr(0, removeUntil - 1).split('name=').pop();
+        // TODO: WTF THIS HACK?!
+        let name = data.source.substr(0, removeUntil - 1).split('name=').pop().split(';');
+        name = name[0].replace('.zip','');
+
         const base64 = data.source.substr(removeUntil);
         const sourceFile = `${sourcesDirectory}/${name}`;
 

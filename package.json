@@ -19,7 +19,6 @@
     "colors": "^1.1.2",
     "dart-sass": "^1.0.0-beta.3",
     "del": "^3.0.0",
-    "electron": "^1.7.9",
     "express": "^4.16.2",
     "extract-zip": "^1.6.6",
     "fs": "0.0.1-security",

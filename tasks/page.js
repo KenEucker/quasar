@@ -12,10 +12,11 @@ const task = () => {
 	return lib.unpackFiles(quasArgs)
 	.then(() => { 
 		console.log("injecting assets!");
+		quasArgs = lib.copyTemplateFilesToAssetsPath(quasArgs);
 		return lib.injectCode(quasArgs) })
 	.then(() => { 
 		console.log("moving files!");
-		return lib.moveFilesFromAssetsFolderToOutput(quasArgs, [ '**' ] ) })
+		return lib.copyFilesFromAssetsFolderToOutput(quasArgs, [ '**' ] ) })
 	.then(() => { 
 		console.log("output!");
 		return lib.outputToHtmlFile(quasArgs) });
@@ -49,9 +50,8 @@ const validateRequiredArgs = (args = {}) => {
 			//Default the output filename to the signal
 			quasArgs.output = `${quasArgs.signal}_${quasArgs.qType}`;
 		}
-		quasArgs = lib.copyTemplateFilesToAssetsPath(quasArgs);
 
-		return resolve();
+		return resolve(quasArgs);
 	});
 }
 

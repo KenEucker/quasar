@@ -75,7 +75,7 @@ function addClickEvent(el = null, clickName = null, clickUrl = null, clickID = n
 
 	if(!el) {
 		if(!clickID) {
-			console.log("look at what you're doing with your life and reevaluate your decisions.");
+			return;
 		}
 
 		el = document.getElementById(clickID);
