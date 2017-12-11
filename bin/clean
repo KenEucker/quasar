@@ -1,6 +1,7 @@
 #!/bin/bash 
 
-echo "cleaning QUASAR folders"
-rm -rf ./assets/
-rm -rf ./public/
-rm -rf ./jobs/
+echo "cleaning QUASAR output folders"
+rm -rf assets
+rm -rf public
+rm -rf jobs
+rm -rf dist

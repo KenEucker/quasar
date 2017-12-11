@@ -4,22 +4,8 @@ A light version of the quasi app runtime that uses simple web files to generate 
 # Framework
 QUASAR framework - a gulp based framework that imports html web files which injects template data into a compiled output of an html snippet _(or quasars)_.
 
-# Install it
-1. install nodejs
-2. run `npm install` to install dependencies
-
-# Use it
-run `bin/cli` to use the cli of quasar
-run `bin/watch` to automate jobs using json files in the /json folder
-run `bin/web` to run an api and web server with form @ http://localhost:3720
-run `bin/app` to run the entire application in an electron app complete with api and webserver
-
-# Run as a process
-* optionally run `bin/watch` to autoload json files to build quasars
-* optionally run `bin/app --autoBuildWebForm=true` to run quasar as a process with a web api and form
-
-## Templating with the files in the /assets folder
-Files located in the /assets folder are used in build tasks for quasar ouput. The default target of a quasar is `${qType}.hml`, so if the quasar is of type 'page' then the default target would be `page.html`. Similarly, css and js assets are defaulted to `${qType}.css` and `${qType}.js` respectively. These default values can be overriden at runtime.
+# Run as an application
+run `bin/app` to run the entire application in an electron app complete with api and webserver. You do not need to follow any additional steps if all you want to do is use quasar as an application.
 
 # Development
 Usefule commands:
@@ -38,6 +24,28 @@ defaults = {
 		runApi: false }
 ```
 * there is a `.vscode/launch.json` file in the repository that enables debugging of the application in vscode. You can use the above arguments in your IDE and override any of the above arguments.
+
+## Install it
+1. install nodejs
+2. run `npm install` to install dependencies
+
+## Use it
+* run `bin/cli` to use the cli of quasar
+* run `bin/watch` to automate jobs using json files in the /json folder
+* run `bin/web` to run an api and web server with form @ http://localhost:3720
+
+## Run as a process
+1. run `bin/cli --runAsProcess=true` to run the application as a process
+	* optionally add the `--runApi=true` argument to run the api @ http://localhost:3720
+	* optionally add the `--watchJobs=true` argument to autoload json files to build quasars
+	* optionally add the `--runWebform=true` to run the webform @ http://localhost:3720
+	* optionally add the `--autoBuildWebForm=true` to build the quasarWebform task on startup
+
+## Package it as a standalone app
+1. run `bin/package` to create an executable that you can distribute as a standalone application
+
+## Templating with the files in the /assets folder
+Files located in the /assets folder are used in build tasks for quasar ouput. The default target of a quasar is `${qType}.hml`, so if the quasar is of type 'page' then the default target would be `page.html`. Similarly, css and js assets are defaulted to `${qType}.css` and `${qType}.js` respectively. These default values can be overriden at runtime.
 
 
 # Vendors that really make this project possible

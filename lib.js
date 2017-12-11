@@ -27,8 +27,7 @@ let gulp = require('gulp'),
 	yargs = require('yargs'),
 	mkdir = require('mkdirp-sync');
 
-// Exported values
-const config = require(`${process.cwd()}/config.js`);
+let config = {};
 
 // Logger
 let logToFile = yargs.argv.logToFile, logDate = yargs.argv.logDate, logSeverity = yargs.argv.logSeverity;
@@ -761,6 +760,12 @@ const outputToHtmlFile = (quasArgs) => {
 	})
 }
 
+const init = (appRoot = process.cwd()) => {
+	config = require(`${appRoot}/config.js`);
+}
+
+init();
+
 module.exports = {
 	convertPromptToJsonSchemaFormProperty,
 	convertPromptToJsonSchemaUIFormProperty,
@@ -778,6 +783,7 @@ module.exports = {
 	getTaskNames,
 	getQuasarPromptQuestions,
 	hasQuasarInitialArgs,
+	init,
 	initialPrompt,
 	injectCode,
 	logAsync,

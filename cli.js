@@ -19,7 +19,6 @@ requireDir('./tasks/');
 
 let PORT = process.env.PORT || '3720';
 
-
 const initialPrompt = () => {
 	const tasksPath = path.resolve('./tasks/');
 	let availableTasks = lib.getTaskNames(tasksPath);
@@ -78,9 +77,9 @@ const spawnWebForm = (runningApi) => {
 }
 
 gulp.task(`watchJobs`, () => {
-	lib.logSuccess(`watching folder /jobs/ for new or changed files to build from`);
 	mkdir(path.resolve(lib.config.dirname, 'jobs'));
 	
+	lib.logSuccess(`watching folder /jobs/ for new or changed files to build from`);
 	return watch('jobs/*.json', { ignoreInitial: true })
 		.pipe(jsonTransform(transformToProcessArgs))
 		//.pipe(vinylPaths(del))
@@ -98,6 +97,7 @@ const packageElectronApp = () => {
 const run = (args = {}) => {
 	return new promise((resolve, reject) => {
 		let defaults = {
+			appRoot: path.resolve(process.cwd()),
 			port: PORT,
 			runAsProcess: false,
 			runStandalone: false,
@@ -108,12 +108,21 @@ const run = (args = {}) => {
 			runApi: false };
 		args = Object.assign(defaults, yargs.argv, args);
 		PORT = args.port;
+
+		// console.log(`Application root folder: ${args.appRoot}`);
+		// lib.init(args.appRoot);
 		
 		lib.logInfo(`Running the qausar cli under the process: ${process.title}`);
 		if(args.runAsProcess) {
 			if (args.runApi) {
 				lib.definitelyCallFunction(() => {
 					api.run(args.port);
+				});
+			}
+			
+			if (args.watchJobs) {
+				lib.definitelyCallFunction(() => {
+					lib.runTask('watchJobs');
 				});
 			}
 
@@ -139,12 +148,6 @@ const run = (args = {}) => {
 				} else {
 					return resolve();
 				}
-			}
-
-			if (args.watchJobs) {
-				lib.definitelyCallFunction(() => {
-					lib.runTask('watchJobs');
-				});
 			}
 		}
 		

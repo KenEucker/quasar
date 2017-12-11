@@ -1,6 +1,11 @@
 #!/bin/bash 
 
-rm -rf quasar-darwin-x64
+echo "Removing old package files"
+rm -rf dist
+echo "checking for electron installed locally"
+npm list electron || npm install electron
+echo "checking for electron packager"
 npm list -g electron-packager || npm install -g electron-packager
-electron-packager .
+echo "starting electron-packager"
+electron-packager . --out=dist
 #node cli.js --packageApp=true "$@"
