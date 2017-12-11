@@ -1,12 +1,14 @@
-const electron = require('electron');
-const cli = require('./cli');
-const app = electron.app;
-const BrowserWindow = electron.BrowserWindow;
+const electron = require('electron'),
+  path = require('path'),
+  cli = require('./cli'),
+  app = electron.app,
+  BrowserWindow = electron.BrowserWindow;
 
 let mainWindow, PORT = process.env.PORT || '3720';
 
 const electrify = () => {
-    cli.run({ 
+    cli.run({
+        rootPath: path.resolve(app.getAppPath('./')),
         runAsProcess: true,
         watchJobs: true,
         runWebForm: true,
@@ -18,10 +20,13 @@ const electrify = () => {
 }
 
 const createWindow = () => {
-    // Create the browser window.
+    // Create the browser window
     mainWindow = new BrowserWindow({width: 1200, height: 800});
+    const title = process.env.PWD;//app.getAppPath('./');
+    // console.log(title);
+    mainWindow.setTitle(title);
     mainWindow.loadURL(`http://localhost:${PORT}`);
-    // mainWindow.webContents.openDevTools()
+    // mainWindow.webContents.openDevTools();
 
     mainWindow.on('closed', () => {
         mainWindow = null

@@ -1,13 +1,11 @@
 //config file for paths and such
-const dirname = process.cwd();
-
 const config = {
-	dirname,
-	node_modules:		`${dirname}/node_modules/`,
-	outputFolder:		`${dirname}/public`,
-	sourceFolder:		`${dirname}/sources`,
-	assetsFolder:		`${dirname}/assets`,
-	templatesFolder:	`${dirname}/templates`
+	dirname: __dirname,
+	node_modules:		`${__dirname}/node_modules/`,
+	outputFolder:		`${__dirname}/public`,
+	sourceFolder:		`${__dirname}/sources`,
+	assetsFolder:		`${__dirname}/assets`,
+	templatesFolder:	`${__dirname}/templates`
 };
 
 module.exports = config;
