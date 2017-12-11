@@ -3,6 +3,7 @@ import { render } from "react-dom";
 
 import Form from "react-jsonschema-form";
 import Axios from "axios";
+import Notifications, {notify} from 'react-notify-toast';
 
 let forms = [], selectedForm = '';
 
@@ -20,11 +21,19 @@ const ensureData = (data) => {
     return allData;
 }
 
+const createNotificationBar = () => {
+    let topBar = document.createElement('div');
+    let div = document.createElement('div');
+    topBar.className = 'topBar';
+    div.className = 'notifications';
+    render(<Notifications />, div);
+
+    topBar.appendChild(div);
+    document.body.prepend(topBar);
+}
+
 const postData = (uri, data, success = () => {}, error = err => { console.log(err) }) => {
-    const config = {}; //{ headers: { 'Content-Type': 'multipart/form-data' } };
-    // if (document.querySelector('input[type=file]').files.length) {
-    //     data.file = document.querySelector('input[type=file]').files[0];
-    // }
+    const config = {};
     Axios.post(uri, data, config).then(success).catch(error);
 }
 
@@ -35,11 +44,16 @@ const getData = (uri, data, success = () => {}, error = err => { console.log(err
 const onFormChanged = (e) => {
 }
 
+const quasarJobSaved = (response) => {
+    notify.show(`Job ${response.data.jobFile} runnning...`);
+}
+
 const onFormSubmitted = (e) => {
-    postData(window.location.origin, ensureData(e.formData));
+    postData(window.location.origin, ensureData(e.formData), quasarJobSaved);
 }
 
 const createForms = () => {
+
     window.quasarForms.forEach((form) => {
         var div = document.createElement('div');
         var formTitle = form.name;
@@ -82,6 +96,8 @@ const createDropdown = () => {
         dropdown.add(option);
     });
     dropdown.addEventListener("change", (t) => {
+        notify.show(`Changing to form ${t.target.value}`);
+    
         forms.forEach((form) => {
             const formEl = document.getElementById(form);
             if(form == t.target.value) {
@@ -104,4 +120,5 @@ const finalTouches = () => {
 
 createForms();
 createDropdown();
+createNotificationBar();
 finalTouches();
