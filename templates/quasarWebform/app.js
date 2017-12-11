@@ -70,11 +70,10 @@ const loadingPage = () => {
 }
 
 const postedForm = (req, res) => {
-    return res.json(() => {
-        return new Promise((resolve, reject) => {
+    let jsonp = new Promise((resolve, reject) => {
             let data = req.body;
             const outputDirectory = findOutputDirectory(path.resolve(__dirname));
-            const outputFile = `${data.qType}_${Date.now()}`;
+            const outputFile = `${outputDirectory}/${data.qType}_${Date.now()}.json`;
 
             if(data.source && data.source.length) {
                 let removeUntil = data.source.indexOf(',');
@@ -93,9 +92,11 @@ const postedForm = (req, res) => {
                 data.sourceExt = sourceExt;
                 // console.log(`storing args in ${outputDirectory} for quasar loading and saving source to ${sourcesDirectory}/${sourceFile}${sourceExt}`);
             }
-            fs.writeFileSync(`${outputDirectory}/${outputFile}.json`, JSON.stringify(data));
-        })
-    })
+            fs.writeFileSync(outputFile, JSON.stringify(data));
+
+            return resolve({jobFile: outputFile});
+        });
+    return res.json(jsonp);
 }
 
 const webForm = (app, port = null, start = false) => {
