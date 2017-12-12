@@ -43,8 +43,8 @@ const validateRequiredArgs = (args = {}) => {
 			const split = dtAdsArgs.source.split('.');
 
 			if(split.length > 1) {
-				dtAdsArgs.sourceExt = split.pop();
-				dtAdsArgs.source = dtAdsArgs.source.substr(0, dtAdsArgs.source.length - dtAdsArgs.sourceExt.length - 1);
+				dtAdsArgs.sourceExt = `.${split.pop()}`;
+				dtAdsArgs.source = dtAdsArgs.source.substr(0, dtAdsArgs.source.length - dtAdsArgs.sourceExt.length);
 			}
 		} else {
 			//Default the input filename to the campaign
@@ -71,6 +71,7 @@ const validateRequiredArgs = (args = {}) => {
 				dtAdsArgs.target += '.html';
 			}
 		}
+		dtAdsArgs.targetFilePath = `${dtAdsArgs.assetsFolder}/${dtAdsArgs.target}`;
 
 		switch(dtAdsArgs.clickTarget) {
 			default:
@@ -97,7 +98,7 @@ const validateRequiredArgs = (args = {}) => {
 		}
 
 		const datetime = new Date(Date.now());
-		dtAdsArgs.bucketPath = `${dtAdsArgs.bucket}/${dtAdsArgs.client}/${datetime.getFullYear()}/${datetime.getMonth() + 1}/${dtAdsArgs.campaign}`;
+		dtAdsArgs.bucketPath = `ads/${dtAdsArgs.client}/${datetime.getFullYear()}/${datetime.getMonth() + 1}/${dtAdsArgs.campaign}`;
 
 		return resolve();
 	});
@@ -197,7 +198,7 @@ const init = () => {
 			type: 'list',
 			name: 'source',
 			message: `Enter the input archive filename (default .zip):\n`,
-			choices: ['none'].concat(lib.getFilenamesInDirectory(dtAdsArgs.sourceFolder, ['zip']))
+			choices: lib.getFilenamesInDirectory(lib.config.sourceFolder, ['zip'])
 		},{
 			type: 'input',
 			name: 'target',

@@ -722,19 +722,21 @@ const uploadFiles = (quasArgs) => {
 
 		const configFilename = `${quasArgs.dirname}/.config`;
 		if(fs.existsSync(configFilename)) {
-			logInfo(`Uploading files form ${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}/ to the path: %AWS%/${quasArgs.bucketPath}`);
+			const fromLocalDirectory = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}/`;
+			const toS3BucketPath = `${quasArgs.bucket}/${quasArgs.bucketPath}`;
+			logInfo(`Uploading files form ${fromLocalDirectory} to the path: ${toS3BucketPath}`);
 
 			var config = JSON.parse(fs.readFileSync(configFilename));
 			let s3 = gulpS3(config);
 
-			gulp.src(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}/**`)
+			gulp.src(`${fromLocalDirectory}**`)
 				.pipe(s3({
-					Bucket: `${quasArgs.bucketPath}`,
+					Bucket: toS3BucketPath,
 					ACL: 'public-read'
 				}, {
 					maxRetries: 5
 				}))
-				.on('end', () => { logSuccess(`Files successfully uploaded to S3 under the path: /${quasArgs.bucketPath}`); return resolve(); });
+				.on('end', () => { logSuccess(`Files successfully uploaded to S3 under the path: /${toS3BucketPath}`); return resolve(); });
 		} else {
 			logError(`Could not find AWS configuration, aborting upload.`);
 			return resolve(quasArgs);
