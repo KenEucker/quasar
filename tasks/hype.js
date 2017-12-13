@@ -129,7 +129,7 @@ const parseFiles = () => {
 		}
 		
 		const hypeElements = await page.evaluate(function() {
-			var els = Array.prototype.slice.call(document.querySelectorAll('.HYPE_element:not([id|="hype-obj"])'));
+			var els = Array.prototype.slice.call(document.querySelectorAll('.h-track-click'));
 			var hypeElementIds = [];
 
 			for(var i in els) {

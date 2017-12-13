@@ -15,6 +15,9 @@ var addGAScript = function() {
 }; // End addGAScript();
 
 function videoTracking(video) {
+	if(videoEl.className.indexOf('h-track-click') == -1) {
+		return;
+	}
 
 	var eventCategory = 'video_bigtop';
 	var videoLabel = video.id;
@@ -69,9 +72,6 @@ function videoTracking(video) {
 }
 
 function addClickEvent(el = null, clickName = null, clickUrl = null, clickID = null) {
-	if(!clickUrl) {
-		clickUrl = campaignClickUrl;
-	}
 
 	if(!el) {
 		if(!clickID) {
@@ -80,20 +80,27 @@ function addClickEvent(el = null, clickName = null, clickUrl = null, clickID = n
 
 		el = document.getElementById(clickID);
 	}
+	
+	clickUrl = clickUrl || campaignClickUrl;
+	clickID = clickID || el.id;
+	clickName = clickName || clickID;
 
-	if(el) {
+	if(el.className.indexOf('h-track-click') != -1) {
 		el.onclick = function() {
 			window.ga(gaTracker + '.send', 'event', dtadsCampaign, 'click', clickName, {nonInteraction: true});
-			var win = window.open(campaignClickUrl, windowTarget);
-			if(win) { win.focus(); }
+
+			if(this.className.indexOf('h-no-click-url') == -1) {
+				var win = window.parent.open(campaignClickUrl, windowTarget);
+				if(win) { win.focus(); }
+			}
 		};
 	}
 }
 
-function setClickEvents() {
+function addTracking() {
 	for(var i = 0; i < clickIDs.length; ++i) {
-		var clickName = clickIDs[i];
-		var el = document.getElementById(clickName);
+		var clickID = clickIDs[i];
+		var el = document.getElementById(clickID);
 
 		if(el) {
 			addClickEvent(el);
@@ -108,7 +115,7 @@ function setClickEvents() {
 
 function initTracking() {
 	addGAScript();
-	setClickEvents();
+	addTracking();
 }
 
 window.HYPE_eventListeners = window.HYPE_eventListeners || [];
