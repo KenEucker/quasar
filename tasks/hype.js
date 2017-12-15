@@ -43,8 +43,8 @@ const validateRequiredArgs = (args = {}) => {
 			const split = dtAdsArgs.source.split('.');
 
 			if(split.length > 1) {
-				dtAdsArgs.sourceExt = split.pop();
-				dtAdsArgs.source = dtAdsArgs.source.substr(0, dtAdsArgs.source.length - dtAdsArgs.sourceExt.length - 1);
+				dtAdsArgs.sourceExt = `.${split.pop()}`;
+				dtAdsArgs.source = dtAdsArgs.source.substr(0, dtAdsArgs.source.length - dtAdsArgs.sourceExt.length);
 			}
 		} else {
 			//Default the input filename to the campaign
@@ -71,9 +71,34 @@ const validateRequiredArgs = (args = {}) => {
 				dtAdsArgs.target += '.html';
 			}
 		}
+		dtAdsArgs.targetFilePath = `${dtAdsArgs.assetsFolder}/${dtAdsArgs.target}`;
+
+		switch(dtAdsArgs.clickTarget) {
+			default:
+			case '':
+			case 'default':
+				dtAdsArgs.clickTarget = '';
+			break;
+
+			case 'same window':
+				dtAdsArgs.clickTarget = '_self';
+			break;
+			
+			case 'new tab':
+				dtAdsArgs.clickTarget = '_blank';
+			break;
+
+			case 'parent':
+				dtAdsArgs.clickTarget = '_parent';
+			break;
+			
+			case 'top':
+				dtAdsArgs.clickTarget = '_top';
+			break;
+		}
 
 		const datetime = new Date(Date.now());
-		dtAdsArgs.bucketPath = `${dtAdsArgs.bucket}/${dtAdsArgs.client}/${datetime.getFullYear()}/${datetime.getMonth() + 1}/${dtAdsArgs.campaign}`;
+		dtAdsArgs.bucketPath = `ads/${dtAdsArgs.client}/${datetime.getFullYear()}/${datetime.getMonth() + 1}/${dtAdsArgs.campaign}`;
 
 		return resolve();
 	});
@@ -104,7 +129,7 @@ const parseFiles = () => {
 		}
 		
 		const hypeElements = await page.evaluate(function() {
-			var els = Array.prototype.slice.call(document.querySelectorAll('.HYPE_element:not([id|="hype-obj"])'));
+			var els = Array.prototype.slice.call(document.querySelectorAll('.h-track-click'));
 			var hypeElementIds = [];
 
 			for(var i in els) {
@@ -173,7 +198,7 @@ const init = () => {
 			type: 'list',
 			name: 'source',
 			message: `Enter the input archive filename (default .zip):\n`,
-			choices: lib.getFilenamesInDirectory(dtAdsArgs.sourceFolder, ['zip'])
+			choices: lib.getFilenamesInDirectory(lib.config.sourceFolder, ['zip'])
 		},{
 			type: 'input',
 			name: 'target',
@@ -182,6 +207,13 @@ const init = () => {
 			type: 'input',
 			name: 'output',
 			message: `Enter the output filename postfix (default extension .${dtAdsArgs.outputExt} ${colors.yellow('(optional)')}):\n`
+		},{
+			type: 'list',
+			name: 'clickTarget',
+			// TODO: add better question intelligence here for the different ways to open a new window on click
+			message: `How should the window open when clicked?`,
+			default: 'default',
+			choices: ['default','same window','new tab']//, 'parent','top']
 		}]),
 		{
 			qType: qType,

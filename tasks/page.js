@@ -70,7 +70,7 @@ const init = () => {
 			type: 'list',
 			name: 'source',
 			message: `Enter the source filename (default .zip):\n`,
-			choices: ['none'].concat(lib.getFilenamesInDirectory(quasArgs.sourceFolder, ['zip']))
+			choices: ['none'].concat(lib.getFilenamesInDirectory(lib.config.sourceFolder, ['zip']))
 		}, {
 			type: 'input',
 			name: 'body',

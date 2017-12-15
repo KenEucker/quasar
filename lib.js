@@ -318,26 +318,36 @@ const makePromptRequired = function(input) {
 
 const convertPromptToJsonSchemaFormProperty = (prompt) => {
 	let title = prompt.message,
-		type = prompt.type;
+		type = prompt.type,
+		_default = prompt.default;
+		
+	let property = {
+		type,
+		title
+	};
+
+	if(_default) {
+		property.default = _default;
+	}
 
 	switch(type) {
 		case 'input':
-			type = 'string';
+		property.type = 'string';
 		break;
 		case 'list':
+			// TODO: add fields, on the quasar side, for what type of field this should be
 			if(prompt.name == 'source') {
-				type = 'string'
-				_default = prompt.choices
+				property.type = 'string';
+			} else {
+				property.type = 'string';
+				property.enum = prompt.choices;
 			}
 		break;
 		default:
 		break;
 	}
 
-	return {
-		type,
-		title
-	};
+	return property;
 }
 
 const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
@@ -356,7 +366,7 @@ const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
 			if(prompt.name == 'source') {
 				widget = 'file';
 			} else {
-				widget = 'checkboxes';
+				widget = 'radio';
 			}
 		break;
 	}
@@ -712,19 +722,21 @@ const uploadFiles = (quasArgs) => {
 
 		const configFilename = `${quasArgs.dirname}/.config`;
 		if(fs.existsSync(configFilename)) {
-			logInfo(`Uploading files form ${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}/ to the path: %AWS%/${quasArgs.bucketPath}`);
+			const fromLocalDirectory = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}/`;
+			const toS3BucketPath = `${quasArgs.bucket}/${quasArgs.bucketPath}`;
+			logInfo(`Uploading files form ${fromLocalDirectory} to the path: ${toS3BucketPath}`);
 
 			var config = JSON.parse(fs.readFileSync(configFilename));
 			let s3 = gulpS3(config);
 
-			gulp.src(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}/**`)
+			gulp.src(`${fromLocalDirectory}**`)
 				.pipe(s3({
-					Bucket: `${quasArgs.bucketPath}`,
+					Bucket: toS3BucketPath,
 					ACL: 'public-read'
 				}, {
 					maxRetries: 5
 				}))
-				.on('end', () => { logSuccess(`Files successfully uploaded to S3 under the path: /${quasArgs.bucketPath}`); return resolve(); });
+				.on('end', () => { logSuccess(`Files successfully uploaded to S3 under the path: /${toS3BucketPath}`); return resolve(); });
 		} else {
 			logError(`Could not find AWS configuration, aborting upload.`);
 			return resolve(quasArgs);

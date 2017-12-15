@@ -4,168 +4,209 @@
 
 (function() {
 
-	var clickUrl = '<%= clickUrl %>';
+	var bartenderClickUrl = '<%= clickUrl %>';
 	var clickTarget = '<%= clickTarget %>';
 	var dtadsCampaign = '<%= client %>_<%= campaign %>';
 	var backgroundColor = '<%= backgroundColor %>';
     var imageUrl = '<%= imageUrl %>';
 	var adHtml = `<%= adHtml %>`;
+	var adExternalUrl = '';
+	var externalButtonText = 'Learn More';
 	var barContainer = "dtads-bar-container_" + dtadsCampaign;
-
+	var isFixed = '.m-pint-wrap.is-fixed';
+	var externalButtonHtml = adExternalUrl.length ? '<button class=\"outer\">' + externalButtonText + '</button>' : '';
+	var bartenderHeight = '70px';
+	var barContainerID = barContainer;
+	var barContainerClasses = ' ' + barContainerID;
+	var barContainerSelector = barContainerClasses.split(' ').join(' .');
+	
 	var style_str = " \
-	@media (min-width: 800px) { \
-		.dtads-bigtop-container iframe { \
-					margin-bottom: -70px; \
-				} \
-		." + barContainer + " { \
-			position: relative; \
-			width: 100%; \
-			height: 70px; \
-			pointer-events: none; \
-			cursor: pointer; \
+		@media (min-width: 800px) { \
+			.dtads-bigtop-container iframe { \
+						margin-bottom: -" + bartenderHeight + "; \
+					} \
+			" + barContainerSelector + " { \
+				position: relative; \
+				width: 100%; \
+				height: " + bartenderHeight + "; \
+				pointer-events: none; \
+				cursor: pointer; \
+			} \
+			" + barContainerSelector + " > .close { \
+				opacity: 0; \
+				width: 20px; \
+				height: 20px; \
+				position: absolute; \
+				top: 8px; \
+				right: 8px; \
+				background: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KPHBvbHlnb24gZmlsbD0iI2ZmZmZmZiIgcG9pbnRzPSI2NCw1LjkgNTguMSwwIDMyLDI2LjEgNS45LDAgMCw1LjkgMjYuMSwzMiAwLDU4LjEgNS45LDY0IDMyLDM3LjkgNTguMSw2NCA2NCw1OC4xIDM3LjksMzIgIi8+Cjwvc3ZnPgo=) no-repeat; \
+				background-size: contain;  \
+				background-color: rgba(0,0,0,0.5); \
+				border-radius: 50%; \
+			} \
+			" + barContainerSelector + " > div { \
+				height: " + bartenderHeight + "; \
+				line-height: " + bartenderHeight + "; \
+				text-align: center; \
+				text-decoration: none; \
+				font-size: 1.5em; \
+			} \
+			" + barContainerSelector + " > div { \
+				opacity: 0; \
+			} \
+			" + isFixed + " " + barContainerSelector + " > div > .outer { \
+				font-size: 0.85em; \
+				margin-left: 10px; \
+				border-radius: 3px; \
+				cursor: pointer; \
+				background-color: #BFBFBF; \
+				padding: 0.3rem; \
+				position: absolute; \
+				top: 5px; \
+				right: 15%; \
+				z-index: 1003; \
+				border: 0; \
+				color: inherit; \
+				overflow: visible; \
+				-webkit-appearance: button; /* for input */ \
+				-webkit-user-select: none; /* for button */ \
+				-moz-user-select: none; \
+				-ms-user-select: none; \
+				pointer-events: all; \
+			} \
+			" + isFixed + " " + barContainerSelector + " > div > .outer :hover { \
+				background-color: #fff; \
+			} \
+			" + isFixed + " " + barContainerSelector + " > .inner > div :hover { \
+				text-decoration: none; \
+			} \
+			" + isFixed + " " + barContainerSelector + " > .inner > div > input { \
+				font-size: 3em; \
+				height: 3em; \
+			} \
+			" + isFixed + " " + barContainerSelector + " { \
+				pointer-events: all; \
+				z-index: 1; \
+			} \
+			" + isFixed + " " + barContainerSelector + " > div > .inner { \
+				position: relative; \
+				width: 100%; \
+				background: url(" + imageUrl + ") no-repeat bottom; \
+				background-color: " + backgroundColor + "; \
+				opacity: 1; \
+				height: " + bartenderHeight + "; \
+				pointer-events: all; \
+				cursor: pointer; \
+				background-size: cover; \
+				text-decoration: none; \
+				display: block; \
+				width: 100%; \
+				height: 100%; \
+				z-index: -1; \
+				text-decoration: none; \
+				z-index: 1; \
+			} \
+			" + isFixed + " " + barContainerSelector + " > div { \
+				height: " + bartenderHeight + " !important; \
+				opacity: 1; \
+			} \
+			" + isFixed + " " + barContainerSelector + " > div > .outer { \
+				height: " + bartenderHeight + " !important; \
+				opacity: 1; \
+				z-index: 3; \
+			} \
+			" + isFixed + " " + barContainerSelector + " > .close { \
+				opacity: 1; \
+				z-index: 3; \
+			} \
 		} \
-		." + barContainer + " > .close { \
-			opacity: 0; \
-			width: 20px; \
-			height: 20px; \
-			position: absolute; \
-			top: 8px; \
-			right: 8px; \
-			background: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KPHBvbHlnb24gZmlsbD0iI2ZmZmZmZiIgcG9pbnRzPSI2NCw1LjkgNTguMSwwIDMyLDI2LjEgNS45LDAgMCw1LjkgMjYuMSwzMiAwLDU4LjEgNS45LDY0IDMyLDM3LjkgNTguMSw2NCA2NCw1OC4xIDM3LjksMzIgIi8+Cjwvc3ZnPgo=) no-repeat; \
-			background-size: contain;  \
-			background-color: rgba(0,0,0,0.5); \
-			border-radius: 50%; \
-		} \
-		." + barContainer + " > .inner > div { \
-			height: 70px; \
-			line-height: 70px; \
-			text-align: center; \
-			text-decoration: none; \
-			font-size: 1.5em; \
-		} \
-		." + barContainer + " > .inner > div :hover { \
-			text-decoration: none; \
-		} \
-		." + barContainer + " > .inner > div > input { \
-			font-size: 3em; \
-			height: 3em; \
-		} \
-		.m-pint-wrap.is-fixed ." + barContainer + " { \
-			pointer-events: all; \
-			z-index: 1; \
-		} \
-		." + barContainer + " > .inner { \
-			position: relative; \
-			width: 100%; \
-			background: url(" + imageUrl + ") no-repeat bottom; \
-			background-color: " + backgroundColor + "; \
-			opacity: 1; \
-			height: 70px; \
-			pointer-events: all; \
-			cursor: pointer; \
-			background-size: cover; \
-			text-decoration: none; \
-			display: block; \
-			width: 100%; \
-			height: 100%; \
-			z-index: -1; \
-			text-decoration: none; \
-		} \
-		.m-pint-wrap.is-fixed ." + barContainer + " { \
-			height: 70px !important; \
-			opacity: 1; \
-		} \
-		.m-pint-wrap.is-fixed ." + barContainer + " > .close { \
-			opacity: 1; \
-		} \
-	} \
-	@media (max-width: 799px) { \
-		." + barContainer + " { \
-			display: none; \
-		} \
-		.dtads-bigtop-container { \
-			margin-bottom: 0; \
-			display: none; \
-		} \
-	}";
+		@media (max-width: 799px) { \
+			" + barContainerSelector + " { \
+				display: none; \
+			} \
+			.dtads-bigtop-container { \
+				margin-bottom: 0; \
+				display: none; \
+			} \
+		}";
 
-var script_str = " \
-	(function() { \
-		window.BKQ = window.BKQ || []; \
-		window.BKQ.push(function() { \
-			\
-			var bk = window.Barkeep || DT.Barkeep; \
-			var bs = window.Burnside || DTAds; \
-			var bartenderHTML = window.document.createElement('div'); \
-			bartenderHTML.id = '" + barContainer + "'; \
-			bartenderHTML.className = 'm-pint h-pint " + barContainer + "'; \
-			bartenderHTML.dataset.type = 'fixed'; \
-			bartenderHTML.dataset.priority = '10'; \
-			\
-			/***** ADD YOU CUSTOM HTML HERE ***********/ \
-			bartenderHTML.innerHTML = '<a href=\"javascript:void(0)\" class=\"inner\">" + ad_html + "</a><a href=\"javascript:void(0)\" class=\"close h-do-remove-pint\" rel=\"nofollow\"></a>'; \
-			\
-			bk.insert( bartenderHTML, 'bottom' ); \
-			\
-			var dtadsBartenderClickEvents = function() { \
-				var _bartenderInnerContainer = window.document.querySelector('." + barContainer + " .inner'); \
+	var script_str = " \
+		(function() { \
+			window.BKQ = window.BKQ || []; \
+			window.BKQ.push(function() { \
 				\
-				_bartenderInnerContainer.addEventListener('click', function(event) { \
-					event.preventDefault(); \
-					var win = window.top.open('" + bartender_click_url + "', '" + click_target + "'); \
-					win.focus(); \
-				}, false); \
+				var bk = window.Barkeep || DT.Barkeep; \
+				var bs = window.Burnside || DTAds; \
+				var bartenderHTML = window.document.createElement('div'); \
+				bartenderHTML.id = '" + barContainerID + "'; \
+				bartenderHTML.className = 'm-pint h-pint " + barContainerClasses + "'; \
+				bartenderHTML.dataset.type = 'fixed'; \
+				bartenderHTML.dataset.priority = '1'; \
 				\
-			}; \
-			dtadsBartenderClickEvents(); \
-			var changeBigtopMarginBack = function() { \
-				var closeButton = window.document.querySelector('." + barContainer + " > .close'); \
-				var bigtopContainerIframe = window.document.querySelector('.dtads-bigtop-container iframe') || window.document.querySelector('.burnside-bigtop-container iframe'); \
-				closeButton.addEventListener('click', function(evnt) { \
-					evnt.preventDefault(); \
+				/***** ADD YOU CUSTOM HTML HERE ***********/ \
+				bartenderHTML.innerHTML = '<div><a href=\"javascript:void(0)\" class=\"inner\">" + adHtml + "</a>" + externalButtonHtml + "</div><a href=\"javascript:void(0)\" class=\"close h-do-remove-pint\" rel=\"nofollow\"></a>'; \
+				\
+				bk.insert( bartenderHTML, 'bottom' ); \
+				\
+				var dtadsBartenderClickEvents = function() { \
+					var _bartenderInnerContainer = window.document.querySelector('" + barContainerSelector + " div > .inner'); \
 					\
-					if (!bigtopContainerIframe) return; \
-						bigtopContainerIframe.style.marginBottom = '0'; \
+					if(!_bartenderInnerContainer) { \
+						console.log('The ad html is malformed'); \
+						return; \
+					} \
+					_bartenderInnerContainer.addEventListener('click', function(event) { \
+						event.preventDefault(); \
+						var win = window.top.open('" + bartenderClickUrl + "', '" + clickTarget + "'); \
+						win.focus(); \
+					}, false); \
+					\
+					var externalButton = window.document.querySelector('" + barContainerSelector + " div > .outer'); \
+					if(externalButton) { \
+						externalButton.addEventListener('click', function(event) { \
+								event.preventDefault(); \
+								var externalWin = window.top.open('" + adExternalUrl + "', '_blank'); \
+								externalWin.focus(); \
+						}, false); \
+					} \
+					\
+					var closeButton = window.document.querySelector('" + barContainerSelector + " .close'); \
+					var bigtopContainerIframe = window.document.querySelector('.dtads-bigtop-container iframe') || window.document.querySelector('.burnside-bigtop-container iframe'); \
+					closeButton.addEventListener('click', function(evnt) { \
+						evnt.preventDefault(); \
 						\
-				}, false); \
-			}; \
-			changeBigtopMarginBack(); \
-			\
-			bk.remove_expendables(2, false); \
-		}); \
-	}());";
+						if (!bigtopContainerIframe) return; \
+							bigtopContainerIframe.style.marginBottom = '0'; \
+							\
+					}, false); \
+				}; \
+				\
+				dtadsBartenderClickEvents(); \
+				\
+				bk.remove_expendables(2, false); \
+			}); \
+		}());";
 
-// append style
-var head = window.parent.document.head || window.parent.document.getElementsByTagName('head')[0];
-var style_el  = window.parent.document.createElement( 'style' );
+	// append style
+	var head = window.parent.document.head || window.parent.document.getElementsByTagName('head')[0];
+	var style_el  = window.parent.document.createElement( 'style' );
 
-style_el.type = 'text/css';
+	style_el.type = 'text/css';
 
-if ( style_el.styleSheet )
-	style_el.styleSheet.cssText = style_str;
-else
-	style_el.appendChild( window.parent.document.createTextNode( style_str ) );
+	if ( style_el.styleSheet )
+		style_el.styleSheet.cssText = style_str;
+	else
+		style_el.appendChild( window.parent.document.createTextNode( style_str ) );
 
-head.appendChild( style_el );
+	head.appendChild( style_el );
 
-// append script
-var script_el  = window.parent.document.createElement( 'script' );
-script_el.type = 'text/javascript';
-script_el.text = script_str;
+	// append script
+	var script_el  = window.parent.document.createElement( 'script' );
+	script_el.type = 'text/javascript';
+	script_el.text = script_str;
 
-window.parent.document.body.appendChild( script_el );
+	window.parent.document.body.appendChild( script_el );
 
 })();
 
 </script>
-<!-- Generated by quasar on: Sun Dec 10 2017 00:11:03 GMT-0800 (PST) by: Kens-MacBook-Pro.local [ https://github.com/KenEucker/quasar ] -->
-<!-- Generated by quasar on: Sun Dec 10 2017 00:11:26 GMT-0800 (PST) by: Kens-MacBook-Pro.local [ https://github.com/KenEucker/quasar ] -->
-<!-- Generated by quasar on: Sun Dec 10 2017 00:13:03 GMT-0800 (PST) by: Kens-MacBook-Pro.local [ https://github.com/KenEucker/quasar ] -->
-<!-- Generated by quasar on: Sun Dec 10 2017 00:17:30 GMT-0800 (PST) by: Kens-MacBook-Pro.local [ https://github.com/KenEucker/quasar ] -->
-<!-- Generated by quasar on: Sun Dec 10 2017 00:17:40 GMT-0800 (PST) by: Kens-MacBook-Pro.local [ https://github.com/KenEucker/quasar ] -->
-<!-- Generated by quasar on: Sun Dec 10 2017 00:18:31 GMT-0800 (PST) by: Kens-MacBook-Pro.local [ https://github.com/KenEucker/quasar ] -->
-<!-- Generated by quasar on: Sun Dec 10 2017 00:18:51 GMT-0800 (PST) by: Kens-MacBook-Pro.local [ https://github.com/KenEucker/quasar ] -->
-<!-- Generated by quasar on: Sun Dec 10 2017 00:20:30 GMT-0800 (PST) by: Kens-MacBook-Pro.local [ https://github.com/KenEucker/quasar ] -->
-<!-- Generated by quasar on: Sun Dec 10 2017 00:21:41 GMT-0800 (PST) by: Kens-MacBook-Pro.local [ https://github.com/KenEucker/quasar ] -->
-<!-- Generated by quasar on: Sun Dec 10 2017 00:21:58 GMT-0800 (PST) by: Kens-MacBook-Pro.local [ https://github.com/KenEucker/quasar ] -->
-<!-- Generated by quasar on: Sun Dec 10 2017 00:23:42 GMT-0800 (PST) by: Kens-MacBook-Pro.local [ https://github.com/KenEucker/quasar ] -->

@@ -25,6 +25,9 @@ lib.resolveQuasArgs = (args, _args = {}) => {
 	args.client = args.client || args.domain;
 	args.campaign = args.campaign || args.signal;
 
+	args.bucket = 'dtcn';
+	args.cdnUrlStart = 'https://cdn.dtcn.com/';
+
 	return args;
 }
 
