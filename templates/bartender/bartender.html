@@ -172,9 +172,9 @@
 					closeButton.addEventListener('click', function(evnt) { \
 						evnt.preventDefault(); \
 						\
-						if (!bigtopContainerIframe) return; \
+						if (bigtopContainerIframe) { \
 							bigtopContainerIframe.style.marginBottom = '0'; \
-							\
+						}\
 					}, false); \
 				}; \
 				\
