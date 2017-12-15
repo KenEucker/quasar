@@ -8,7 +8,7 @@
 	var clickTarget = '<%= clickTarget %>';
 	var dtadsCampaign = '<%= client %>_<%= campaign %>';
 	var backgroundColor = '<%= backgroundColor %>';
-    var imageUrl = '<%= imageUrl %>';
+	var imageUrl = '<%= imageUrl %>';
 	var adHtml = `<%= adHtml %>`;
 	var adExternalUrl = '';
 	var externalButtonText = 'Learn More';
@@ -23,14 +23,15 @@
 	var style_str = " \
 		@media (min-width: 800px) { \
 			.dtads-bigtop-container iframe { \
-						margin-bottom: -" + bartenderHeight + "; \
-					} \
+				margin-bottom: -" + bartenderHeight + "; \
+			} \
 			" + barContainerSelector + " { \
 				position: relative; \
 				width: 100%; \
 				height: " + bartenderHeight + "; \
 				pointer-events: none; \
 				cursor: pointer; \
+				z-index: -1; \
 			} \
 			" + barContainerSelector + " > .close { \
 				opacity: 0; \
@@ -51,10 +52,7 @@
 				text-decoration: none; \
 				font-size: 1.5em; \
 			} \
-			" + barContainerSelector + " > div { \
-				opacity: 0; \
-			} \
-			" + isFixed + " " + barContainerSelector + " > div > .outer { \
+			" + barContainerSelector + " > div > .outer { \
 				font-size: 0.85em; \
 				margin-left: 10px; \
 				border-radius: 3px; \
@@ -74,26 +72,21 @@
 				-ms-user-select: none; \
 				pointer-events: all; \
 			} \
-			" + isFixed + " " + barContainerSelector + " > div > .outer :hover { \
+			" + barContainerSelector + " > div > .outer :hover { \
 				background-color: #fff; \
 			} \
-			" + isFixed + " " + barContainerSelector + " > .inner > div :hover { \
+			" + barContainerSelector + " > .inner > div :hover { \
 				text-decoration: none; \
 			} \
-			" + isFixed + " " + barContainerSelector + " > .inner > div > input { \
+			" + barContainerSelector + " > .inner > div > input { \
 				font-size: 3em; \
 				height: 3em; \
 			} \
-			" + isFixed + " " + barContainerSelector + " { \
-				pointer-events: all; \
-				z-index: 1; \
-			} \
-			" + isFixed + " " + barContainerSelector + " > div > .inner { \
+			" + barContainerSelector + " > div > .inner { \
 				position: relative; \
 				width: 100%; \
 				background: url(" + imageUrl + ") no-repeat bottom; \
 				background-color: " + backgroundColor + "; \
-				opacity: 1; \
 				height: " + bartenderHeight + "; \
 				pointer-events: all; \
 				cursor: pointer; \
@@ -104,6 +97,10 @@
 				height: 100%; \
 				z-index: -1; \
 				text-decoration: none; \
+				z-index: 1; \
+			} \
+			" + isFixed + " " + barContainerSelector + " { \
+				pointer-events: all; \
 				z-index: 1; \
 			} \
 			" + isFixed + " " + barContainerSelector + " > div { \
