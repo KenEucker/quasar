@@ -13,6 +13,7 @@
 	var adExternalUrl = '';
 	var externalButtonText = 'Learn More';
 	var barContainer = "dtads-bar-container_" + dtadsCampaign;
+	var isFixed = '.m-pint-wrap.is-fixed';
 	var externalButtonHtml = adExternalUrl.length ? '<button class=\"outer\">' + externalButtonText + '</button>' : '';
 	var bartenderHeight = '70px';
 	var barContainerID = barContainer;
@@ -50,7 +51,10 @@
 				text-decoration: none; \
 				font-size: 1.5em; \
 			} \
-			" + barContainerSelector + " > div > .outer { \
+			" + barContainerSelector + " > div { \
+				opacity: 0; \
+			} \
+			" + isFixed + " " + barContainerSelector + " > div > .outer { \
 				font-size: 0.85em; \
 				margin-left: 10px; \
 				border-radius: 3px; \
@@ -70,21 +74,21 @@
 				-ms-user-select: none; \
 				pointer-events: all; \
 			} \
-			" + barContainerSelector + " > div > .outer :hover { \
+			" + isFixed + " " + barContainerSelector + " > div > .outer :hover { \
 				background-color: #fff; \
 			} \
-			" + barContainerSelector + " > .inner > div :hover { \
+			" + isFixed + " " + barContainerSelector + " > .inner > div :hover { \
 				text-decoration: none; \
 			} \
-			" + barContainerSelector + " > .inner > div > input { \
+			" + isFixed + " " + barContainerSelector + " > .inner > div > input { \
 				font-size: 3em; \
 				height: 3em; \
 			} \
-			.m-pint-wrap.is-fixed " + barContainerSelector + " { \
+			" + isFixed + " " + barContainerSelector + " { \
 				pointer-events: all; \
 				z-index: 1; \
 			} \
-			" + barContainerSelector + " > div > .inner { \
+			" + isFixed + " " + barContainerSelector + " > div > .inner { \
 				position: relative; \
 				width: 100%; \
 				background: url(" + imageUrl + ") no-repeat bottom; \
@@ -102,16 +106,16 @@
 				text-decoration: none; \
 				z-index: 1; \
 			} \
-			.m-pint-wrap.is-fixed " + barContainerSelector + " > div { \
+			" + isFixed + " " + barContainerSelector + " > div { \
 				height: " + bartenderHeight + " !important; \
 				opacity: 1; \
 			} \
-			.m-pint-wrap.is-fixed " + barContainerSelector + " > div > .outer { \
+			" + isFixed + " " + barContainerSelector + " > div > .outer { \
 				height: " + bartenderHeight + " !important; \
 				opacity: 1; \
 				z-index: 3; \
 			} \
-			.m-pint-wrap.is-fixed " + barContainerSelector + " > .close { \
+			" + isFixed + " " + barContainerSelector + " > .close { \
 				opacity: 1; \
 				z-index: 3; \
 			} \
