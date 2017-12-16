@@ -65,4 +65,5 @@ Files located in the /assets folder are used in build tasks for quasar ouput. Th
 - [x] Express based web UI with live preview for quasar building
 - [x] Asset compiler and bundler
 - [x] Builder packaged as an electron application
+- [ ] Image compression before upload
 - [ ] Asset mutation on output (minification, tree shaking, code splitting, uglification)
