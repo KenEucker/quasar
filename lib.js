@@ -23,6 +23,7 @@ let gulp = require('gulp'),
 	colors = require('colors'),
 	os = require('os'),
 	promise = require('bluebird'),
+	lastLine = require('last-line'),
 	fs = require('fs'),
 	yargs = require('yargs'),
 	mkdir = require('mkdirp-sync');
@@ -99,14 +100,38 @@ const log = (message, obj, status = null, title = '', color = colors.grey) => {
 
 	return;
 }
-const logSuccessfulOutput = (quasArgs) => {
+const logSuccessfulOutputToFile = (quasArgs) => {
 	const noArgTypes = ['object', 'function'];
-	const cliArgs = Object.keys(quasArgs).map((k) => { return noArgTypes.indexOf(typeof quasArgs[k]) == -1 ? `--${k}=\`${quasArgs[k]}\`` : '' });
+	const cliArgs = Object.keys(quasArgs).map((k) => { return noArgTypes.indexOf(typeof quasArgs[k]) == -1 ? `--${k}=\'${quasArgs[k]}\'` : '' });
 	const logFilePath = path.resolve(`${quasArgs.dirname}/${quasArgs.logToFile}`);
-	fs.appendFileSync(logFilePath, `node cli.js ${cliArgs.join(' ')} --noPrompt=true`, (err) => {
+	fs.appendFileSync(logFilePath, `node cli.js ${cliArgs.join(' ')} --noPrompt=true\r\n`, (err) => {
 		if (err) throw err;
 		logSuccess(`Logged to logfile: ${logFilePath}`);
 	});
+}
+
+const runLastSuccessfulBuild = (quasArgs = null) => {
+	return new promise((resolve, reject) => {
+		if(!quasArgs) {
+			quasArgs = { logToFile: `.log`, dirname: config.dirname };
+		}
+		const logFilePath = path.resolve(`${quasArgs.dirname}/${quasArgs.logToFile}`);
+		let command = null;
+
+		if (fs.existsSync(logFilePath)) {
+			lastLine(logFilePath, function (err, command) {
+				if (err) { logError(`Could not read last line from logfile: ${logFilePath}`) }
+
+				logSuccess(`Running the last found command in the logfile: ${command}`);
+				command = command.replace(`node cli.js`, ``);
+				spawnCommand(null, command.split());
+
+				return resolve();
+			});
+		} else {
+			logError(`Could not find logfile: ${logFilePath}`);
+		}
+	})
 }
 
 const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addDefaultRequiredArgs = true) => {
@@ -186,10 +211,8 @@ const sassify = (options) => {
 	})
 }
 
-const spawnQuasarTask = (argsFile, args = []) => {
-	const command = `node`;
+const spawnCommand = (argsFile, args = [], command = `node`, after = ``) => {
 	args.unshift(`cli.js`);
-
 	log(`Running command ${command} ${args.join(' ')}`);
 	spawn.spawn(command, args)
 		.on("error", (error) => { console.log(`ERROR:`, error); })
@@ -563,19 +586,7 @@ const copyTemplateFilesToAssetsPath = (quasArgs) => {
 // Unpack input files
 const unpackFiles = (quasArgs) => {
 	return new promise((resolve, reject) => {
-		if (!quasArgs.unpackFiles || !quasArgs.source) {
-			return resolve(quasArgs);
-		}
-
-		const zipFilePath = path.resolve(`${quasArgs.sourceFolder}/${quasArgs.source}${quasArgs.sourceExt}`);
 		const destinationPath = path.resolve(`${quasArgs.assetsFolder}`);
-		log(`unpacking source files from (${zipFilePath}) to the public folder (${destinationPath})`);
-
-		if (!fs.existsSync(zipFilePath)) {
-			logError(`source could not be found`, zipFilePath);
-			return reject();
-		}
-
 		const destinationPathExists = fs.existsSync(path.resolve(`${destinationPath}/${quasArgs.target}`));
 		if (!quasArgs.overwriteUnpackDestination && destinationPathExists) {
 			logError(`files have already been unpacked, run again with option --overwriteUnpackDestination=true to overwite files.`);
@@ -587,6 +598,18 @@ const unpackFiles = (quasArgs) => {
 				del(destinationPath);
 				mkdir(destinationPath);
 			}
+		}
+
+		if (!quasArgs.unpackFiles || !quasArgs.source) {
+			return resolve(quasArgs);
+		}
+		
+		const zipFilePath = path.resolve(`${quasArgs.sourceFolder}/${quasArgs.source}${quasArgs.sourceExt}`);
+		log(`unpacking source files from (${zipFilePath}) to the folder (${destinationPath}) before building output`);
+
+		if (!fs.existsSync(zipFilePath)) {
+			logError(`source could not be found`, zipFilePath);
+			return reject();
 		}
 
 		unzip(zipFilePath, { dir: destinationPath }, (err) => {
@@ -784,7 +807,7 @@ const outputToHtmlFile = (quasArgs) => {
 				}
 				logSuccess(`Output file saved as: ${quasArgs.dirname}${outputPath}/${quasArgs.output}${quasArgs.outputExt}`);
 				quasArgs.buildCompletedSuccessfully = true;
-				logSuccessfulOutput(quasArgs);
+				logSuccessfulOutputToFile(quasArgs);
 				return resolve(quasArgs);
 			});
 	})
@@ -828,8 +851,9 @@ module.exports = {
 	promptConsole,
 	quasarSelectPrompt,
 	registerRequiredQuasArgs,
+	runLastSuccessfulBuild,
 	runTask,
-	spawnQuasarTask,
+	spawnCommand,
 	unpackFiles,
 	uploadFiles,
 	// Externally controlled values

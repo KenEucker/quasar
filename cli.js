@@ -49,7 +49,7 @@ const transformToProcessArgs = (data, file) => {
 		`--argsFile=${file.path}`
 	];
 
-	let result = lib.spawnQuasarTask(file.path, cliArgs);
+	let result = lib.spawnCommand(file.path, cliArgs);
 
 	// Return the args as the log so that the command can be analyzed or rerun
 	return `[${result}] --> node ${cliArgs.join(' ')}`;
@@ -113,7 +113,12 @@ const run = (args = {}) => {
 		// lib.init(args.appRoot);
 		
 		lib.logInfo(`Running the qausar cli under the process: ${process.title}`);
-		if(args.runAsProcess) {
+		if(args.reRunLastSuccessfulBuild || args.reRun) {
+			lib.logInfo(`Running the last recorded successful run from the logfile`);
+			lib.runLastSuccessfulBuild();
+
+			return resolve();
+		} else if(args.runAsProcess) {
 			if (args.runApi) {
 				lib.definitelyCallFunction(() => {
 					api.run(args.port);
