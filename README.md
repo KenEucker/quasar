@@ -40,6 +40,7 @@ defaults = {
 	* optionally add the `--watchJobs=true` argument to autoload json files to build quasars
 	* optionally add the `--runWebform=true` to run the webform @ http://localhost:3720
 	* optionally add the `--autoBuildWebForm=true` to build the quasarWebform task on startup
+	* optionally add the `--reRun=true` to rebuild the last successfully run arguments back through quasar
 
 ## Package it as a standalone app
 1. run `bin/package` to create an executable that you can distribute as a standalone application
@@ -47,6 +48,8 @@ defaults = {
 ## Templating with the files in the /assets folder
 Files located in the /assets folder are used in build tasks for quasar ouput. The default target of a quasar is `${qType}.hml`, so if the quasar is of type 'page' then the default target would be `page.html`. Similarly, css and js assets are defaulted to `${qType}.css` and `${qType}.js` respectively. These default values can be overriden at runtime.
 
+## Logging
+Logging to the console from the CLI happens with data off by default and only the most top level messages. Other debug options are set with the argument `--logSeverity=` and available options are `ALL`,`DEBUG`,`NONE`,`NODATA`. Successful build outputs are logged in a '.log' file in the root of the project.
 
 # Vendors that really make this project possible
 * phantom
