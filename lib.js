@@ -102,7 +102,15 @@ const log = (message, obj, status = null, title = '', color = colors.grey) => {
 }
 const logSuccessfulOutputToFile = (quasArgs) => {
 	const noArgTypes = ['object', 'function'];
-	const cliArgs = Object.keys(quasArgs).map((k) => { return noArgTypes.indexOf(typeof quasArgs[k]) == -1 ? `--${k}=\'${quasArgs[k]}\'` : '' });
+	const skipKeys = ['/bin/zsh', '$0', 'noPrompt'];
+	let recordedKeys = [];
+	const cliArgs = Object.keys(quasArgs).map((k) => { 
+		const skipValue = noArgTypes.indexOf(typeof quasArgs[k]) != -1 || skipKeys.indexOf(k) != -1 || recordedKeys.indexOf(k) != -1;
+		if(!skipValue) { 
+			recordedKeys.push(k); 
+			return `--${k}=\"${quasArgs[k]}\"`;
+		}
+	});
 	const logFilePath = path.resolve(`${quasArgs.dirname}/${quasArgs.logToFile}`);
 	fs.appendFileSync(logFilePath, `node cli.js ${cliArgs.join(' ')} --noPrompt=true\r\n`, (err) => {
 		if (err) throw err;
@@ -124,7 +132,9 @@ const runLastSuccessfulBuild = (quasArgs = null) => {
 
 				logSuccess(`Running the last found command in the logfile: ${command}`);
 				command = command.replace(`node cli.js`, ``);
-				spawnCommand(null, command.split());
+				let args = command.split(' ');
+				args = args.map( k => { return k.replace(/"/g,'') });
+				spawnCommand(null, args);
 
 				return resolve();
 			});
@@ -211,13 +221,19 @@ const sassify = (options) => {
 	})
 }
 
-const spawnCommand = (argsFile, args = [], command = `node`, after = ``) => {
+const spawnCommand = (argsFile, args = [], command = `node`, synchronous = false) => {
 	args.unshift(`cli.js`);
 	log(`Running command ${command} ${args.join(' ')}`);
-	spawn.spawn(command, args)
-		.on("error", (error) => { console.log(`ERROR:`, error); })
-		.on("data", (data) => { console.log("DATA: ", data); })
-		.on("end", (msg) => { console.log("Ended: ", msg); });
+	let call = spawn.spawn;
+
+	if(synchronous) {
+		return spawn.spawnSync(command, args, {stdio: "inherit"});
+	}
+
+	return spawn.spawn(command, args)
+		.on("error", (error) => { logError('Error: ', error); })
+		.on("data", (data) => { logData("DATA: ", data); })
+		.on("close", (msg) => { logInfo("command ended with message: ", msg); });
 }
 
 const getTaskNames = (dir) => {
@@ -513,7 +529,7 @@ const copyFilesFromAssetsFolderToOutput = (quasArgs, files, excludeFiles = null)
 	return new promise((resolve, reject) => {
 		const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
 		if (!excludeFiles) {
-			excludeFiles = [`${quasArgs.qType}.html`, `${quasArgs.qType}.css`, `${quasArgs.qType}.js`];
+			excludeFiles = [`${quasArgs.target}`, `${quasArgs.qType}.html`, `${quasArgs.qType}.css`, `${quasArgs.qType}.js`];
 		}
 		logInfo(`copying files (${files.join()}) from ${quasArgs.assetsFolder}/ to ${destinationPath}`);
 
