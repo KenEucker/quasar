@@ -29,8 +29,6 @@
 				position: relative; \
 				width: 100%; \
 				height: " + bartenderHeight + "; \
-				pointer-events: none; \
-				cursor: pointer; \
 				z-index: -1; \
 			} \
 			" + barContainerSelector + " > .close { \
@@ -44,6 +42,8 @@
 				background-size: contain;  \
 				background-color: rgba(0,0,0,0.5); \
 				border-radius: 50%; \
+				z-index: 3; \
+				cursor: pointer; \
 			} \
 			" + barContainerSelector + " > div { \
 				height: " + bartenderHeight + "; \
@@ -51,6 +51,7 @@
 				text-align: center; \
 				text-decoration: none; \
 				font-size: 1.5em; \
+				cursor: pointer; \
 			} \
 			" + barContainerSelector + " > div > .outer { \
 				font-size: 0.85em; \
@@ -62,7 +63,6 @@
 				position: absolute; \
 				top: 5px; \
 				right: 15%; \
-				z-index: 1003; \
 				border: 0; \
 				color: inherit; \
 				overflow: visible; \
@@ -85,17 +85,14 @@
 			" + barContainerSelector + " > div > .inner { \
 				position: relative; \
 				width: 100%; \
+				height: " + bartenderHeight + "; \
 				background: url(" + imageUrl + ") no-repeat bottom; \
 				background-color: " + backgroundColor + "; \
-				height: " + bartenderHeight + "; \
 				pointer-events: all; \
 				cursor: pointer; \
 				background-size: cover; \
 				text-decoration: none; \
 				display: block; \
-				width: 100%; \
-				height: 100%; \
-				z-index: 1; \
 			} \
 			" + isFixed + " " + barContainerSelector + " { \
 				pointer-events: all; \
@@ -105,14 +102,8 @@
 				height: " + bartenderHeight + " !important; \
 				opacity: 1; \
 			} \
-			" + isFixed + " " + barContainerSelector + " > div > .outer { \
-				height: " + bartenderHeight + " !important; \
-				opacity: 1; \
-				z-index: 3; \
-			} \
 			" + isFixed + " " + barContainerSelector + " > .close { \
 				opacity: 1; \
-				z-index: 3; \
 			} \
 		} \
 		@media (max-width: 799px) { \
@@ -167,9 +158,6 @@
 					\
 					var closeButton = window.document.querySelector('" + barContainerSelector + " .close'); \
 					var bigtopContainerIframe = window.document.querySelector('.dtads-bigtop-container iframe') || window.document.querySelector('.burnside-bigtop-container iframe'); \
-					if (!bigtopContainerIframe) { \
-						bartenderHTML.style.zIndex = 1; \
-					} \
 					closeButton.addEventListener('click', function(evnt) { \
 						evnt.preventDefault(); \
 						\
