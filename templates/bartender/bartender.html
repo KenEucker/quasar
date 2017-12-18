@@ -95,8 +95,6 @@
 				display: block; \
 				width: 100%; \
 				height: 100%; \
-				z-index: -1; \
-				text-decoration: none; \
 				z-index: 1; \
 			} \
 			" + isFixed + " " + barContainerSelector + " { \
@@ -169,6 +167,9 @@
 					\
 					var closeButton = window.document.querySelector('" + barContainerSelector + " .close'); \
 					var bigtopContainerIframe = window.document.querySelector('.dtads-bigtop-container iframe') || window.document.querySelector('.burnside-bigtop-container iframe'); \
+					if (!bigtopContainerIframe) { \
+						bartenderHTML.style.zIndex = 1; \
+					} \
 					closeButton.addEventListener('click', function(evnt) { \
 						evnt.preventDefault(); \
 						\
