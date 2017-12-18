@@ -61,8 +61,14 @@ const loadingPage = () => {
 
                 <script>
                 setInterval(function() {
-                    window.reload();
-                }, 1000)
+                    var h1 = document.querySelector('h1');
+                    if(h1) {
+                        h1.innerHTML += '.';
+                    }
+                }, 500)
+                setInterval(function() {
+                    window.location.reload(true);
+                }, 3000)
                 </script>
             </body>
         </html>
