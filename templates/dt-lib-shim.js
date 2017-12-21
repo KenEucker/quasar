@@ -6,12 +6,14 @@ lib.getCampaignPromptQuestions = () => {
 		type: 'input',
 		name: 'domain',
 		message: 'Enter the name of the client to be used in building assets:\n',
+		required: true,
 		validate: lib.makePromptRequired
 	},
 	{
 		type: 'input',
 		name: 'signal',
 		message: 'Enter the name of the campaign to be used when compiling quasars:\n',
+		required: true,
 		validate: lib.makePromptRequired
 	}];
 }

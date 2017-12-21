@@ -201,7 +201,7 @@ const init = () => {
 		},{
 			type: 'input',
 			name: 'output',
-			message: `Enter the output filename postfix (default extension .${dtAdsArgs.outputExt} ${colors.yellow('(optional)')}):\n`
+			message: `Enter the output filename postfix (default extension .txt ${colors.yellow('(optional)')}):\n`
 		},{
 			type: 'confirm',
 			name: 'uploadToS3',
