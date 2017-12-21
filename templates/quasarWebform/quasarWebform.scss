@@ -49,22 +49,42 @@ body {
         }
     }
 
-    .quasarWebform {
+    nav {
+        color: transparent;
+        background-color: transparent;
+        box-shadow: none;
+        -webkit-box-shadow: none;
+    }
+
+    .formContainer {
         position: relative;
         margin-left: 1em;
         margin-right: 1em;
         background-color: rgba(255,255,255,0.75);
         padding: 1em;
+        padding-bottom: 4em;
 
-        .form-control {
-            // max-width: 50%;
-        }
+        form {
+            .form-group.field {
+                label {
+                    font-size: 1rem;
+                    color: black;
+                    font-family: 'Roboto', sans-serif;
+                }
+            }
 
-        > p {
-            text-align: center;
-            button[type=submit] {
-                font-family: space_age;
-                // font-size: 2em;
+            .form-control {
+                // max-width: 50%;
+            }
+
+            > p {
+                // text-align: center;
+                button[type=submit] {
+                    font-family: space_age;
+                    position: absolute;
+                    right: 2em;
+                    bottom: 2em;
+                }
             }
         }
     }

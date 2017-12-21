@@ -3,14 +3,14 @@ import { render } from "react-dom";
 
 import Form from "react-jsonschema-form";
 import Axios from "axios";
-import Notifications, {notify} from 'react-notify-toast';
+import Notifications, { notify } from 'react-notify-toast';
 
 let forms = [], selectedForm = '';
 
 const log = (type) => console.log.bind(console, type);
 const apiUri = `${window.location.protocol}/${window.location.hostname}:${window.location.port}`;
 const elementsMaterialistic = true;
-const notification = notify.show || (() => {});
+const notification = notify.show || (() => { });
 
 const ensureData = (data) => {
     let allData = {};
@@ -34,12 +34,12 @@ const createNotificationBar = () => {
     document.body.prepend(topBar);
 }
 
-const postData = (uri, data, success = () => {}, error = err => { console.log(err) }) => {
+const postData = (uri, data, success = () => { }, error = err => { console.log(err) }) => {
     const config = {};
     Axios.post(uri, data, config).then(success).catch(error);
 }
 
-const getData = (uri, data, success = () => {}, error = err => { console.log(err) }) => {
+const getData = (uri, data, success = () => { }, error = err => { console.log(err) }) => {
     Axios.get(uri).then(success).catch(error);
 }
 
@@ -73,19 +73,19 @@ const createForms = () => {
         var formTitle = schema.name;
         form.id = formTitle;
         form.style.display = 'none';
-        form.className = "quasarWebform";
+        form.className = "formContainer";
 
         render((
-            <Form 
+            <Form
                 schema={schema.schema}
                 uiSchema={schema.uiSchema}
                 onChange={onFormChanged}
                 onSubmit={onFormSubmitted}
                 onError={log("errors")}>
-                    <p>
-                        <button type="submit" class="btn btn-info">Generate</button>
-                    </p>
-                </Form>
+                <p>
+                    <button type="submit" class="btn btn-info">Generate ></button>
+                </p>
+            </Form>
         ), form);
 
         document.getElementById("app").appendChild(form);
@@ -122,7 +122,7 @@ const showForm = (formTitle = null) => {
 
     forms.forEach((form) => {
         const formEl = document.getElementById(form);
-        if(form == formTitle) {
+        if (form == formTitle) {
             selectedForm = form;
             formEl.style.display = "block";
         } else {
@@ -130,11 +130,11 @@ const showForm = (formTitle = null) => {
         }
     });
 
-    if(!formTitle) {
+    if (!formTitle) {
         welcomeMessageDisplay = "block";
         selectedForm = "";
-    } 
-    
+    }
+
     if (elementsMaterialistic) {
         document.querySelector('.mdl-layout-title').innerHTML = selectedForm;
         document.getElementById('welcome').style.display = welcomeMessageDisplay;
@@ -158,14 +158,13 @@ const makeElementsMaterialistic = () => {
     const app = document.getElementById("app");
     const heading = document.getElementById("quasarHeading");
     const headerText = heading ? heading.innerHTML : "quasar";
-    const firstFormId = forms.length ? forms[0] : "";
     const materialisticContainer = document.createElement('div');
     materialisticContainer.id = "mdl";
     materialisticContainer.className = "mdl-layout mdl-js-layout mdl-layout--fixed-header";
     materialisticContainer.innerHTML = `
         <header class="mdl-layout__header">
         <div class="mdl-layout__header-row">
-            <span class="mdl-layout-title">${firstFormId}</span>
+            <span class="mdl-layout-title"></span>
             <div class="mdl-layout-spacer"></div>
             <span class="mdl-layout-heading">${headerText}</span>
         </div>
@@ -175,16 +174,16 @@ const makeElementsMaterialistic = () => {
             ${getMaterialisticFormHeader()}
         </div>
         <main class="mdl-layout__content">
-            <div class="page-content mdl-grid"><div id="welcome" class="quasarWebform mdl-cell mdl-cell--8-col"><p>Welcome to the quasar build pipeline, where you can get a single html snippet from a series of different configurations.</p></div></div>
+            <div class="page-content mdl-grid"><div id="welcome" class="formContainer mdl-cell mdl-cell--8-col"><p>Welcome to the quasar build pipeline, where you can get a single html snippet from a series of different configurations.</p></div></div>
         </main>`;
     app.parentNode.insertBefore(materialisticContainer, app);
-    
+
     if (heading) {
         heading.style.display = "none";
     }
 
     materialisticContainer.querySelectorAll('.mdl-layout-heading').forEach((appLink) => {
-        appLink.addEventListener('click', function(e) {
+        appLink.addEventListener('click', function (e) {
             e.preventDefault();
 
             showForm();
@@ -194,7 +193,7 @@ const makeElementsMaterialistic = () => {
     });
 
     materialisticContainer.querySelectorAll('.mdl-navigation__link').forEach((navLink) => {
-        navLink.addEventListener('click', function(e) {
+        navLink.addEventListener('click', function (e) {
             e.preventDefault();
 
             var href = e.target.getAttribute('href');
@@ -208,8 +207,8 @@ const makeElementsMaterialistic = () => {
     materialisticContainer.querySelector('.mdl-layout__drawer').addEventListener('click', function () {
         materialisticContainer.querySelector('.mdl-layout__obfuscator').classList.remove('is-visible');
         this.classList.remove('is-visible');
-      }, false);
-    
+    }, false);
+
     app.querySelectorAll('form').forEach((form) => {
         form.className += " mdl-cell mdl-cell--8-col";
     });
@@ -222,7 +221,7 @@ const makeElementsMaterialistic = () => {
             input.parentNode.className += " mdl-textfield mdl-js-textfield";
         }
     });
-    
+
     const materialisticContainerInner = document.querySelector('#mdl .page-content');
     materialisticContainerInner.appendChild(app);
 
