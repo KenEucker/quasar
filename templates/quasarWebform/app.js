@@ -8,7 +8,9 @@ let express = require('express'),
     bodyParser = require('body-parser'),
     jsonPromise = require('express-json-promise');
 
-let PORT = process.env.PORT || '3720', app = null, sourcesDirectory = null;
+let PORT = process.env.PORT || '3720',
+    app = null,
+    sourcesDirectory = path.resolve(`${process.cwd()}/sources/`);
 
 const staticOptions = {
     dotfiles: 'ignore',
@@ -22,7 +24,7 @@ const staticOptions = {
     }
 };
 
-const findOutputDirectory = (startPath, outputDirectory = 'jobs', maxLevels = 5) => {
+const findOutputDirectory = (startPath, outputDirectory = '', maxLevels = 5) => {
     if (!fs.existsSync(startPath)){
         return;
     }
@@ -51,12 +53,12 @@ const findOutputDirectory = (startPath, outputDirectory = 'jobs', maxLevels = 5)
     }
 }
 
-const loadingPage = () => {
+const loadingPage = (message = `Loading ...`) => {
     return `
         <html>
             <body>
                 <h1>
-                    Loading ...
+                    ${message}
                 </h1>
 
                 <script>
@@ -77,18 +79,27 @@ const loadingPage = () => {
 
 const webForm = (app, port = null, start = false) => {
 
-    if(!sourcesDirectory) {
-        sourcesDirectory = path.resolve(`${process.cwd()}/sources/`);
-        mkdir(sourcesDirectory);
-    }
+    mkdir(sourcesDirectory);
     PORT = port || PORT;
 
-    // app.use(bodyParser.json({limit:'50mb'}));
-    // app.use(bodyParser.urlencoded({ extended: true, limit:'50mb' }));
+    app.get('/job/:id', function(req, res){
+        const jobFile = `${req.params.id}.json`;
+        const jobFilePath = `${findOutputDirectory(path.resolve(__dirname), `jobs`)}/completed/${jobFile}`;
 
-    // app.use(jsonPromise());
-
-    // app.post('/', postedForm);
+        if(fs.existsSync(jobFilePath)) {
+            const jobArgs = JSON.parse(fs.readFileSync(jobFilePath));
+            if(fs.existsSync(jobArgs.outputFilePath)) {
+                res.sendFile(jobArgs.outputFilePath);
+            } else {
+                console.log(`outputFilePath not found: ${jobArgs.outputFilePath}`);
+            }
+        } else if (fs.existsSync(jobFilePath.replace('/completed', '/queued'))){
+            console.log(`jobFile not complete: ${jobFile}`);
+            res.send(loadingPage("Building ..."));
+        } else {
+            res.send("job does not exist");
+        }
+    });
 
     app.get('/', function(req, res){
         const webFormPath = path.resolve(path.join(`${__dirname}/index.html`));

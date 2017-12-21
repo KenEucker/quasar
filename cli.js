@@ -62,6 +62,7 @@ const spawnWebForm = () => {
 		lib.logInfo(`loading the webform file ${webFormPath}`);
 
 		webForm = require(webFormPath);
+		webForm.init();
 		// console.log('this should attach to the app', api.app);
 		webForm.run(api.app, api.PORT);
 
@@ -75,14 +76,8 @@ gulp.task(`watchJobs`, () => {
 	mkdir(path.resolve(lib.config.dirname, 'jobs'));
 	
 	lib.logSuccess(`watching folder /jobs/ for new or changed files to build from`);
-	return watch('jobs/*.json', { ignoreInitial: true })
-		.pipe(jsonTransform(transformToProcessArgs))
-		//.pipe(vinylPaths(del))
-		.pipe(rename({
-			suffix: `_${Date.now()}`,
-			extname: `.log`
-		}))
-		.pipe(gulp.dest('jobs/logs'));
+	return watch('jobs/queued/*.json', { ignoreInitial: true })
+		.pipe(jsonTransform(transformToProcessArgs));
 });
 
 const packageElectronApp = () => {

@@ -116,6 +116,14 @@ const logSuccessfulOutputToFile = (quasArgs) => {
 		if (err) throw err;
 		logSuccess(`Logged to logfile: ${logFilePath}`);
 	});
+
+	if(quasArgs.argsFile && fs.existsSync(quasArgs.argsFile)) {
+		fromFile = JSON.parse(fs.readFileSync(quasArgs.argsFile));
+		fromFile.completed = true;
+		fromFile.outputFilePath = `${quasArgs.dirname}${getQuasarOutputPath(quasArgs)}/${quasArgs.output}${quasArgs.outputExt}`;
+		fs.writeFileSync(quasArgs.argsFile.replace(`/queued`,`/completed`), JSON.stringify(fromFile));
+		fs.unlink(quasArgs.argsFile);
+	}
 }
 
 const runLastSuccessfulBuild = (quasArgs = null) => {
@@ -150,6 +158,7 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 	// If the argsFile parameter is set and the file exists, load parameters from file
 	if (yargs.argv.argsFile && fs.existsSync(yargs.argv.argsFile)) {
 		fromFile = JSON.parse(fs.readFileSync(yargs.argv.argsFile));
+		
 	}
 
 	const quasArgs = Object.assign(
@@ -268,6 +277,10 @@ const getFilenamesInDirectory = (directory, extensions = [], removeExtension = f
 	}
 
 	return filenames;
+}
+
+const getQuasarOutputPath = (quasArgs = {}) => {
+	return `${quasArgs.outputFolder.replace(quasArgs.dirname, '')}/${quasArgs.domain}/${quasArgs.signal}`;
 }
 
 const findOutputDirectory = (startPath, outputDirectory = 'jobs', maxLevels = 5) => {
@@ -839,7 +852,7 @@ const uploadFiles = (quasArgs) => {
 // Compile the quasar into the output folder
 const outputToHtmlFile = (quasArgs) => {
 	return new promise((resolve, reject) => {
-		const outputPath = `${quasArgs.outputFolder.replace(quasArgs.dirname, '')}/${quasArgs.domain}/${quasArgs.signal}`;
+		const outputPath = getQuasarOutputPath(quasArgs);
 		log(`Applying the following parameters to the template (${quasArgs.targetFilePath}) and building output`);
 		log(`data:`, quasArgs);
 
