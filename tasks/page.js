@@ -37,6 +37,13 @@ const validateRequiredArgs = (args = {}) => {
 		
 		if(quasArgs.source == 'none') {
 			quasArgs.source = null;
+		} else if(quasArgs.source && quasArgs.source.length) {
+			const split = quasArgs.source.split('.');
+
+			if(split.length > 1) {
+				quasArgs.sourceExt = `.${split.pop()}`;
+				quasArgs.source = quasArgs.source.substr(0, quasArgs.source.length - quasArgs.sourceExt.length);
+			}
 		}
 
 		if(quasArgs.output && quasArgs.output.length) {
@@ -70,7 +77,7 @@ const init = () => {
 			type: 'list',
 			name: 'source',
 			message: `Enter the source filename (default .zip):\n`,
-			choices: ['none'].concat(lib.getFilenamesInDirectory(quasArgs.sourceFolder, ['zip']))
+			choices: ['none'].concat(lib.getFilenamesInDirectory(config.sourceFolder, ['zip']))
 		}, {
 			type: 'input',
 			name: 'body',

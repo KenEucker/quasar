@@ -4,4 +4,3 @@ echo "cleaning QUASAR output folders"
 rm -rf assets
 rm -rf public
 rm -rf jobs
-rm -rf dist

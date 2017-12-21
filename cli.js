@@ -55,20 +55,15 @@ const transformToProcessArgs = (data, file) => {
 	return `[${result}] --> node ${cliArgs.join(' ')}`;
 }
 
-const spawnWebForm = (runningApi) => {
+const spawnWebForm = () => {
 	const webFormPath = path.resolve(`./public/quasar/Webform/app.js`);
 
 	if(fs.existsSync(webFormPath)) {
 		lib.logInfo(`loading the webform file ${webFormPath}`);
 
 		webForm = require(webFormPath);
-		lib.definitelyCallFunction(() => {
-			if(runningApi) {
-				webForm.run(api.app, api.PORT);
-			} else {
-				webForm.run();
-			}
-		});
+		// console.log('this should attach to the app', api.app);
+		webForm.run(api.app, api.PORT);
 
 		return true;
 	}
@@ -92,6 +87,45 @@ gulp.task(`watchJobs`, () => {
 
 const packageElectronApp = () => {
 	packager({ executableName: 'quasar', platform: 'all' });
+}
+
+const runAsProcess = (args, resolve, reject) => {
+	if (args.runApi) {
+		// console.log('this should creat the app');
+		api.run(null, args.port);
+	}
+	
+	if (args.watchJobs) {
+		lib.runTask('watchJobs');
+	}
+
+	if (args.runWebForm) {
+		// TODO: use more intelligent path
+		if(!spawnWebForm(args.runApi)) {
+			if(args.autoBuildWebForm) {
+				lib.logInfo('automated quasar build of `quasarWebform`');
+					lib.runTask('quasarWebform', () => {
+							lib.logInfo('attempting another run of the quasarWebform');
+							if(!spawnWebForm(args.runApi)) {
+								lib.logError(`Can't do that!`);
+							} else {
+								resolve();
+							}
+					});
+
+					return true;
+			} else {
+				lib.logError(`cannot run webform because ${path.resolve(`./public/quasar/Webform/app.js`)} has not been built yet, run again with option --autoBuildWebForm=true to auto build the webform.`);
+				reject();
+				return true;
+			}
+		} else {
+			resolve();
+			return true;
+		}
+	}
+
+	return false;
 }
 
 const run = (args = {}) => {
@@ -119,41 +153,11 @@ const run = (args = {}) => {
 
 			return resolve();
 		} else if(args.runAsProcess) {
-			if (args.runApi) {
-				lib.definitelyCallFunction(() => {
-					api.run(args.port);
-				});
-			}
-			
-			if (args.watchJobs) {
-				lib.definitelyCallFunction(() => {
-					lib.runTask('watchJobs');
-				});
-			}
-
-			if (args.runWebForm) {
-				// TODO: use more intelligent path
-				if(!spawnWebForm(args.runApi)) {
-					if(args.autoBuildWebForm) {
-						lib.logInfo('automated quasar build of `quasarWebform`');
-						lib.definitelyCallFunction(() => {
-							return lib.runTask('quasarWebform', () => {
-									lib.logInfo('attempting another run of the quasarWebform');
-									if(!spawnWebForm(args.runApi)) {
-										lib.logError(`Can't do that!`);
-									} else {
-										return resolve();
-									}
-							});
-						});
-					} else {
-						lib.logError(`cannot run webform because ${path.resolve(`./public/quasar/Webform/app.js`)} has not been built yet, run again with option --autoBuildWebForm=true to auto build the webform.`);
-						return reject();
-					}
-				} else {
-					return resolve();
+			lib.definitelyCallFunction(() => {
+				if(runAsProcess(args, resolve, reject)) {
+					return;
 				}
-			}
+			});
 		}
 		
 		if (args.qType) {
