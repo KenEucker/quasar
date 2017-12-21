@@ -22,6 +22,7 @@ class Api {
 		let jsonp = new Promise((resolve, reject) => {
 			let data = req.body;
 			const outputDirectory = lib.findOutputDirectory(path.resolve(__dirname));
+			const sourcesDirectory = path.resolve(`${process.cwd()}/sources/`);
 			const outputFile = `${outputDirectory}/${data.qType}_${Date.now()}.json`;
 
 			if (data.source && data.source.length) {
@@ -34,7 +35,7 @@ class Api {
 				name = name[0].replace('.zip', '');
 
 				const base64 = data.source.substr(removeUntil);
-				const sourceFile = `${this.sourcesDirectory}/${name}`;
+				const sourceFile = `${sourcesDirectory}/${name}`;
 
 				fs.writeFileSync(`${sourceFile}${sourceExt}`, base64, 'base64');
 				data.source = name;
@@ -57,8 +58,8 @@ class Api {
 		}
 		this.app = app;
 
-		if (!this.sourcesDirectory) {``
-		this.sourcesDirectory = path.resolve(`${process.cwd()}/sources/`);
+		if (!this.sourcesDirectory) {
+			this.sourcesDirectory = path.resolve(`${process.cwd()}/sources/`);
 			mkdir(this.sourcesDirectory);
 		}
 		this.port = port || this.port;
