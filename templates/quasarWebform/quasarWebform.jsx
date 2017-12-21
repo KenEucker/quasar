@@ -49,15 +49,15 @@ const onFormChanged = (e) => {
 const quasarJobSaved = (response) => {
     const job = response.data.jobFile.replace('.json', '');
     let runningJobHtml = `Job ${job} runnning...`;
-    if (elementsMaterialistic) {
-        runningJobHtml = `
-        <span id="${job}" class="mdl-progress mdl-js-progress mdl-progress__indeterminate">Job ${job} runnning...</span>`;
-    }
 
     notification(runningJobHtml);
 
     const app = document.getElementById('app');
-    app.className.replace('isBusy', '');
+    app.classList.remove('isBusy');
+}
+
+const showOutputWindow = () => {
+
 }
 
 const onFormSubmitted = (e) => {
@@ -182,6 +182,19 @@ const makeElementsMaterialistic = () => {
         heading.style.display = "none";
     }
 
+    materialisticContainer.querySelectorAll('legend').forEach((legend) => {
+        const text = legend.innerHTML;
+        legend.innerHTML = `<div class="row">
+            <div class="col s12 m5">
+            <div class="card-panel teal">
+                <span>
+                    ${text}
+                </span>
+            </div>
+            </div>
+        </div>`;
+    });
+    
     materialisticContainer.querySelectorAll('.mdl-layout-heading').forEach((appLink) => {
         appLink.addEventListener('click', function (e) {
             e.preventDefault();

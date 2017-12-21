@@ -23,7 +23,7 @@ body {
         cursor: pointer;
     }
 
-    app.isBusy {
+    .isBusy {
         pointer-events: none;
         opacity: 0.4;
     }

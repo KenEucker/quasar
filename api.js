@@ -9,7 +9,8 @@ class Api {
 	constructor() {
 		this.port = process.env.port || '3720'
 		this.app = null
-		this.sourcesDirectory = null
+		this.jobsDirectory = path.resolve(`${process.cwd()}/jobs/queue`)
+		this.sourcesDirectory = path.resolve(`${process.cwd()}/sources/`)
 		this.availableTasks = lib.getTaskNames(path.resolve('./tasks/'));
 
 		if (yargs.argv.runApiStandalone) {
@@ -21,9 +22,9 @@ class Api {
 	onTaskDataReceived(req, res) {
 		let jsonp = new Promise((resolve, reject) => {
 			let data = req.body;
-			const outputDirectory = lib.findOutputDirectory(path.resolve(__dirname));
+			const jobsDirectory = `${lib.findOutputDirectory(path.resolve(__dirname))}/queue`;
 			const sourcesDirectory = path.resolve(`${process.cwd()}/sources/`);
-			const outputFile = `${outputDirectory}/${data.qType}_${Date.now()}.json`;
+			const jobFile = `${jobsDirectory}/${data.qType}_${Date.now()}.json`;
 
 			if (data.source && data.source.length) {
 				let removeUntil = data.source.indexOf(',');
@@ -40,15 +41,14 @@ class Api {
 				fs.writeFileSync(`${sourceFile}${sourceExt}`, base64, 'base64');
 				data.source = name;
 				data.sourceExt = sourceExt;
-				// console.log(`storing args in ${outputDirectory} for quasar loading and saving source to ${sourcesDirectory}/${sourceFile}${sourceExt}`);
+				// console.log(`storing args in ${jobsDirectory} for quasar loading and saving source to ${sourcesDirectory}/${sourceFile}${sourceExt}`);
 			}
-			fs.writeFileSync(outputFile, JSON.stringify(data));
+			fs.writeFileSync(jobFile, JSON.stringify(data));
 
-			return resolve({ jobFile: outputFile });
+			return resolve({ jobFile: jobFile });
 		});
 		return res.json(jsonp);
 	}
-
 
 	run(app = null, port = null, start = false) {
 		if (!app) {
@@ -56,13 +56,12 @@ class Api {
 			// console.log('creating the app in api.js');
 			start = true;
 		}
+		this.port = port || this.port;
 		this.app = app;
 
-		if (!this.sourcesDirectory) {
-			this.sourcesDirectory = path.resolve(`${process.cwd()}/sources/`);
-			mkdir(this.sourcesDirectory);
-		}
-		this.port = port || this.port;
+		mkdir(this.sourcesDirectory);
+		mkdir(this.jobsDirectory);
+		mkdir(this.jobsDirectory.replace('/queue', '/completed'));
 
 		this.app.use(bodyParser.json({ limit: '50mb' }));
 		this.app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
