@@ -82,6 +82,7 @@ const createForms = () => {
             <Form
                 schema={schema.schema}
                 uiSchema={schema.uiSchema}
+                formData={schema.formData}
                 onChange={onFormChanged}
                 onSubmit={onFormSubmitted}
                 onError={log("errors")}>
@@ -147,6 +148,11 @@ const showForm = (formTitle = null) => {
 const finalTouches = () => {
     const file = document.querySelector('input[type=file]');
     file.setAttribute('accept', 'application/zip');
+
+    // HACK!
+    document.querySelectorAll('.field label.control-label').forEach((label) => {
+        label.innerHTML = label.innerHTML.replace(` [33m(optional)[39m`, '');
+    });
 }
 
 const getMaterialisticFormHeader = () => {
@@ -197,7 +203,7 @@ const makeElementsMaterialistic = () => {
             </div>
         </div>`;
     });
-    
+
     materialisticContainer.querySelectorAll('.mdl-layout-heading').forEach((appLink) => {
         appLink.addEventListener('click', function (e) {
             e.preventDefault();
