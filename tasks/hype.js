@@ -156,11 +156,6 @@ const confirmationPrompt = () => {
 				name: 'hypeElements',
 				message: `Select the ids of the clickable HYPE elements to attach click events. The following ${dtAdsArgs.hypeElements.length} HYPE elements were found:`,
 				choices: dtAdsArgs.hypeElements.map(c => { return { name: c, checked: true } })
-			},{
-				type: 'confirm',
-				name: 'uploadToS3',
-				message: `Upload assets to S3? ${colors.yellow('(optional)')}`,
-				default: false
 			}], (res) => {
 				dtAdsArgs = Object.assign(dtAdsArgs, res);
 
@@ -207,6 +202,11 @@ const init = () => {
 			type: 'input',
 			name: 'output',
 			message: `Enter the output filename postfix (default extension .${dtAdsArgs.outputExt} ${colors.yellow('(optional)')}):\n`
+		},{
+			type: 'confirm',
+			name: 'uploadToS3',
+			message: `Upload assets to S3? ${colors.yellow('(optional)')}`,
+			default: false
 		},{
 			type: 'list',
 			name: 'clickTarget',
