@@ -5,7 +5,7 @@ let gulp = require('gulp'),
 	insert = require('gulp-insert'),
 	prompt = require('inquirer'),
 	sass = require('dart-sass')
-	concat = require('gulp-concat'),
+concat = require('gulp-concat'),
 	flatmap = require('gulp-flatmap'),
 	babel = require('gulp-babel'),
 	spawn = require("child_process"),
@@ -20,7 +20,7 @@ let gulp = require('gulp'),
 	unzip = require("extract-zip"),
 	path = require('path'),
 	mv = require('mv')
-	colors = require('colors'),
+colors = require('colors'),
 	os = require('os'),
 	promise = require('bluebird'),
 	lastLine = require('last-line'),
@@ -104,10 +104,10 @@ const logSuccessfulOutputToFile = (quasArgs) => {
 	const noArgTypes = ['object', 'function'];
 	const skipKeys = ['/bin/zsh', '$0', 'noPrompt'];
 	let recordedKeys = [];
-	const cliArgs = Object.keys(quasArgs).map((k) => { 
+	const cliArgs = Object.keys(quasArgs).map((k) => {
 		const skipValue = noArgTypes.indexOf(typeof quasArgs[k]) != -1 || skipKeys.indexOf(k) != -1 || recordedKeys.indexOf(k) != -1;
-		if(!skipValue) { 
-			recordedKeys.push(k); 
+		if (!skipValue) {
+			recordedKeys.push(k);
 			return `--${k}=\"${quasArgs[k]}\"`;
 		}
 	});
@@ -120,7 +120,7 @@ const logSuccessfulOutputToFile = (quasArgs) => {
 
 const runLastSuccessfulBuild = (quasArgs = null) => {
 	return new promise((resolve, reject) => {
-		if(!quasArgs) {
+		if (!quasArgs) {
 			quasArgs = { logToFile: `.log`, dirname: config.dirname };
 		}
 		const logFilePath = path.resolve(`${quasArgs.dirname}/${quasArgs.logToFile}`);
@@ -133,7 +133,7 @@ const runLastSuccessfulBuild = (quasArgs = null) => {
 				logSuccess(`Running the last found command in the logfile: ${command}`);
 				command = command.replace(`node cli.js`, ``);
 				let args = command.split(' ');
-				args = args.map( k => { return k.replace(/"/g,'') });
+				args = args.map(k => { return k.replace(/"/g, '') });
 				spawnCommand(null, args);
 
 				return resolve();
@@ -227,8 +227,8 @@ const spawnCommand = (argsFile, args = [], command = `node`, synchronous = false
 	log(`Running command ${command} ${args.join(' ')}`);
 	let call = spawn.spawn;
 
-	if(synchronous) {
-		return spawn.spawnSync(command, args, {stdio: "inherit"});
+	if (synchronous) {
+		return spawn.spawnSync(command, args, { stdio: "inherit" });
 	}
 
 	return spawn.spawn(command, args)
@@ -271,32 +271,32 @@ const getFilenamesInDirectory = (directory, extensions = [], removeExtension = f
 }
 
 const findOutputDirectory = (startPath, outputDirectory = 'jobs', maxLevels = 5) => {
-    if (!fs.existsSync(startPath)){
-        return;
-    }
+	if (!fs.existsSync(startPath)) {
+		return;
+	}
 
-    // If the startPath is the one we are looking for
-    let stat = fs.lstatSync(startPath);
-        if(stat.isDirectory() && startPath.split('/').pop() == outputDirectory) {
-            return startPath;
-    }
+	// If the startPath is the one we are looking for
+	let stat = fs.lstatSync(startPath);
+	if (stat.isDirectory() && startPath.split('/').pop() == outputDirectory) {
+		return startPath;
+	}
 
-    // If the path we are looking for is a sybling of the startPath
-    const files=fs.readdirSync(startPath);
-    for (let i=0; i < files.length; i++) {
-        const pathname = path.join( startPath, files[i]);
+	// If the path we are looking for is a sybling of the startPath
+	const files = fs.readdirSync(startPath);
+	for (let i = 0; i < files.length; i++) {
+		const pathname = path.join(startPath, files[i]);
 
-        stat = fs.lstatSync(pathname);
-        if(stat.isDirectory() && pathname.split('/').pop() == outputDirectory) {
-            return pathname;
-        }
-    }
+		stat = fs.lstatSync(pathname);
+		if (stat.isDirectory() && pathname.split('/').pop() == outputDirectory) {
+			return pathname;
+		}
+	}
 
-    if(maxLevels > 0) {
-        return findOutputDirectory(path.resolve(startPath, '../'), outputDirectory, maxLevels - 1);
-    } else {
-        return;
-    }
+	if (maxLevels > 0) {
+		return findOutputDirectory(path.resolve(startPath, '../'), outputDirectory, maxLevels - 1);
+	} else {
+		return;
+	}
 }
 
 const fromDir = (startPath, filter, extension = '') => {
@@ -420,6 +420,9 @@ const convertPromptToJsonSchemaFormProperty = (prompt) => {
 				property.enum = prompt.choices;
 			}
 			break;
+		case 'confirm':
+			property.enum = ["Yes", "No"];
+			property.type = "boolean";
 		default:
 			break;
 	}
@@ -437,6 +440,10 @@ const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
 	switch (widget) {
 		case 'input':
 			widget = 'text';
+			break;
+
+		case 'confirm':
+			widget = 'radio';
 			break;
 
 		case 'list':
@@ -648,7 +655,7 @@ const unpackFiles = (quasArgs) => {
 		if (!quasArgs.unpackFiles || !quasArgs.source) {
 			return resolve(quasArgs);
 		}
-		
+
 		const zipFilePath = path.resolve(`${quasArgs.sourceFolder}/${quasArgs.source}${quasArgs.sourceExt}`);
 		log(`unpacking source files from (${zipFilePath}) to the folder (${destinationPath}) before building output`);
 
