@@ -93,9 +93,11 @@ const webForm = (app, port = null, start = false) => {
             } else {
                 console.log(`outputFilePath not found: ${jobArgs.outputFilePath}`);
             }
-        } else {
+        } else if (fs.existsSync(jobFilePath.replace('/completed', '/queued'))){
             console.log(`jobFile not found: ${jobFilePath}`);
             res.send(loadingPage("Building ..."));
+        } else {
+            res.send("job does not exist");
         }
     });
 

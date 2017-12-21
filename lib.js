@@ -121,7 +121,7 @@ const logSuccessfulOutputToFile = (quasArgs) => {
 		fromFile = JSON.parse(fs.readFileSync(quasArgs.argsFile));
 		fromFile.completed = true;
 		fromFile.outputFilePath = `${quasArgs.dirname}${getQuasarOutputPath(quasArgs)}/${quasArgs.output}${quasArgs.outputExt}`;
-		fs.writeFileSync(quasArgs.argsFile.replace(`/queue`,`/completed`), JSON.stringify(fromFile));
+		fs.writeFileSync(quasArgs.argsFile.replace(`/queued`,`/completed`), JSON.stringify(fromFile));
 		fs.unlink(quasArgs.argsFile);
 	}
 }

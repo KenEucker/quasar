@@ -9,7 +9,7 @@ class Api {
 	constructor() {
 		this.port = process.env.port || '3720'
 		this.app = null
-		this.jobsDirectory = path.resolve(`${process.cwd()}/jobs/queue`)
+		this.jobsDirectory = path.resolve(`${process.cwd()}/jobs/queued`)
 		this.sourcesDirectory = path.resolve(`${process.cwd()}/sources/`)
 		this.availableTasks = lib.getTaskNames(path.resolve('./tasks/'));
 
@@ -22,9 +22,10 @@ class Api {
 	onTaskDataReceived(req, res) {
 		let jsonp = new Promise((resolve, reject) => {
 			let data = req.body;
-			const jobsDirectory = `${lib.findOutputDirectory(path.resolve(__dirname))}/queue`;
+			const jobsDirectory = `${lib.findOutputDirectory(path.resolve(__dirname))}/queued`;
 			const sourcesDirectory = path.resolve(`${process.cwd()}/sources/`);
-			const jobFile = `${jobsDirectory}/${data.qType}_${Date.now()}.json`;
+			const job = `${data.qType}_${Date.now()}`;
+			const jobFile = `${jobsDirectory}/${job}.json`;
 
 			if (data.source && data.source.length) {
 				let removeUntil = data.source.indexOf(',');
@@ -45,7 +46,7 @@ class Api {
 			}
 			fs.writeFileSync(jobFile, JSON.stringify(data));
 
-			return resolve({ jobFile: jobFile });
+			return resolve({ job, jobFile });
 		});
 		return res.json(jsonp);
 	}
@@ -61,7 +62,7 @@ class Api {
 
 		mkdir(this.sourcesDirectory);
 		mkdir(this.jobsDirectory);
-		mkdir(this.jobsDirectory.replace('/queue', '/completed'));
+		mkdir(this.jobsDirectory.replace('/queued', '/completed'));
 
 		this.app.use(bodyParser.json({ limit: '50mb' }));
 		this.app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));

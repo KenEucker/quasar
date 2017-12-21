@@ -76,7 +76,7 @@ gulp.task(`watchJobs`, () => {
 	mkdir(path.resolve(lib.config.dirname, 'jobs'));
 	
 	lib.logSuccess(`watching folder /jobs/ for new or changed files to build from`);
-	return watch('jobs/queue/*.json', { ignoreInitial: true })
+	return watch('jobs/queued/*.json', { ignoreInitial: true })
 		.pipe(jsonTransform(transformToProcessArgs));
 });
 

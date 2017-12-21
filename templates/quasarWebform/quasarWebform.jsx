@@ -47,13 +47,16 @@ const onFormChanged = (e) => {
 }
 
 const quasarJobSaved = (response) => {
-    const job = response.data.jobFile.replace('.json', '');
+    const job = response.data.job;
+    const jobFile = response.data.jobFile.replace('.json');
     let runningJobHtml = `Job ${job} runnning...`;
 
     notification(runningJobHtml);
 
     const app = document.getElementById('app');
     app.classList.remove('isBusy');
+    const jobWin = window.open(`/job/${job}`, job);
+    jobWin.focus();
 }
 
 const showOutputWindow = () => {
