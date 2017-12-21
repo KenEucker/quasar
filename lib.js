@@ -117,11 +117,11 @@ const logSuccessfulOutputToFile = (quasArgs) => {
 		logSuccess(`Logged to logfile: ${logFilePath}`);
 	});
 
-	if(quasArgs.argsFile && fs.existsSync(quasArgs.argsFile)) {
+	if (quasArgs.argsFile && fs.existsSync(quasArgs.argsFile)) {
 		fromFile = JSON.parse(fs.readFileSync(quasArgs.argsFile));
 		fromFile.completed = true;
 		fromFile.outputFilePath = `${quasArgs.dirname}${getQuasarOutputPath(quasArgs)}/${quasArgs.output}${quasArgs.outputExt}`;
-		fs.writeFileSync(quasArgs.argsFile.replace(`/queued`,`/completed`), JSON.stringify(fromFile));
+		fs.writeFileSync(quasArgs.argsFile.replace(`/queued`, `/completed`), JSON.stringify(fromFile));
 		fs.unlink(quasArgs.argsFile);
 	}
 }
@@ -158,7 +158,7 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 	// If the argsFile parameter is set and the file exists, load parameters from file
 	if (yargs.argv.argsFile && fs.existsSync(yargs.argv.argsFile)) {
 		fromFile = JSON.parse(fs.readFileSync(yargs.argv.argsFile));
-		
+
 	}
 
 	const quasArgs = Object.assign(
@@ -435,7 +435,6 @@ const convertPromptToJsonSchemaFormProperty = (prompt) => {
 			}
 			break;
 		case 'confirm':
-			property.enum = ["Yes", "No"];
 			property.type = "boolean";
 		default:
 			break;
@@ -487,7 +486,7 @@ const registerRequiredQuasArgs = (quasArgs, requiredArgs = [], nonRequiredArgs =
 		// TODO: update two arrays of objects
 	}
 	quasArgs.requiredArgs.forEach((arg) => {
-		quasArgs[arg.name] = quasArgs[arg.name] || quasArgs.default || '';
+		quasArgs[arg.name] = quasArgs[arg.name] || arg.default || '';
 	});
 
 	return quasArgs;
