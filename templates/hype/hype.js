@@ -15,7 +15,7 @@ var addGAScript = function() {
 }; // End addGAScript();
 
 function videoTracking(video) {
-	if(videoEl.className.indexOf('h-track-click') == -1) {
+	if(video.className.indexOf('h-track-click') == -1) {
 		return;
 	}
 

@@ -60,7 +60,7 @@ const validateRequiredArgs = (args = {}) => {
 			}
 		} else {
 			//Default the output filename to the campaign
-			dtAdsArgs.output =`${dtAdsArgs.campaign}_${dtAdsArgs.qType}`;
+			dtAdsArgs.output =`${dtAdsArgs.client}_${dtAdsArgs.campaign}_${dtAdsArgs.qType}`;
 		}
 
 		if(!dtAdsArgs.target || !dtAdsArgs.target.length) {
