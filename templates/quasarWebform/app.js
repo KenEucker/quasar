@@ -8,6 +8,20 @@ let express = require('express'),
     bodyParser = require('body-parser'),
     jsonPromise = require('express-json-promise');
 
+let PORT = process.env.PORT || '3720', app = null, sourcesDirectory = null;
+
+const staticOptions = {
+    dotfiles: 'ignore',
+    etag: false,
+    extensions: ['htm', 'html', 'jpg'],
+    index: false,
+    maxAge: '1d',
+    redirect: false,
+    setHeaders: function (res, path, stat) {
+    res.set('x-timestamp', Date.now())
+    }
+};
+
 const findOutputDirectory = (startPath, outputDirectory = 'jobs', maxLevels = 5) => {
     if (!fs.existsSync(startPath)){
         return;
@@ -37,20 +51,6 @@ const findOutputDirectory = (startPath, outputDirectory = 'jobs', maxLevels = 5)
     }
 }
 
-let PORT = process.env.PORT || '3720', app = null, sourcesDirectory = null;
-
-const staticOptions = {
-    dotfiles: 'ignore',
-    etag: false,
-    extensions: ['htm', 'html', 'jpg'],
-    index: false,
-    maxAge: '1d',
-    redirect: false,
-    setHeaders: function (res, path, stat) {
-    res.set('x-timestamp', Date.now())
-    }
-};
-
 const loadingPage = () => {
     return `
         <html>
@@ -75,36 +75,6 @@ const loadingPage = () => {
     `;
 }
 
-const postedForm = (req, res) => {
-    let jsonp = new Promise((resolve, reject) => {
-            let data = req.body;
-            const outputDirectory = findOutputDirectory(path.resolve(__dirname));
-            const outputFile = `${outputDirectory}/${data.qType}_${Date.now()}.json`;
-
-            if(data.source && data.source.length) {
-                let removeUntil = data.source.indexOf(',');
-                removeUntil = removeUntil > 0 ? removeUntil + 1 : removeUntil;
-
-                const sourceExt = `.zip`;
-                // TODO: WTF THIS HACK?!
-                let name = data.source.substr(0, removeUntil - 1).split('name=').pop().split(';');
-                name = name[0].replace('.zip','');
-
-                const base64 = data.source.substr(removeUntil);
-                const sourceFile = `${sourcesDirectory}/${name}`;
-
-                fs.writeFileSync(`${sourceFile}${sourceExt}`, base64, 'base64'); 
-                data.source = name;
-                data.sourceExt = sourceExt;
-                // console.log(`storing args in ${outputDirectory} for quasar loading and saving source to ${sourcesDirectory}/${sourceFile}${sourceExt}`);
-            }
-            fs.writeFileSync(outputFile, JSON.stringify(data));
-
-            return resolve({jobFile: outputFile});
-        });
-    return res.json(jsonp);
-}
-
 const webForm = (app, port = null, start = false) => {
 
     if(!sourcesDirectory) {
@@ -113,12 +83,12 @@ const webForm = (app, port = null, start = false) => {
     }
     PORT = port || PORT;
 
-    app.use(bodyParser.json({limit:'50mb'}));
-    app.use(bodyParser.urlencoded({ extended: true, limit:'50mb' }));
+    // app.use(bodyParser.json({limit:'50mb'}));
+    // app.use(bodyParser.urlencoded({ extended: true, limit:'50mb' }));
 
-    app.use(jsonPromise());
+    // app.use(jsonPromise());
 
-    app.post('/', postedForm);
+    // app.post('/', postedForm);
 
     app.get('/', function(req, res){
         const webFormPath = path.resolve(path.join(`${__dirname}/index.html`));
@@ -148,7 +118,7 @@ const launchInBrowser = () => {
     })
 }
 
-const run = (app = null, port = null, autoLaunchBrowser = yargs.argv.autoLaunchBrowser || false, start = false) => {
+const run = (app = null, port = null, start = false, autoLaunchBrowser = yargs.argv.autoLaunchBrowser || false) => {
     if (!app) {
         app = express();
         start = true;
@@ -159,10 +129,10 @@ const run = (app = null, port = null, autoLaunchBrowser = yargs.argv.autoLaunchB
     if (autoLaunchBrowser) {
         launchInBrowser();
     }
-    }
+}
 
-    if (yargs.argv.runWebFormStandalone) {
-    run(null, yargs.argv.webFormPort, yargs.argv.autoLaunchBrowser, true);
+if (yargs.argv.runWebFormStandalone) {
+    run(null, yargs.argv.webFormPort, true, yargs.argv.autoLaunchBrowser);
 }
 
 const init = () => {

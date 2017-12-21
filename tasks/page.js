@@ -37,6 +37,13 @@ const validateRequiredArgs = (args = {}) => {
 		
 		if(quasArgs.source == 'none') {
 			quasArgs.source = null;
+		} else if(quasArgs.source && quasArgs.source.length) {
+			const split = quasArgs.source.split('.');
+
+			if(split.length > 1) {
+				quasArgs.sourceExt = `.${split.pop()}`;
+				quasArgs.source = quasArgs.source.substr(0, quasArgs.source.length - quasArgs.sourceExt.length);
+			}
 		}
 
 		if(quasArgs.output && quasArgs.output.length) {

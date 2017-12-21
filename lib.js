@@ -165,6 +165,7 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 			scriptsAsset: qType ? `${config.assetsFolder}/${qType}/${qType}.js` : undefined,
 			target: qType ? `${qType}.html` : undefined,
 			bucket: '%AWS%',
+			sourceExt: '.zip',
 			outputExt: '.txt',
 			cdnUrlStart: 'https://cdn.com/',
 			uploadToS3: false,
@@ -187,7 +188,7 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 }
 
 const definitelyCallFunction = (cb, resolve = null) => {
-	if (process.title == 'gulp') {
+	if (process.title == 'gulp' && !(gulp.hasTask('default'))) {
 		gulp.task('default', () => {
 			cb();
 			if (resolve) { resolve() }
@@ -267,6 +268,35 @@ const getFilenamesInDirectory = (directory, extensions = [], removeExtension = f
 	}
 
 	return filenames;
+}
+
+const findOutputDirectory = (startPath, outputDirectory = 'jobs', maxLevels = 5) => {
+    if (!fs.existsSync(startPath)){
+        return;
+    }
+
+    // If the startPath is the one we are looking for
+    let stat = fs.lstatSync(startPath);
+        if(stat.isDirectory() && startPath.split('/').pop() == outputDirectory) {
+            return startPath;
+    }
+
+    // If the path we are looking for is a sybling of the startPath
+    const files=fs.readdirSync(startPath);
+    for (let i=0; i < files.length; i++) {
+        const pathname = path.join( startPath, files[i]);
+
+        stat = fs.lstatSync(pathname);
+        if(stat.isDirectory() && pathname.split('/').pop() == outputDirectory) {
+            return pathname;
+        }
+    }
+
+    if(maxLevels > 0) {
+        return findOutputDirectory(path.resolve(startPath, '../'), outputDirectory, maxLevels - 1);
+    } else {
+        return;
+    }
 }
 
 const fromDir = (startPath, filter, extension = '') => {
@@ -844,6 +874,7 @@ module.exports = {
 	copyFilesFromTemplatesFolderToOutput,
 	copyTemplateFilesToAssetsPath,
 	definitelyCallFunction,
+	findOutputDirectory,
 	findTargetFile,
 	fromDir,
 	getQuasArgs,

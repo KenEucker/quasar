@@ -9,6 +9,8 @@ let forms = [], selectedForm = '';
 
 const log = (type) => console.log.bind(console, type);
 const apiUri = `${window.location.protocol}/${window.location.hostname}:${window.location.port}`;
+const elementsMaterialistic = true;
+const notification = notify.show || (() => {});
 
 const ensureData = (data) => {
     let allData = {};
@@ -45,26 +47,38 @@ const onFormChanged = (e) => {
 }
 
 const quasarJobSaved = (response) => {
-    notify.show(`Job ${response.data.jobFile} runnning...`);
+    const job = response.data.jobFile.replace('.json', '');
+    let runningJobHtml = `Job ${job} runnning...`;
+    if (elementsMaterialistic) {
+        runningJobHtml = `
+        <span id="${job}" class="mdl-progress mdl-js-progress mdl-progress__indeterminate">Job ${job} runnning...</span>`;
+    }
+
+    notification(runningJobHtml);
+
+    const app = document.getElementById('app');
+    app.className.replace('isBusy', '');
 }
 
 const onFormSubmitted = (e) => {
+    const app = document.getElementById('app');
+    app.className += " isBusy";
     postData(window.location.origin, ensureData(e.formData), quasarJobSaved);
 }
 
 const createForms = () => {
-
-    window.quasarForms.forEach((form) => {
-        var div = document.createElement('div');
-        var formTitle = form.name;
-        div.id = formTitle;
-        div.style.display = 'none';
-        forms.push(formTitle);
+    forms = window.quasarForms.map(form => form.name);
+    window.quasarForms.forEach((schema) => {
+        var form = document.createElement('div');
+        var formTitle = schema.name;
+        form.id = formTitle;
+        form.style.display = 'none';
+        form.className = "quasarWebform";
 
         render((
             <Form 
-                schema={form.schema}
-                uiSchema={form.uiSchema}
+                schema={schema.schema}
+                uiSchema={schema.uiSchema}
                 onChange={onFormChanged}
                 onSubmit={onFormSubmitted}
                 onError={log("errors")}>
@@ -72,9 +86,9 @@ const createForms = () => {
                         <button type="submit" class="btn btn-info">Generate</button>
                     </p>
                 </Form>
-        ), div);
+        ), form);
 
-        document.getElementById("app").appendChild(div);
+        document.getElementById("app").appendChild(form);
     });
 }
 
@@ -96,21 +110,35 @@ const createDropdown = () => {
         dropdown.add(option);
     });
     dropdown.addEventListener("change", (t) => {
-        notify.show(`Changing to form ${t.target.value}`);
-    
-        forms.forEach((form) => {
-            const formEl = document.getElementById(form);
-            if(form == t.target.value) {
-                selectedForm = form;
-                formEl.style.display = "block";
-            } else {
-                formEl.style.display = "none";
-            }
-        });
+        showForm(t.target.value);
     });
 
     outer.appendChild(dropdown);
     document.body.prepend(outer);
+}
+
+const showForm = (formTitle = null) => {
+    let welcomeMessageDisplay = 'none';
+
+    forms.forEach((form) => {
+        const formEl = document.getElementById(form);
+        if(form == formTitle) {
+            selectedForm = form;
+            formEl.style.display = "block";
+        } else {
+            formEl.style.display = "none";
+        }
+    });
+
+    if(!formTitle) {
+        welcomeMessageDisplay = "block";
+        selectedForm = "";
+    } 
+    
+    if (elementsMaterialistic) {
+        document.querySelector('.mdl-layout-title').innerHTML = selectedForm;
+        document.getElementById('welcome').style.display = welcomeMessageDisplay;
+    }
 }
 
 const finalTouches = () => {
@@ -118,7 +146,96 @@ const finalTouches = () => {
     file.setAttribute('accept', 'application/zip');
 }
 
-createForms();
-createDropdown();
-createNotificationBar();
-finalTouches();
+const getMaterialisticFormHeader = () => {
+    let headerHtml = `<nav class="mdl-navigation">`;
+    forms.forEach((form) => {
+        headerHtml += `<a class="mdl-navigation__link" href="${form}">${form}</a>`;
+    });
+    return `${headerHtml}</nav>`;
+}
+
+const makeElementsMaterialistic = () => {
+    const app = document.getElementById("app");
+    const heading = document.getElementById("quasarHeading");
+    const headerText = heading ? heading.innerHTML : "quasar";
+    const firstFormId = forms.length ? forms[0] : "";
+    const materialisticContainer = document.createElement('div');
+    materialisticContainer.id = "mdl";
+    materialisticContainer.className = "mdl-layout mdl-js-layout mdl-layout--fixed-header";
+    materialisticContainer.innerHTML = `
+        <header class="mdl-layout__header">
+        <div class="mdl-layout__header-row">
+            <span class="mdl-layout-title">${firstFormId}</span>
+            <div class="mdl-layout-spacer"></div>
+            <span class="mdl-layout-heading">${headerText}</span>
+        </div>
+        </header>
+        <div class="mdl-layout__drawer">
+            <span class="mdl-layout-title">Quasar</span>
+            ${getMaterialisticFormHeader()}
+        </div>
+        <main class="mdl-layout__content">
+            <div class="page-content mdl-grid"><div id="welcome" class="quasarWebform mdl-cell mdl-cell--8-col"><p>Welcome to the quasar build pipeline, where you can get a single html snippet from a series of different configurations.</p></div></div>
+        </main>`;
+    app.parentNode.insertBefore(materialisticContainer, app);
+    
+    if (heading) {
+        heading.style.display = "none";
+    }
+
+    materialisticContainer.querySelectorAll('.mdl-layout-heading').forEach((appLink) => {
+        appLink.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            showForm();
+
+            return false;
+        });
+    });
+
+    materialisticContainer.querySelectorAll('.mdl-navigation__link').forEach((navLink) => {
+        navLink.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            var href = e.target.getAttribute('href');
+            showForm(href);
+
+            return false;
+        });
+    });
+
+    // Close drawer hack
+    materialisticContainer.querySelector('.mdl-layout__drawer').addEventListener('click', function () {
+        materialisticContainer.querySelector('.mdl-layout__obfuscator').classList.remove('is-visible');
+        this.classList.remove('is-visible');
+      }, false);
+    
+    app.querySelectorAll('form').forEach((form) => {
+        form.className += " mdl-cell mdl-cell--8-col";
+    });
+    app.querySelectorAll('button').forEach((button) => {
+        button.className += " mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent";
+    });
+    app.querySelectorAll('input').forEach((input) => {
+        if (input.getAttribute('type') == 'text') {
+            input.className += " mdl-textfield__input";
+            input.parentNode.className += " mdl-textfield mdl-js-textfield";
+        }
+    });
+    
+    const materialisticContainerInner = document.querySelector('#mdl .page-content');
+    materialisticContainerInner.appendChild(app);
+
+}
+
+const createApp = () => {
+    createForms();
+
+    if (elementsMaterialistic) { makeElementsMaterialistic() }
+    else { createDropdown() }
+
+    createNotificationBar();
+    finalTouches();
+}
+
+createApp();
