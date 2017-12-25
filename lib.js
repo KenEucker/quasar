@@ -661,9 +661,9 @@ const unpackFiles = (quasArgs) => {
 
 			if (destinationPathExists) {
 				del(destinationPath);
-				mkdir(destinationPath);
 			}
 		}
+		mkdir(destinationPath);
 
 		if (!quasArgs.unpackFiles || !quasArgs.source) {
 			return resolve(quasArgs);
