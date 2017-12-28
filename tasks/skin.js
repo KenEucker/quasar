@@ -1,7 +1,8 @@
 let gulp = require('gulp'),
 	promise = require('bluebird'),
 	colors = require('colors'),
-	fs = require('fs');
+	fs = require('fs'),
+	admZip = require('adm-zip');
 
 const qType = path.basename(__filename).split('.')[0];
 const shim = 'dt-lib-shim.js';
@@ -11,6 +12,7 @@ let dtAdsArgs = {};
 
 const task = () => {
 	return lib.injectCode(dtAdsArgs)
+		.then(() => { return getSkinImageFilenames() })
 		.then(() => { return lib.outputToHtmlFile(dtAdsArgs); })
 		.then(() => { return lib.copyFilesFromSourcesFolderToOutput(dtAdsArgs) })
 		.then(() => { return lib.uploadFiles(dtAdsArgs, [ '*.txt' ]) })
@@ -22,6 +24,29 @@ const run = (args = {}) => {
 
 const getQuasarPrompts = () => {
 	return dtAdsArgs.requiredArgs;
+}
+
+const getSkinImageFilenames = () => {
+	return new Promise((resolve, reject) => {
+		const zipFileName = `${dtAdsArgs.sourceFolder}/${dtAdsArgs.source}${dtAdsArgs.sourceExt}`;
+		let zip = new admZip(zipFileName),
+			zipEntries = zip.getEntries(),
+			setLeft = false, setRight = false;
+	
+		zipEntries.forEach((zipEntry) => {
+			if (!(setLeft && setRight) && zipEntry.name.indexOf('.jpg') != -1) {
+				if (zipEntry.name[0].toUpperCase() === "L") {
+					dtAdsArgs.leftImageUrl = `${dtAdsArgs.cdnUrlStart}${dtAdsArgs.client}/${dtAdsArgs.campaign}/${zipEntry.name}`;
+					setLeft = true;
+				} else if(zipEntry.name[0].toUpperCase() === "R") {
+					dtAdsArgs.rightImageUrl = `${dtAdsArgs.cdnUrlStart}${dtAdsArgs.client}/${dtAdsArgs.campaign}/${zipEntry.name}`;
+					setRight = true;
+				}
+			}
+		});
+
+		return resolve();
+	});
 }
 
 const validateRequiredArgs = (args = {}) => {
@@ -40,16 +65,8 @@ const validateRequiredArgs = (args = {}) => {
 			//Default the input filename to the campaign
 			dtAdsArgs.source = dtAdsArgs.campaign;
 		}
-
-		if (!(dtAdsArgs.imageName && dtAdsArgs.imageName.length)) {
-			dtAdsArgs.imageName = `${dtAdsArgs.source}${dtAdsArgs.sourceExt}`;
-		} else {
-			const split1 = dtAdsArgs.imageName.split('.');
-			if (split1.length < 2) {
-				dtAdsArgs.imageName = `${dtAdsArgs.imageName}${dtAdsArgs.sourceExt}`;
-			}
-		}
-		dtAdsArgs.imageUrl = `${dtAdsArgs.cdnUrlStart}${dtAdsArgs.client}/${dtAdsArgs.campaign}/${dtAdsArgs.imageName}`;
+		//dtAdsArgs.leftImageUrl = 
+		//dtAdsArgs.rightImageUrl = `${dtAdsArgs.cdnUrlStart}${dtAdsArgs.client}/${dtAdsArgs.campaign}/${dtAdsArgs.imageName}`;
 
 		if (dtAdsArgs.output && dtAdsArgs.output.length) {
 			const split = dtAdsArgs.output.split('.');
@@ -81,13 +98,9 @@ const init = () => {
 	dtAdsArgs = lib.getQuasArgs(qType, lib.getCampaignPromptQuestions().concat([{
 		type: 'list',
 		name: 'source',
-		message: `Select the source image for the skin:\n`,
-		choices: ['none'].concat(lib.getFilenamesInDirectory(lib.config.sourceFolder, ['jpg'])),
+		message: `Select the source image for the skins ('left-' and 'right-'):\n`,
+		choices: ['none'].concat(lib.getFilenamesInDirectory(lib.config.sourceFolder, ['zip'])),
 		required: true
-	}, {
-		type: 'input',
-		name: 'imageName',
-		message: `enter the name of the image (source) ${colors.yellow('(optional)')})\n`
 	}, {
 		type: 'input',
 		name: 'bgColor',
@@ -106,7 +119,8 @@ const init = () => {
 			qType: qType,
 			clickUrl: '!! PASTE CLICK URL HERE !!',
 			impressionTracker: '!! PASTE IMPRESSION TRACKER URL HERE !!',
-			sourceExt: '.jpg',
+			sourceExt: '.zip',
+			preload: true,
 			requiredArgsValidation: validateRequiredArgs
 		}, false);
 }
