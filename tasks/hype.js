@@ -11,7 +11,7 @@ const lib = fs.existsSync(`${config.assetsFolder}/${shim}`) ? require(`${config.
 let dtAdsArgs = {};
 
 const task = () => {
-	return lib.copyFilesFromSourcesFolderToOutput(dtAdsArgs)
+	return lib.unpackFiles(dtAdsArgs)
 		.then(() => { return lib.moveTargetFilesToRootOfAssetsPath(dtAdsArgs) })
 		.then(() => { return parseFiles() })
 		.then(() => { return confirmationPrompt() })
