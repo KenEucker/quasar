@@ -2,10 +2,10 @@
   "name": "quasar",
   "version": "0.4.0",
   "description": "A light version of the quasi app runtime",
-  "main": "main.js",
+  "main": "quasar.js",
   "productName": "quasar",
   "dependencies": {
-    "aws-sdk": "^2.173.0",
+    "aws-sdk": "^2.175.0",
     "axios": "^0.17.1",
     "babel-core": "^6.26.0",
     "babel-polyfill": "^6.26.0",
@@ -64,6 +64,13 @@
     "deploy": "bin/package",
     "watch": "bin/watch",
     "clean": "bin/clean"
+  },
+  "bin": {
+    "cli": "./bin/cli",
+    "package": "./bin/package",
+    "watch": "./bin/watch",
+    "clean": "./bin/clean"
+
   },
   "author": "keneucker@gmail.com"
 }
