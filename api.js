@@ -35,10 +35,12 @@ class Api {
 				let removeUntil = data.source.indexOf(',');
 				removeUntil = removeUntil > 0 ? removeUntil + 1 : removeUntil;
 
-				const sourceExt = `.zip`;
+				let sourceExt = `.zip`;
 				// TODO: WTF THIS HACK?!
 				let name = data.source.substr(0, removeUntil - 1).split('name=').pop().split(';');
-				name = name[0].replace('.zip', '');
+				let split = name[0].split('.');
+				sourceExt = split.length > 1 ? `.${split.pop()}` : sourceExt;
+				name = split.join('.');
 
 				const base64 = data.source.substr(removeUntil);
 				const sourceFile = `${sourcesDirectory}/${name}`;
