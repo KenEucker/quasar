@@ -594,8 +594,17 @@ const copyFilesFromAssetsFolderToOutput = (quasArgs, files, excludeFiles = null)
 	});
 }
 
-const copyFilesFromSourcesFolderToOutput = (quasArgs, files, excludeFiles = []) => {
+const copyFilesFromSourcesFolderToOutput = (quasArgs, files = null, excludeFiles = []) => {
 	return new promise((resolve, reject) => {
+		if (!files && quasArgs.source && quasArgs.source.length) {
+			if (quasArgs.sourceExt === '.zip') {
+				return unpackFiles(quasArgs);
+			}
+			files = [ `${quasArgs.source}${quasArgs.sourceExt}` ];
+		} else {
+			return resolve(quasArgs);
+		}
+
 		const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
 		logInfo(`copying files (${files.join()}) from ${quasArgs.sourceFolder}/ to ${destinationPath}`);
 
