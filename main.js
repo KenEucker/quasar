@@ -1,13 +1,14 @@
 const electron = require('electron'),
   path = require('path'),
-  cli = require('./cli'),
+  quasar = require('./quasar'),
   app = electron.app,
   BrowserWindow = electron.BrowserWindow;
 
 let mainWindow, PORT = process.env.PORT || '3720';
 
 const electrify = () => {
-    cli.run({
+  console.log(quasar);
+  quasar.cli.run({
         rootPath: path.resolve(app.getAppPath('./')),
         runAsProcess: true,
         watchJobs: true,

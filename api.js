@@ -8,15 +8,19 @@ class Api {
 
 	constructor() {
 		this.port = process.env.port || '3720'
-		this.app = null
+		this._app = null
 		this.jobsDirectory = path.resolve(`${process.cwd()}/jobs/queued`)
 		this.sourcesDirectory = path.resolve(`${process.cwd()}/sources/`)
 		this.availableTasks = lib.getTaskNames(path.resolve('./tasks/'));
 
 		if (yargs.argv.runApiStandalone) {
 			// console.log('running the api standalone');
-			run(null, yargs.argv.apiPort, true);
+			this.run(null, yargs.argv.apiPort, true);
 		}
+	}
+
+	get app() {
+		return this._app;
 	}
 
 	onTaskDataReceived(req, res) {
@@ -58,21 +62,21 @@ class Api {
 			start = true;
 		}
 		this.port = port || this.port;
-		this.app = app;
+		this._app = app;
 
 		mkdir(this.sourcesDirectory);
 		mkdir(this.jobsDirectory);
 		mkdir(this.jobsDirectory.replace('/queued', '/completed'));
 
-		this.app.use(bodyParser.json({ limit: '50mb' }));
-		this.app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+		this._app.use(bodyParser.json({ limit: '50mb' }));
+		this._app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
-		this.app.use(jsonPromise());
+		this._app.use(jsonPromise());
 
-		this.app.post('/', this.onTaskDataReceived);
+		this._app.post('/', this.onTaskDataReceived);
 
 		if (start) {
-			this.app.listen(this.port);
+			this._app.listen(this.port);
 			// console.log('starting the app in api.js');
 		}
 
