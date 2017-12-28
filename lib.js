@@ -412,7 +412,6 @@ const convertPromptToJsonSchemaFormProperty = (prompt) => {
 	let title = prompt.message,
 		type = prompt.type,
 		_default = prompt.default;
-
 	let property = {
 		type,
 		title
@@ -599,9 +598,11 @@ const copyFilesFromSourcesFolderToOutput = (quasArgs, files = null, excludeFiles
 	return new promise((resolve, reject) => {
 		if (!files && quasArgs.source && quasArgs.source.length) {
 			if (quasArgs.sourceExt === '.zip') {
-				return unpackFiles(quasArgs);
+				return unpackFiles(quasArgs)
+					.then(() => { return copyFilesFromAssetsFolderToOutput(quasArgs, ['**']) })
+					.then(resolve);
 			}
-			files = [ `${quasArgs.source}${quasArgs.sourceExt}` ];
+			files = [`${quasArgs.source}${quasArgs.sourceExt}`];
 		} else {
 			return resolve(quasArgs);
 		}
@@ -860,7 +861,7 @@ const uploadFiles = (quasArgs, excludeFiles = []) => {
 			var config = JSON.parse(fs.readFileSync(configFilename));
 			let s3 = gulpS3(config);
 
-			if(quasArgs.excludeOutputFileFromUpload) {
+			if (quasArgs.excludeOutputFileFromUpload) {
 				excludeFiles.push(`${quasArgs.output}${quasArgs.outputExt}`);
 			}
 			excludeFiles = excludeFiles.map(excludeFile => `!${fromLocalDirectory}${excludeFile}`);
