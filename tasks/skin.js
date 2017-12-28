@@ -36,10 +36,10 @@ const getSkinImageFilenames = () => {
 		zipEntries.forEach((zipEntry) => {
 			if (!(setLeft && setRight) && zipEntry.name.indexOf('.jpg') != -1) {
 				if (zipEntry.name[0].toUpperCase() === "L") {
-					dtAdsArgs.leftImageUrl = `${dtAdsArgs.cdnUrlStart}ads/${dtAdsArgs.client}/${dtAdsArgs.campaign}/${zipEntry.name}`;
+					dtAdsArgs.leftImageUrl = `${dtAdsArgs.cdnUrlStart}${dtAdsArgs.bucketPath}/${zipEntry.name}`;
 					setLeft = true;
 				} else if(zipEntry.name[0].toUpperCase() === "R") {
-					dtAdsArgs.rightImageUrl = `${dtAdsArgs.cdnUrlStart}ads/${dtAdsArgs.client}/${dtAdsArgs.campaign}/${zipEntry.name}`;
+					dtAdsArgs.rightImageUrl = `${dtAdsArgs.cdnUrlStart}${dtAdsArgs.bucketPath}/${zipEntry.name}`;
 					setRight = true;
 				}
 			}
