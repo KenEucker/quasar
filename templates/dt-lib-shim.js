@@ -30,6 +30,9 @@ lib.resolveQuasArgs = (args, _args = {}) => {
 	args.bucket = 'dtcn';
 	args.cdnUrlStart = 'https://cdn.dtcn.com/';
 
+	const datetime = new Date(Date.now());
+	args.bucketPath = `ads/${args.client}/${datetime.getFullYear()}/${datetime.getMonth() + 1}/${args.campaign}`;
+
 	return args;
 }
 

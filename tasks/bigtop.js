@@ -15,12 +15,14 @@ let dtAdsArgs = {};
 
 const task = () => {
 	return lib.injectCode(dtAdsArgs)
-	.then(() => { lib.outputToHtmlFile(dtAdsArgs); });
-};
+		.then(() => { return lib.outputToHtmlFile(dtAdsArgs); })
+		.then(() => { return lib.copyFilesFromSourcesFolderToOutput(dtAdsArgs, [dtAdsArgs.source]) })
+		.then(() => { return lib.uploadFiles(dtAdsArgs, [ '*.txt' ]) })
+}
 
 const run = (args = {}) => {
 	return validateRequiredArgs(args).then(task);
-};
+}
 
 const getQuasarPrompts = () => {
 	return dtAdsArgs.requiredArgs;
@@ -30,10 +32,24 @@ const validateRequiredArgs = (args) => {
 	return new Promise((resolve, reject) => {
 		dtAdsArgs = lib.resolveQuasArgs(dtAdsArgs, args);
 
-		if(dtAdsArgs.output && dtAdsArgs.output.length) {
+		if (!(dtAdsArgs.source && dtAdsArgs.source.length && dtAdsArgs.source !== 'none')) {
+			dtAdsArgs.source = null;
+		}
+
+		if (!(dtAdsArgs.imageName && dtAdsArgs.imageName.length)) {
+			dtAdsArgs.imageName = dtAdsArgs.source;
+		} else {
+			const split1 = dtAdsArgs.imageName.split('.');
+			if (split1.length < 2) {
+				dtAdsArgs.imageName = `${dtAdsArgs.imageName}${dtAdsArgs.sourceExt}`;
+			}
+		}
+		dtAdsArgs.imageUrl = `${dtAdsArgs.cdnUrlStart}${dtAdsArgs.client}/${dtAdsArgs.campaign}/${dtAdsArgs.imageName}`;
+
+		if (dtAdsArgs.output && dtAdsArgs.output.length) {
 			const split = dtAdsArgs.output.split('.');
 
-			if(split.length > 1) {
+			if (split.length > 1) {
 				dtAdsArgs.outputExt = split.pop();
 				dtAdsArgs.output = dtAdsArgs.output.substr(0, dtAdsArgs.output.length - dtAdsArgs.outputExt.length);
 			}
@@ -48,7 +64,7 @@ const validateRequiredArgs = (args) => {
 };
 
 gulp.task(`${qType}:build`, () => {
-	if(!dtAdsArgs.noPrompt) {
+	if (!dtAdsArgs.noPrompt) {
 		return lib.initialPrompt(dtAdsArgs).then(task);
 	} else {
 		return run();
@@ -58,21 +74,32 @@ gulp.task(`${qType}`, [`${qType}:build`]);
 
 const init = () => {
 	dtAdsArgs = lib.getQuasArgs(qType, lib.getCampaignPromptQuestions().concat([{
-			type: 'input',
-			name: 'imageUrl',
-			message: 'Bigtop URL:',
-			default: '!! PASTE BIGTOP IMAGE URL HERE!!'
-		},
-		{
-			type: 'input',
-			name: 'output',
-			message: `Enter the output filename postfix (default extension .txt ${colors.yellow('(optional)')}):\n`
-		}]),
+		type: 'list',
+		name: 'source',
+		message: `Select the source image for the skin:\n`,
+		choices: ['none'].concat(lib.getFilenamesInDirectory(lib.config.sourceFolder, ['jpg'])),
+		required: true
+	}, {
+		type: 'input',
+		name: 'imageName',
+		message: `enter the name of the source image (default extention .jpg) ${colors.yellow('(optional)')})\n`
+	}, {
+		type: 'input',
+		name: 'output',
+		message: `Enter the output filename postfix (default extension .txt ${colors.yellow('(optional)')}):\n`
+	}, {
+		type: 'confirm',
+		name: 'uploadToS3',
+		message: `Upload assets to S3? ${colors.yellow('(optional)')}`,
+		default: false
+	}]),
 		{
 			qType: qType,
 			clickUrl: '!! PASTE CLICK URL HERE !!',
 			windowTarget: '_blank',
-			requiredArgsValidation: validateRequiredArgs }, false);
+			sourceExt: '.jpg',
+			requiredArgsValidation: validateRequiredArgs
+		}, false);
 }
 
 init();

@@ -17,11 +17,11 @@ const task = () => {
 		.then(() => { return confirmationPrompt() })
 		.then(() => { return lib.injectCode(dtAdsArgs) })
 		.then(() => { return injectHypeAdCode() })
-		.then(() => { return lib.copyFilesFromAssetsFolderToOutput(dtAdsArgs, [ '**' ] ) })
+		.then(() => { return lib.copyFilesFromAssetsFolderToOutput(dtAdsArgs, ['**']) })
 		.then(() => { return lib.uploadFiles(dtAdsArgs) })
 		.then(() => { return lib.outputToHtmlFile(dtAdsArgs) })
 		.finally(() => {
-			if(dtAdsArgs.buildCompletedSuccessfully) {
+			if (dtAdsArgs.buildCompletedSuccessfully) {
 				lib.logFin('build finished successfully');
 			} else {
 				lib.logInfo('build finished unexpectedly');
@@ -38,11 +38,11 @@ const run = (args = {}) => {
 const validateRequiredArgs = (args = {}) => {
 	return new Promise((resolve, reject) => {
 		dtAdsArgs = lib.resolveQuasArgs(dtAdsArgs, args);
-		
-		if(dtAdsArgs.source && dtAdsArgs.source.length) {
+
+		if (dtAdsArgs.source && dtAdsArgs.source.length) {
 			const split = dtAdsArgs.source.split('.');
 
-			if(split.length > 1) {
+			if (split.length > 1) {
 				dtAdsArgs.sourceExt = `.${split.pop()}`;
 				dtAdsArgs.source = dtAdsArgs.source.substr(0, dtAdsArgs.source.length - dtAdsArgs.sourceExt.length);
 			}
@@ -51,54 +51,51 @@ const validateRequiredArgs = (args = {}) => {
 			dtAdsArgs.source = dtAdsArgs.campaign;
 		}
 
-		if(dtAdsArgs.output && dtAdsArgs.output.length) {
+		if (dtAdsArgs.output && dtAdsArgs.output.length) {
 			const split = dtAdsArgs.output.split('.');
 
-			if(split.length > 1) {
+			if (split.length > 1) {
 				dtAdsArgs.outputExt = split.pop();
 				dtAdsArgs.output = dtAdsArgs.output.substr(0, dtAdsArgs.output.length - dtAdsArgs.outputExt.length);
 			}
 		} else {
 			//Default the output filename to the campaign
-			dtAdsArgs.output =`${dtAdsArgs.client}_${dtAdsArgs.campaign}_${dtAdsArgs.qType}`;
+			dtAdsArgs.output = `${dtAdsArgs.client}_${dtAdsArgs.campaign}_${dtAdsArgs.qType}`;
 		}
 
-		if(!dtAdsArgs.target || !dtAdsArgs.target.length) {
+		if (!dtAdsArgs.target || !dtAdsArgs.target.length) {
 			dtAdsArgs.target = `${dtAdsArgs.source}.html`;
 		} else {
 			const split = dtAdsArgs.target.split('.');
-			if(split.length == 1) {
+			if (split.length == 1) {
 				dtAdsArgs.target += '.html';
 			}
 		}
 		dtAdsArgs.targetFilePath = `${dtAdsArgs.assetsFolder}/${dtAdsArgs.target}`;
 
-		switch(dtAdsArgs.clickTarget) {
+		switch (dtAdsArgs.clickTarget) {
 			default:
 			case '':
 			case 'default':
 				dtAdsArgs.clickTarget = '';
-			break;
+				break;
 
 			case 'same window':
 				dtAdsArgs.clickTarget = '_self';
-			break;
-			
+				break;
+
 			case 'new tab':
 				dtAdsArgs.clickTarget = '_blank';
-			break;
+				break;
 
 			case 'parent':
 				dtAdsArgs.clickTarget = '_parent';
-			break;
-			
+				break;
+
 			case 'top':
 				dtAdsArgs.clickTarget = '_top';
-			break;
+				break;
 		}
-
-		const datetime = new Date(Date.now());
-		dtAdsArgs.bucketPath = `ads/${dtAdsArgs.client}/${datetime.getFullYear()}/${datetime.getMonth() + 1}/${dtAdsArgs.campaign}`;
 
 		return resolve();
 	});
@@ -116,30 +113,30 @@ const parseFiles = () => {
 		dtAdsArgs = lib.copyTemplateFilesToAssetsPath(dtAdsArgs);
 
 		lib.log(`rendering target file (${dtAdsArgs.targetFilePath}) and learning parameters`);
-		
-		await page.on('onResourceRequested', function(requestData) {
+
+		await page.on('onResourceRequested', function (requestData) {
 			lib.log(`Requesting ${requestData.url}`);
 		});
-	
+
 		const status = await page.open(dtAdsArgs.targetFilePath);
 		//const content = await page.property('content');
-		if(status == 'fail') {
+		if (status == 'fail') {
 			lib.logError('failed to open webpage');
 			return reject();
 		}
-		
-		const hypeElements = await page.evaluate(function() {
+
+		const hypeElements = await page.evaluate(function () {
 			var els = Array.prototype.slice.call(document.querySelectorAll('.h-track-click'));
 			var hypeElementIds = [];
 
-			for(var i in els) {
+			for (var i in els) {
 				hypeElementIds.push(els[i].id);
 			}
 
 			return hypeElementIds;
 		});
 		page.close();
-		
+
 		dtAdsArgs.hypeElements = hypeElements;
 		return resolve(dtAdsArgs);
 	});
@@ -180,7 +177,7 @@ const injectHypeAdCode = () => {
 // Test HYPE Ad Unit 
 
 gulp.task(`${qType}:build`, () => {
-	if(!dtAdsArgs.noPrompt) {
+	if (!dtAdsArgs.noPrompt) {
 		return lib.initialPrompt(dtAdsArgs).then(task);
 	} else {
 		return run();
@@ -190,36 +187,37 @@ gulp.task(`${qType}`, [`${qType}:build`]);
 
 const init = () => {
 	dtAdsArgs = lib.getQuasArgs(qType, lib.getCampaignPromptQuestions().concat([{
-			type: 'list',
-			name: 'source',
-			message: `Enter the input archive filename (default .zip):\n`,
-			choices: lib.getFilenamesInDirectory(lib.config.sourceFolder, ['zip'])
-		},{
-			type: 'input',
-			name: 'target',
-			message: `Enter the target html filename ${colors.yellow('(optional)')}:\n`
-		},{
-			type: 'input',
-			name: 'output',
-			message: `Enter the output filename postfix (default extension .txt ${colors.yellow('(optional)')}):\n`
-		},{
-			type: 'confirm',
-			name: 'uploadToS3',
-			message: `Upload assets to S3? ${colors.yellow('(optional)')}`,
-			default: false
-		},{
-			type: 'list',
-			name: 'clickTarget',
-			// TODO: add better question intelligence here for the different ways to open a new window on click
-			message: `How should the window open when clicked?`,
-			default: 'default',
-			choices: ['default','same window','new tab']//, 'parent','top']
-		}]),
+		type: 'list',
+		name: 'source',
+		message: `Enter the input archive filename (default .zip):\n`,
+		choices: ['none'].concat(lib.getFilenamesInDirectory(lib.config.sourceFolder, ['zip']))
+	}, {
+		type: 'input',
+		name: 'target',
+		message: `Enter the target html filename ${colors.yellow('(optional)')}:\n`
+	}, {
+		type: 'input',
+		name: 'output',
+		message: `Enter the output filename postfix (default extension .txt ${colors.yellow('(optional)')}):\n`
+	}, {
+		type: 'confirm',
+		name: 'uploadToS3',
+		message: `Upload assets to S3? ${colors.yellow('(optional)')}`,
+		default: false
+	}, {
+		type: 'list',
+		name: 'clickTarget',
+		// TODO: add better question intelligence here for the different ways to open a new window on click
+		message: `How should the window open when clicked?`,
+		default: 'default',
+		choices: ['default', 'same window', 'new tab']//, 'parent','top']
+	}]),
 		{
 			qType: qType,
 			sourceExt: '.zip',
 			googleAnalyticsID: 'UA-82208-8',
-			requiredArgsValidation: validateRequiredArgs }, false);
+			requiredArgsValidation: validateRequiredArgs
+		}, false);
 }
 
 init();
