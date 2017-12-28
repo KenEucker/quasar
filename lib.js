@@ -551,7 +551,7 @@ const moveTargetFilesToRootOfAssetsPath = (quasArgs) => {
 					quasArgs.targetFilePath = targetFilePath;
 					let remove = baseDir.replace(quasArgs.assetsFolder, '').substr(1).split('/');
 					remove = path.resolve(`${quasArgs.assetsFolder}/${remove[0]}`);
-					del(path.resolve(remove));
+					del.sync(path.resolve(remove));
 
 					return resolve(quasArgs);
 				});
@@ -685,7 +685,7 @@ const unpackFiles = (quasArgs) => {
 			logInfo(`${destinationPathExists ? `overwriting files in assets folder ${destinationPath}` : `leaving files in unpack destination (${destinationPath}) unmodified`}`);
 
 			if (destinationPathExists) {
-				del(destinationPath);
+				del.sync(destinationPath);
 			}
 		}
 		mkdir(destinationPath);
