@@ -32,12 +32,20 @@ const validateRequiredArgs = (args) => {
 	return new Promise((resolve, reject) => {
 		dtAdsArgs = lib.resolveQuasArgs(dtAdsArgs, args);
 
-		if (!(dtAdsArgs.source && dtAdsArgs.source.length && dtAdsArgs.source !== 'none')) {
-			dtAdsArgs.source = null;
+		if (dtAdsArgs.source && dtAdsArgs.source.length) {
+			const split = dtAdsArgs.source.split('.');
+
+			if (split.length > 1) {
+				dtAdsArgs.sourceExt = `.${split.pop()}`;
+				dtAdsArgs.source = dtAdsArgs.source.substr(0, dtAdsArgs.source.length - dtAdsArgs.sourceExt.length);
+			}
+		} else {
+			//Default the input filename to the campaign
+			dtAdsArgs.source = dtAdsArgs.campaign;
 		}
 
 		if (!(dtAdsArgs.imageName && dtAdsArgs.imageName.length)) {
-			dtAdsArgs.imageName = dtAdsArgs.source;
+			dtAdsArgs.imageName = `${dtAdsArgs.source}${dtAdsArgs.sourceExt}`;
 		} else {
 			const split1 = dtAdsArgs.imageName.split('.');
 			if (split1.length < 2) {
