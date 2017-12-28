@@ -5,7 +5,7 @@ let gulp = require('gulp'),
 	insert = require('gulp-insert'),
 	prompt = require('inquirer'),
 	sass = require('dart-sass')
-concat = require('gulp-concat'),
+	concat = require('gulp-concat'),
 	flatmap = require('gulp-flatmap'),
 	babel = require('gulp-babel'),
 	spawn = require("child_process"),
@@ -20,7 +20,7 @@ concat = require('gulp-concat'),
 	unzip = require("extract-zip"),
 	path = require('path'),
 	mv = require('mv')
-colors = require('colors'),
+	colors = require('colors'),
 	os = require('os'),
 	promise = require('bluebird'),
 	lastLine = require('last-line'),
@@ -185,6 +185,7 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 			overwriteTargetFileFromTemplate: true,
 			cleanUpTargetFileTemplate: false,
 			buildCompletedSuccessfully: false,
+			excludeOutputFileFromUpload: true,
 			logToFile: '.log',
 			qType
 		},
@@ -561,13 +562,14 @@ const moveTargetFilesToRootOfAssetsPath = (quasArgs) => {
 	});
 }
 
-const copyFilesFromTemplatesFolderToOutput = (quasArgs, files) => {
+const copyFilesFromTemplatesFolderToOutput = (quasArgs, files, excludeFiles = []) => {
 	return new promise((resolve, reject) => {
 		const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
 		logInfo(`copying files (${files.join()}) from ${quasArgs.templatesFolder}/ to ${destinationPath}`);
 
 		files = files.map(file => `${quasArgs.templatesFolder}/${file}`);
-		gulp.src(files, { base: quasArgs.templatesFolder })
+		excludeFiles = excludeFiles.map(excludeFile => `!${quasArgs.sourceFolder}/${excludeFile}`);
+		return gulp.src(excludeFiles.concat(files), { base: quasArgs.templatesFolder })
 			.pipe(gulp.dest(destinationPath))
 			.on('end', () => {
 				return resolve(quasArgs);
@@ -586,6 +588,21 @@ const copyFilesFromAssetsFolderToOutput = (quasArgs, files, excludeFiles = null)
 		files = files.map(file => `${quasArgs.assetsFolder}/${file}`);
 		excludeFiles = excludeFiles.map(excludeFile => `!${quasArgs.assetsFolder}/${excludeFile}`);
 		return gulp.src(excludeFiles.concat(files), { base: quasArgs.assetsFolder })
+			.pipe(gulp.dest(destinationPath))
+			.on('end', () => {
+				return resolve(quasArgs);
+			});
+	});
+}
+
+const copyFilesFromSourcesFolderToOutput = (quasArgs, files, excludeFiles = []) => {
+	return new promise((resolve, reject) => {
+		const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
+		logInfo(`copying files (${files.join()}) from ${quasArgs.sourceFolder}/ to ${destinationPath}`);
+
+		files = files.map(file => `${quasArgs.sourceFolder}/${file}`);
+		excludeFiles = excludeFiles.map(excludeFile => `!${quasArgs.sourceFolder}/${excludeFile}`);
+		return gulp.src(excludeFiles.concat(files), { base: quasArgs.sourceFolder })
 			.pipe(gulp.dest(destinationPath))
 			.on('end', () => {
 				return resolve(quasArgs);
@@ -819,7 +836,7 @@ const uploadFileToS3 = (Bucket, Key, Body, callback, ACL = 'public-read') => {
 }
 
 // Upload resources to S3
-const uploadFiles = (quasArgs) => {
+const uploadFiles = (quasArgs, excludeFiles = []) => {
 	return new promise((resolve, reject) => {
 		if (!quasArgs.uploadToS3) {
 			return resolve();
@@ -834,7 +851,11 @@ const uploadFiles = (quasArgs) => {
 			var config = JSON.parse(fs.readFileSync(configFilename));
 			let s3 = gulpS3(config);
 
-			gulp.src(`${fromLocalDirectory}**`)
+			if(quasArgs.excludeOutputFileFromUpload) {
+				excludeFiles.push(`${quasArgs.output}${quasArgs.outputExt}`);
+			}
+			excludeFiles = excludeFiles.map(excludeFile => `!${fromLocalDirectory}${excludeFile}`);
+			return gulp.src(excludeFiles.concat(`${fromLocalDirectory}**`))
 				.pipe(s3({
 					Bucket: toS3BucketPath,
 					ACL: 'public-read'
@@ -891,6 +912,7 @@ module.exports = {
 	compileScriptsToAssetsFolder,
 	compileTargetFileToAssetsFolder,
 	copyFilesFromAssetsFolderToOutput,
+	copyFilesFromSourcesFolderToOutput,
 	copyFilesFromTemplatesFolderToOutput,
 	copyTemplateFilesToAssetsPath,
 	definitelyCallFunction,
