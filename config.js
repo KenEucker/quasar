@@ -1,13 +1,38 @@
-//config file for paths and such
-const dirname = process.cwd();
+class Config {
+	constructor() { this.init(process.cwd()) }
 
-const config = {
-	dirname,
-	node_modules:		`${dirname}/node_modules/`,
-	outputFolder:		`${dirname}/public`,
-	sourceFolder:		`${dirname}/sources`,
-	assetsFolder:		`${dirname}/assets`,
-	templatesFolder:	`${dirname}/templates`
+	init(dirname) {
+		this._dirname = dirname;
+		this._node_modules = `${dirname}/node_modules/`,
+		this._outputFolder = `${dirname}/public`,
+		this._sourceFolder = `${dirname}/sources`,
+		this._assetsFolder = `${dirname}/assets`,
+		this._templatesFolder = `${dirname}/templates`
+	}
+
+	get dirname() {
+		return this._dirname;
+	}
+
+	get node_modules() {
+		return this._node_modules;
+	}
+
+	get outputFolder() {
+		return this._outputFolder;
+	}
+
+	get sourceFolder() {
+		return this._sourceFolder;
+	}
+
+	get assetsFolder() {
+		return this._assetsFolder;
+	}
+
+	get templatesFolder() {
+		return this._templatesFolder;
+	}
 };
 
-module.exports = config;
+module.exports = new Config();

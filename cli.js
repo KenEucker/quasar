@@ -139,7 +139,7 @@ class CLI {
 	run(args = {}) {
 		return new promise((resolve, reject) => {
 			let defaults = {
-				appRoot: path.resolve(process.cwd()),
+				appRoot: process.cwd(),
 				port: this.port,
 				runAsProcess: false,
 				runStandalone: false,
@@ -151,8 +151,8 @@ class CLI {
 			args = Object.assign(defaults, yargs.argv, args);
 			this.port = args.port;
 
-			// console.log(`Application root folder: ${args.appRoot}`);
-			// lib.init(args.appRoot);
+			console.log(`Application root folder: ${args.appRoot}`);
+			lib.init(args.appRoot);
 			
 			lib.logInfo(`Running the qausar cli under the process: ${process.title}`);
 			if(args.reRunLastSuccessfulBuild || args.reRun) {

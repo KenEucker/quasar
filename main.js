@@ -2,19 +2,21 @@ const electron = require('electron'),
   path = require('path'),
   quasar = require('./quasar'),
   app = electron.app,
-  BrowserWindow = electron.BrowserWindow;
+  BrowserWindow = electron.BrowserWindow,
+  isRunningInAsar = require('electron-is-running-in-asar'),
+  appRoot = isRunningInAsar() ? process.resourcesPath : process.cwd();
 
 let mainWindow, PORT = process.env.PORT || '3720';
 
 const electrify = () => {
   console.log(quasar);
   quasar.cli.run({
-        rootPath: path.resolve(app.getAppPath('./')),
+        appRoot: appRoot,
         runAsProcess: true,
         watchJobs: true,
         runWebForm: true,
         autoBuildWebForm: true,
-        runApi:true })
+        runApi: true })
         .then(() => {
           console.log('Loading electron app...');
           return createWindow(); });

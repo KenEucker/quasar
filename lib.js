@@ -911,6 +911,7 @@ const outputToHtmlFile = (quasArgs) => {
 
 const init = (appRoot = process.cwd()) => {
 	config = require(`${appRoot}/config.js`);
+	config.init(appRoot);
 }
 
 init();
