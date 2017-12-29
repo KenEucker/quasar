@@ -9,8 +9,7 @@ const electron = require('electron'),
 let mainWindow, PORT = process.env.PORT || '3720';
 
 const electrify = () => {
-  console.log(quasar);
-  quasar.cli.run({
+  quasar.runCLI({
         appRoot: appRoot,
         runAsProcess: true,
         watchJobs: true,

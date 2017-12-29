@@ -41,7 +41,7 @@ const logFin = (message = 'FiN!', obj, color = colors.green) => { log(message, o
 const log = (message, obj, status = null, title = '', color = colors.grey) => {
 	let logger = console;
 	let logPrefix = `<~-`, logPostfix = `${logPrefix[1]}${logPrefix.replace('<', '>')[0]}`;
-	message = `${logDate ? `[${new Date(Date.now()).toLocaleString('en-US')}]` : ``}${title.length ? ` ${title}:` : ''} ${message}`;
+	message = `${logDate ? `[${new Date(Date.now()).toLocaleString('en-US')}]` : ``}${title.length ? ` ${title}:` : ''} ${message} `;
 	message = `${logPrefix}${message}${logPostfix}`;
 	logSeverity = Array.isArray(logSeverity) ? logSeverity[logSeverity.length - 1] : logSeverity;
 
@@ -247,7 +247,10 @@ const spawnCommand = (argsFile, args = [], command = `node`, synchronous = false
 		.on("close", (msg) => { logInfo("command ended with message: ", msg); });
 }
 
-const getTaskNames = (dir) => {
+const getTaskNames = (dir = null) => {
+	if(!dir) {
+		dir = path.resolve(config.tasksFolder);
+	}
 	return getFilenamesInDirectory(dir, ['js'], true);
 }
 
@@ -341,7 +344,32 @@ const fromDir = (startPath, filter, extension = '') => {
 	return found;
 }
 
-const runTask = (task, end = () => { }) => {
+const loadTasks = (taskPaths = null, loadDefaults = true) => {
+	let tasks = [];
+
+	if (!taskPaths && loadDefaults) {
+		const defaultTasks = getTaskNames();
+		taskPaths = defaultTasks.map(taskPath => path.resolve(`${config.tasksFolder}/${taskPath}`));
+		logInfo(`Loaded default quasars (${defaultTasks})`);
+	} else if (!taskPaths) {
+		return null;
+	}
+
+	for(var task of [].concat(taskPaths)) {
+		let newTask = null;
+		try {
+			newTask = require(task);
+		} catch (e) {
+			task = `${config.tasksFolder}/${task}`;
+			newTask = require(task);
+		} finally {
+			tasks.push(newTask.qType);
+		}
+	}
+	return tasks;
+}
+
+const runTask = (task, end = () => { logFin(`quasar ${task} ended`) }) => {
 	return new promise((resolve, reject) => {
 		if (gulp.hasTask(task)) {
 			runSequence(task, end);
@@ -353,22 +381,18 @@ const runTask = (task, end = () => { }) => {
 	})
 }
 
-const quasarSelectPrompt = (quasArgs) => {
-	return new promise((resolve, reject) => {
-		const tasksPath = path.resolve('./tasks/');
-		let availableTasks = getTaskNames(tasksPath);
-
-		return prompt.prompt([{
-			type: 'list',
-			name: 'task',
-			message: `Select the type of quasar you want to launch:\n`,
-			choices: availableTasks
-		}]).then(res => {
-			if (gulp.hasTask(res.task)) {
-				gulp.start(res.task);
-				return resolve();
-			}
-		});
+const quasarSelectPrompt = (quasArgs = {}) => {
+	return promptConsole([{
+		type: 'list',
+		name: 'task',
+		message: `Select the type of quasar you want to launch:\n`,
+		choices: quasArgs.availableTasks || ["uhhh nevermind"]
+	}], res => {
+		if(res.task !== "uhhh nevermind") {
+			runTask(res.task);
+		} else {
+			logFin("Allllllrrrriiiiiiiggggghhhhhttttttyyyyyy thhhheeennnnn");
+		}
 	})
 }
 
@@ -938,6 +962,7 @@ module.exports = {
 	init,
 	initialPrompt,
 	injectCode,
+	loadTasks,
 	logAsync,
 	log,
 	logInfo,

@@ -3,10 +3,11 @@ class Config {
 
 	init(dirname) {
 		this._dirname = dirname;
-		this._node_modules = `${dirname}/node_modules/`,
+		this._node_modules = `${dirname}/node_modules`,
 		this._outputFolder = `${dirname}/public`,
 		this._sourceFolder = `${dirname}/sources`,
 		this._assetsFolder = `${dirname}/assets`,
+		this._tasksFolder = `${dirname}/tasks`,
 		this._templatesFolder = `${dirname}/templates`
 	}
 
@@ -20,6 +21,10 @@ class Config {
 
 	get outputFolder() {
 		return this._outputFolder;
+	}
+
+	get tasksFolder() {
+		return this._tasksFolder;
 	}
 
 	get sourceFolder() {
