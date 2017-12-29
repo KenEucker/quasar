@@ -81,7 +81,7 @@ gulp.task(`${qType}:precompile`, () => {
 			required: required,
 			properties: properties
 		};
-		formsData.push({ name: task, schema: schema, uiSchema: uiSchema });
+		formsData.push({ name: task, schema: schema, uiSchema: uiSchema, formData: quasArgs });
 	});
 
 	const formDataJsonString = JSON.stringify(formsData);

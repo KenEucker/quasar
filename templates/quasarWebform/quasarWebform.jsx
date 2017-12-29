@@ -147,12 +147,7 @@ const showForm = (formTitle = null) => {
 
 const finalTouches = () => {
     const file = document.querySelector('input[type=file]');
-    file.setAttribute('accept', 'application/zip');
-
-    // HACK!
-    document.querySelectorAll('.field label.control-label').forEach((label) => {
-        label.innerHTML = label.innerHTML.replace(` [33m(optional)[39m`, '');
-    });
+    // file.setAttribute('accept', 'application/zip');
 }
 
 const getMaterialisticFormHeader = () => {

@@ -41,7 +41,7 @@ const logFin = (message = 'FiN!', obj, color = colors.green) => { log(message, o
 const log = (message, obj, status = null, title = '', color = colors.grey) => {
 	let logger = console;
 	let logPrefix = `<~-`, logPostfix = `${logPrefix[1]}${logPrefix.replace('<', '>')[0]}`;
-	message = `${logDate ? `[${new Date(Date.now()).toLocaleString('en-US')}]` : ``}${title.length ? ` ${title}:` : ''} ${message} `;
+	message = `${logDate ? `[${new Date(Date.now()).toLocaleString('en-US')}]` : ``}${title.length ? ` ${title}:` : ''} ${message}`;
 	message = `${logPrefix}${message}${logPostfix}`;
 	logSeverity = Array.isArray(logSeverity) ? logSeverity[logSeverity.length - 1] : logSeverity;
 
@@ -138,7 +138,7 @@ const runLastSuccessfulBuild = (quasArgs = null) => {
 			lastLine(logFilePath, function (err, command) {
 				if (err) { logError(`Could not read last line from logfile: ${logFilePath}`) }
 
-				logSuccess(`Running the last found command in the logfile: ${command}`);
+				logSuccess(`Running the last found command in the logfile`);
 				command = command.replace(`node cli.js`, ``);
 				let args = command.split(' ');
 				args = args.map(k => { return k.replace(/"/g, '') });
@@ -247,10 +247,7 @@ const spawnCommand = (argsFile, args = [], command = `node`, synchronous = false
 		.on("close", (msg) => { logInfo("command ended with message: ", msg); });
 }
 
-const getTaskNames = (dir = null) => {
-	if(!dir) {
-		dir = path.resolve(config.tasksFolder);
-	}
+const getTaskNames = (dir) => {
 	return getFilenamesInDirectory(dir, ['js'], true);
 }
 
@@ -344,32 +341,7 @@ const fromDir = (startPath, filter, extension = '') => {
 	return found;
 }
 
-const loadTasks = (taskPaths = null, loadDefaults = true) => {
-	let tasks = [];
-
-	if (!taskPaths && loadDefaults) {
-		const defaultTasks = getTaskNames();
-		taskPaths = defaultTasks.map(taskPath => path.resolve(`${config.tasksFolder}/${taskPath}`));
-		logInfo(`Loaded default quasars (${defaultTasks})`);
-	} else if (!taskPaths) {
-		return null;
-	}
-
-	for(var task of [].concat(taskPaths)) {
-		let newTask = null;
-		try {
-			newTask = require(task);
-		} catch (e) {
-			task = `${config.tasksFolder}/${task}`;
-			newTask = require(task);
-		} finally {
-			tasks.push(newTask.qType);
-		}
-	}
-	return tasks;
-}
-
-const runTask = (task, end = () => { logFin(`quasar ${task} ended`) }) => {
+const runTask = (task, end = () => { }) => {
 	return new promise((resolve, reject) => {
 		if (gulp.hasTask(task)) {
 			runSequence(task, end);
@@ -381,23 +353,60 @@ const runTask = (task, end = () => { logFin(`quasar ${task} ended`) }) => {
 	})
 }
 
-const quasarSelectPrompt = (quasArgs = {}) => {
-	return promptConsole([{
-		type: 'list',
-		name: 'task',
-		message: `Select the type of quasar you want to launch:\n`,
-		choices: quasArgs.availableTasks || ["uhhh nevermind"]
-	}], res => {
-		if(res.task !== "uhhh nevermind") {
-			runTask(res.task);
+const quasarSelectPrompt = (quasArgs) => {
+	return new promise((resolve, reject) => {
+		const tasksPath = path.resolve('./tasks/');
+		let availableTasks = getTaskNames(tasksPath);
+
+		return prompt.prompt([{
+			type: 'list',
+			name: 'task',
+			message: `Select the type of quasar you want to launch`,
+			choices: availableTasks
+		}]).then(res => {
+			if (gulp.hasTask(res.task)) {
+				gulp.start(res.task);
+				return resolve();
+			}
+		});
+	})
+}
+
+const promptUser = (quasArgs) => { 
+	return promptConsole(quasArgs.requiredArgs, (userResponse) => {
+		if(userResponse.askOptionalQuestions) {
+			return promptConsole(quasArgs.requiredArgs, (res) => { quasArgs.requiredArgsValidation(Object.assign(userResponse, res)) }, true );
 		} else {
-			logFin("Allllllrrrriiiiiiiggggghhhhhttttttyyyyyy thhhheeennnnn");
+			return quasArgs.requiredArgsValidation(userResponse);
 		}
 	})
 }
 
-const initialPrompt = (quasArgs) => { return promptConsole(quasArgs.requiredArgs, quasArgs.requiredArgsValidation) }
-const promptConsole = (questions, getResults) => { return prompt.prompt(questions).then(getResults) }
+const promptConsole = (questions, getResults, showOptional = false, optionalOnly = null) => {
+	let questionsToAsk = [], addQuestion = false;
+	optionalOnly = optionalOnly != null ? optionalOnly : showOptional;
+
+	questions.forEach(question => {
+		addQuestion = false;
+		question.message += `\n`;
+
+		if (question.optional) {
+			question.message = colors.yellow(question.message);
+
+			if (showOptional) {
+				addQuestion = true;
+			}
+		} else if (!optionalOnly) {
+			addQuestion = true;
+		}
+
+		if(addQuestion) {
+			questionsToAsk.push(question);
+		}
+	});
+
+	return prompt.prompt(questionsToAsk).then(getResults);
+}
 
 // This one has to be typehinted as a function for the async method
 const makePromptRequired = function (input) {
@@ -420,15 +429,20 @@ const getQuasarPromptQuestions = (quasArgs) => {
 	return [{
 		type: 'input',
 		name: 'domain',
-		message: 'Enter the name of the domain to be used in building assets:\n',
+		message: 'Enter the name of the domain to be used in building assets:',
 		required: true,
 		validate: makePromptRequired
 	}, {
 		type: 'input',
 		name: 'signal',
-		message: 'Enter the name of the signal to be used when compiling quasars:\n',
+		message: 'Enter the name of the signal to be used when compiling quasars:',
 		required: true,
 		validate: makePromptRequired
+	}, {
+		type: 'confirm',
+		name: 'askOptionalQuestions',
+		message: 'Enter the name of the signal to be used when compiling quasars',
+		default: false
 	}];
 }
 
@@ -460,6 +474,9 @@ const convertPromptToJsonSchemaFormProperty = (prompt) => {
 			break;
 		case 'confirm':
 			property.type = "boolean";
+			property.enum = [true, false]
+			property.enumNames = ['yes', 'no']
+			property.default = property.default ? 'yes' : 'no';
 		default:
 			break;
 	}
@@ -471,7 +488,7 @@ const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
 	let title = prompt.message || '',
 		widget = prompt.type || 'input',
 		help = prompt.help || '';
-	options = {},
+		options = {},
 		ui = {};
 
 	switch (widget) {
@@ -935,7 +952,6 @@ const outputToHtmlFile = (quasArgs) => {
 
 const init = (appRoot = process.cwd()) => {
 	config = require(`${appRoot}/config.js`);
-	config.init(appRoot);
 }
 
 init();
@@ -960,9 +976,8 @@ module.exports = {
 	getQuasarPromptQuestions,
 	hasQuasarInitialArgs,
 	init,
-	initialPrompt,
+	promptUser,
 	injectCode,
-	loadTasks,
 	logAsync,
 	log,
 	logInfo,
