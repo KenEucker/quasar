@@ -37,8 +37,8 @@ const validateRequiredArgs = (args = {}) => {
 				dtAdsArgs.source = dtAdsArgs.source.substr(0, dtAdsArgs.source.length - dtAdsArgs.sourceExt.length);
 			}
 		} else {
-			//Default the input filename to the campaign
-			dtAdsArgs.source = dtAdsArgs.campaign;
+			// No default for this value
+			dtAdsArgs.source = null;
 		}
 
 		if (!(dtAdsArgs.imageName && dtAdsArgs.imageName.length)) {
@@ -70,7 +70,7 @@ const validateRequiredArgs = (args = {}) => {
 
 gulp.task(`${qType}:build`, () => {
 	if (!dtAdsArgs.noPrompt) {
-		return lib.initialPrompt(dtAdsArgs).then(task);
+		return lib.promptUser(dtAdsArgs).then(task);
 	} else {
 		return run();
 	}
@@ -86,7 +86,7 @@ const init = () => {
 	}, {
 		type: 'list',
 		name: 'source',
-		message: `Select the source image for the movie poster:\n`,
+		message: `Select the source image for the movie poster`,
 		choices: ['none'].concat(lib.getFilenamesInDirectory(lib.config.sourceFolder, ['jpg'])),
 		required: true
 	}, {

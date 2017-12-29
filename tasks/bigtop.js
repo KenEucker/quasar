@@ -32,7 +32,7 @@ const validateRequiredArgs = (args) => {
 	return new Promise((resolve, reject) => {
 		dtAdsArgs = lib.resolveQuasArgs(dtAdsArgs, args);
 
-		if (dtAdsArgs.source && dtAdsArgs.source.length) {
+		if (dtAdsArgs.source && dtAdsArgs.source.length && dtAdsArgs.source !== 'none') {
 			const split = dtAdsArgs.source.split('.');
 
 			if (split.length > 1) {
@@ -40,8 +40,8 @@ const validateRequiredArgs = (args) => {
 				dtAdsArgs.source = dtAdsArgs.source.substr(0, dtAdsArgs.source.length - dtAdsArgs.sourceExt.length);
 			}
 		} else {
-			//Default the input filename to the campaign
-			dtAdsArgs.source = dtAdsArgs.campaign;
+			// No default for this value
+			dtAdsArgs.source = null;
 		}
 
 		if (!(dtAdsArgs.imageName && dtAdsArgs.imageName.length)) {
@@ -52,7 +52,7 @@ const validateRequiredArgs = (args) => {
 				dtAdsArgs.imageName = `${dtAdsArgs.imageName}${dtAdsArgs.sourceExt}`;
 			}
 		}
-		dtAdsArgs.imageUrl = `${dtAdsArgs.cdnUrlStart}${dtAdsArgs.client}/${dtAdsArgs.campaign}/${dtAdsArgs.imageName}`;
+		dtAdsArgs.imageUrl = `${dtAdsArgs.cdnUrlStart}${dtAdsArgs.bucketPath}/${dtAdsArgs.imageName}`;
 
 		if (dtAdsArgs.output && dtAdsArgs.output.length) {
 			const split = dtAdsArgs.output.split('.');
@@ -73,7 +73,7 @@ const validateRequiredArgs = (args) => {
 
 gulp.task(`${qType}:build`, () => {
 	if (!dtAdsArgs.noPrompt) {
-		return lib.initialPrompt(dtAdsArgs).then(task);
+		return lib.promptUser(dtAdsArgs).then(task);
 	} else {
 		return run();
 	}
@@ -84,22 +84,25 @@ const init = () => {
 	dtAdsArgs = lib.getQuasArgs(qType, lib.getCampaignPromptQuestions().concat([{
 		type: 'list',
 		name: 'source',
-		message: `Select the source image for the skin:\n`,
+		message: `Select the source image for the skin`,
 		choices: ['none'].concat(lib.getFilenamesInDirectory(lib.config.sourceFolder, ['jpg'])),
 		required: true
 	}, {
 		type: 'input',
 		name: 'imageName',
-		message: `enter the name of the source image (default extention .jpg) ${colors.yellow('(optional)')})\n`
+		message: `enter the name of the source image (default extention .jpg)\n`,
+		optional: true
 	}, {
 		type: 'input',
 		name: 'output',
-		message: `Enter the output filename postfix (default extension .txt ${colors.yellow('(optional)')}):\n`
+		message: `Enter the output filename postfix (default extension .txt)`,
+		optional: true
 	}, {
 		type: 'confirm',
 		name: 'uploadToS3',
-		message: `Upload assets to S3? ${colors.yellow('(optional)')}`,
-		default: false
+		message: `Upload assets to S3?`,
+		default: false,
+		optional: true
 	}]),
 		{
 			qType: qType,

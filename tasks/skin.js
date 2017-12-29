@@ -31,7 +31,8 @@ const getSkinImageFilenames = () => {
 		const zipFileName = `${dtAdsArgs.sourceFolder}/${dtAdsArgs.source}${dtAdsArgs.sourceExt}`;
 		let zip = new admZip(zipFileName),
 			zipEntries = zip.getEntries(),
-			setLeft = false, setRight = false;
+			setLeft = false, setRight = false,
+			firstImage = null, secondImage = null;
 	
 		zipEntries.forEach((zipEntry) => {
 			if (!(setLeft && setRight) && zipEntry.name.indexOf('.jpg') != -1) {
@@ -42,8 +43,20 @@ const getSkinImageFilenames = () => {
 					dtAdsArgs.rightImageUrl = `${dtAdsArgs.cdnUrlStart}${dtAdsArgs.bucketPath}/${zipEntry.name}`;
 					setRight = true;
 				}
+
+				// Save the first and second entries in case we don't find the left and right in the logic above
+				if(!firstImage) {
+					firstImage = zipEntry.name;
+				} else if (!secondImage) {
+					secondImage = zipEntry.name;
+				}
 			}
 		});
+
+		if (!(setLeft && setRight)) {
+			dtAdsArgs.leftImageUrl = setLeft ? dtAdsArgs.leftImageUrl : `${dtAdsArgs.cdnUrlStart}${dtAdsArgs.bucketPath}/${firstImage}`;
+			dtAdsArgs.rightImageUrl = setRight ? dtAdsArgs.rightImageUrl : `${dtAdsArgs.cdnUrlStart}${dtAdsArgs.bucketPath}/${secondImage}`;
+		}
 
 		return resolve();
 	});
@@ -65,8 +78,6 @@ const validateRequiredArgs = (args = {}) => {
 			//Default the input filename to the campaign
 			dtAdsArgs.source = dtAdsArgs.campaign;
 		}
-		//dtAdsArgs.leftImageUrl = 
-		//dtAdsArgs.rightImageUrl = `${dtAdsArgs.cdnUrlStart}${dtAdsArgs.client}/${dtAdsArgs.campaign}/${dtAdsArgs.imageName}`;
 
 		if (dtAdsArgs.output && dtAdsArgs.output.length) {
 			const split = dtAdsArgs.output.split('.');
@@ -87,7 +98,7 @@ const validateRequiredArgs = (args = {}) => {
 
 gulp.task(`${qType}:build`, () => {
 	if (!dtAdsArgs.noPrompt) {
-		return lib.initialPrompt(dtAdsArgs).then(task);
+		return lib.promptUser(dtAdsArgs).then(task);
 	} else {
 		return run();
 	}
@@ -98,7 +109,7 @@ const init = () => {
 	dtAdsArgs = lib.getQuasArgs(qType, lib.getCampaignPromptQuestions().concat([{
 		type: 'list',
 		name: 'source',
-		message: `Select the source image for the skins ('left-' and 'right-'):\n`,
+		message: `Select the source image for the skins ('left-' and 'right-')`,
 		choices: ['none'].concat(lib.getFilenamesInDirectory(lib.config.sourceFolder, ['zip'])),
 		required: true
 	}, {
@@ -108,12 +119,14 @@ const init = () => {
 	}, {
 		type: 'input',
 		name: 'output',
-		message: `Enter the output filename postfix (default extension .txt ${colors.yellow('(optional)')}):\n`
+		message: `Enter the output filename postfix (default extension .txt):`,
+		optional: true
 	}, {
 		type: 'confirm',
 		name: 'uploadToS3',
-		message: `Upload assets to S3? ${colors.yellow('(optional)')}`,
-		default: false
+		message: `Upload assets to S3?`,
+		default: false,
+		optional: true
 	}]),
 		{
 			qType: qType,

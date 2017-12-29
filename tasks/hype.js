@@ -178,7 +178,7 @@ const injectHypeAdCode = () => {
 
 gulp.task(`${qType}:build`, () => {
 	if (!dtAdsArgs.noPrompt) {
-		return lib.initialPrompt(dtAdsArgs).then(task);
+		return lib.promptUser(dtAdsArgs).then(task);
 	} else {
 		return run();
 	}
@@ -189,21 +189,24 @@ const init = () => {
 	dtAdsArgs = lib.getQuasArgs(qType, lib.getCampaignPromptQuestions().concat([{
 		type: 'list',
 		name: 'source',
-		message: `Enter the input archive filename (default .zip):\n`,
+		message: `Enter the input archive filename (default .zip)`,
 		choices: ['none'].concat(lib.getFilenamesInDirectory(lib.config.sourceFolder, ['zip']))
 	}, {
 		type: 'input',
 		name: 'target',
-		message: `Enter the target html filename ${colors.yellow('(optional)')}:\n`
+		message: `Enter the target html filename`,
+		optional: true
 	}, {
 		type: 'input',
 		name: 'output',
-		message: `Enter the output filename postfix (default extension .txt ${colors.yellow('(optional)')}):\n`
+		message: `Enter the output filename postfix (default extension .txt)`,
+		optional: true
 	}, {
 		type: 'confirm',
 		name: 'uploadToS3',
-		message: `Upload assets to S3? ${colors.yellow('(optional)')}`,
-		default: false
+		message: `Upload assets to S3?`,
+		default: false,
+		optional: true
 	}, {
 		type: 'list',
 		name: 'clickTarget',
