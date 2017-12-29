@@ -138,7 +138,7 @@ const runLastSuccessfulBuild = (quasArgs = null) => {
 			lastLine(logFilePath, function (err, command) {
 				if (err) { logError(`Could not read last line from logfile: ${logFilePath}`) }
 
-				logSuccess(`Running the last found command in the logfile: ${command}`);
+				logSuccess(`Running the last found command in the logfile`);
 				command = command.replace(`node cli.js`, ``);
 				let args = command.split(' ');
 				args = args.map(k => { return k.replace(/"/g, '') });
@@ -361,7 +361,7 @@ const quasarSelectPrompt = (quasArgs) => {
 		return prompt.prompt([{
 			type: 'list',
 			name: 'task',
-			message: `Select the type of quasar you want to launch:\n`,
+			message: `Select the type of quasar you want to launch`,
 			choices: availableTasks
 		}]).then(res => {
 			if (gulp.hasTask(res.task)) {
@@ -372,8 +372,41 @@ const quasarSelectPrompt = (quasArgs) => {
 	})
 }
 
-const initialPrompt = (quasArgs) => { return promptConsole(quasArgs.requiredArgs, quasArgs.requiredArgsValidation) }
-const promptConsole = (questions, getResults) => { return prompt.prompt(questions).then(getResults) }
+const promptUser = (quasArgs) => { 
+	return promptConsole(quasArgs.requiredArgs, (userResponse) => {
+		if(userResponse.askOptionalQuestions) {
+			return promptConsole(quasArgs.requiredArgs, (res) => { quasArgs.requiredArgsValidation(Object.assign(userResponse, res)) }, true );
+		} else {
+			return quasArgs.requiredArgsValidation(userResponse);
+		}
+	})
+}
+
+const promptConsole = (questions, getResults, showOptional = false, optionalOnly = null) => {
+	let questionsToAsk = [], addQuestion = false;
+	optionalOnly = optionalOnly != null ? optionalOnly : showOptional;
+
+	questions.forEach(question => {
+		addQuestion = false;
+		question.message += `\n`;
+
+		if (question.optional) {
+			question.message = colors.yellow(question.message);
+
+			if (showOptional) {
+				addQuestion = true;
+			}
+		} else if (!optionalOnly) {
+			addQuestion = true;
+		}
+
+		if(addQuestion) {
+			questionsToAsk.push(question);
+		}
+	});
+
+	return prompt.prompt(questionsToAsk).then(getResults);
+}
 
 // This one has to be typehinted as a function for the async method
 const makePromptRequired = function (input) {
@@ -396,15 +429,20 @@ const getQuasarPromptQuestions = (quasArgs) => {
 	return [{
 		type: 'input',
 		name: 'domain',
-		message: 'Enter the name of the domain to be used in building assets:\n',
+		message: 'Enter the name of the domain to be used in building assets:',
 		required: true,
 		validate: makePromptRequired
 	}, {
 		type: 'input',
 		name: 'signal',
-		message: 'Enter the name of the signal to be used when compiling quasars:\n',
+		message: 'Enter the name of the signal to be used when compiling quasars:',
 		required: true,
 		validate: makePromptRequired
+	}, {
+		type: 'confirm',
+		name: 'askOptionalQuestions',
+		message: 'Enter the name of the signal to be used when compiling quasars',
+		default: false
 	}];
 }
 
@@ -436,6 +474,9 @@ const convertPromptToJsonSchemaFormProperty = (prompt) => {
 			break;
 		case 'confirm':
 			property.type = "boolean";
+			property.enum = [true, false]
+			property.enumNames = ['yes', 'no']
+			property.default = property.default ? 'yes' : 'no';
 		default:
 			break;
 	}
@@ -447,7 +488,7 @@ const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
 	let title = prompt.message || '',
 		widget = prompt.type || 'input',
 		help = prompt.help || '';
-	options = {},
+		options = {},
 		ui = {};
 
 	switch (widget) {
@@ -935,7 +976,7 @@ module.exports = {
 	getQuasarPromptQuestions,
 	hasQuasarInitialArgs,
 	init,
-	initialPrompt,
+	promptUser,
 	injectCode,
 	logAsync,
 	log,

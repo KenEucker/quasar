@@ -17,6 +17,6 @@ bin/cli --logSeverity=NONE --qType=quasarWebform --noPrompt=true
 echo "cleaning up after creating the webform project"
 rm -rf assets
 echo "starting electron-packager"
-electron-packager main.js --out=dist
+electron-packager electron.js --out=dist
 echo "Cleaning up after application creation"
 bin/clean

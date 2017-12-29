@@ -40,14 +40,14 @@ class CLI {
 		return this._app;
 	}
 
-	initialPrompt() {
+	promptUser() {
 		const tasksPath = path.resolve('./tasks/');
 		let availableTasks = lib.getTaskNames(tasksPath);
 
 		return lib.promptConsole([{
 			type: 'list',
 			name: 'task',
-			message: `Select the type of quasar you want to launch:\n`,
+			message: `Select the type of quasar you want to launch`,
 			choices: availableTasks
 		}], res => {
 			lib.runTask(res.task);
@@ -176,7 +176,7 @@ class CLI {
 				});
 			} else if (args.runStandalone) {
 				return lib.definitelyCallFunction(() => {
-					this.initialPrompt();
+					this.promptUser();
 					return resolve();
 				});
 			} else if (args.packageApp) {

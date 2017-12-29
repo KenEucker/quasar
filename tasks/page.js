@@ -64,7 +64,7 @@ const validateRequiredArgs = (args = {}) => {
 
 gulp.task(`${qType}:build`, () => {
 	if(!quasArgs.noPrompt) {
-		return lib.initialPrompt(quasArgs)
+		return lib.promptUser(quasArgs)
 			.then(task);
 	} else {
 		return run();
@@ -76,7 +76,7 @@ const init = () => {
 	quasArgs = lib.getQuasArgs(qType, [{
 			type: 'list',
 			name: 'source',
-			message: `Enter the source filename (default .zip):\n`,
+			message: `Enter the source filename (default .zip)`,
 			choices: ['none'].concat(lib.getFilenamesInDirectory(lib.config.sourceFolder, ['zip']))
 		}, {
 			type: 'input',
