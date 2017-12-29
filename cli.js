@@ -1,5 +1,4 @@
 const gulp = require('gulp'),
-	requireDir = require('require-dir'),
 	fs = require('fs'),
 	rename = require('gulp-rename'),
 	path = require('path'),
@@ -14,20 +13,12 @@ const gulp = require('gulp'),
 	mkdir = require('mkdirp-sync'),
 	// packager = require('electron-packager'),
 	api = require('./api');
-requireDir('./tasks/');
+
 
 class CLI {
 	constructor() {
 		this._app = api.app;
 		this.port = process.env.PORT || '3720';
-		
-		gulp.task(`watchJobs`, () => {
-			mkdir(path.resolve(lib.config.dirname, 'jobs'));
-			
-			lib.logSuccess(`watching folder /jobs/ for new or changed files to build from`);
-			return watch('jobs/queued/*.json', { ignoreInitial: true })
-				.pipe(jsonTransform(this.transformToProcessArgs));
-		});
 		
 		if ( yargs.argv.runStandalone || yargs.argv.runAsProcess || yargs.argv.packageApp) {
 			return this.run();
@@ -38,20 +29,6 @@ class CLI {
 
 	get app() {
 		return this._app;
-	}
-
-	initialPrompt() {
-		const tasksPath = path.resolve('./tasks/');
-		let availableTasks = lib.getTaskNames(tasksPath);
-
-		return lib.promptConsole([{
-			type: 'list',
-			name: 'task',
-			message: `Select the type of quasar you want to launch:\n`,
-			choices: availableTasks
-		}], res => {
-			lib.runTask(res.task);
-		});
 	}
 
 	transformToProcessArgs(data, file) {
@@ -104,6 +81,14 @@ class CLI {
 		}
 		
 		if (args.watchJobs) {
+			gulp.task(`watchJobs`, () => {
+				mkdir(path.resolve(lib.config.dirname, 'jobs'));
+				
+				lib.logSuccess(`watching folder /jobs/ for new or changed files to build from`);
+				return watch('jobs/queued/*.json', { ignoreInitial: true })
+					.pipe(jsonTransform(this.transformToProcessArgs));
+			});
+
 			lib.runTask('watchJobs');
 		}
 
@@ -139,11 +124,12 @@ class CLI {
 	run(args = {}) {
 		return new promise((resolve, reject) => {
 			let defaults = {
-				appRoot: path.resolve(process.cwd()),
+				appRoot: process.cwd(),
 				port: this.port,
 				runAsProcess: false,
 				runStandalone: false,
 				watchJobs: false,
+				loadDefaultTasks: true,
 				qType: false,
 				runWebForm: false,
 				autoBuildWebForm: false,
@@ -151,16 +137,17 @@ class CLI {
 			args = Object.assign(defaults, yargs.argv, args);
 			this.port = args.port;
 
-			// console.log(`Application root folder: ${args.appRoot}`);
-			// lib.init(args.appRoot);
-			
-			lib.logInfo(`Running the qausar cli under the process: ${process.title}`);
+			console.log(`Application root folder: ${args.appRoot}`);
+			lib.init(args.appRoot);
+			args.availableTasks = lib.loadTasks(args.loadTasks, args.loadDefaultTasks);
+
 			if(args.reRunLastSuccessfulBuild || args.reRun) {
 				lib.logInfo(`Running the last recorded successful run from the logfile`);
 				lib.runLastSuccessfulBuild();
 
 				return resolve();
 			} else if(args.runAsProcess) {
+				lib.logInfo(`Running the qausar cli under the process: ${process.title}`);
 				lib.definitelyCallFunction(() => {
 					if(this.runAsProcess(args, resolve, reject)) {
 						return;
@@ -176,7 +163,7 @@ class CLI {
 				});
 			} else if (args.runStandalone) {
 				return lib.definitelyCallFunction(() => {
-					this.initialPrompt();
+					lib.quasarSelectPrompt(args);
 					return resolve();
 				});
 			} else if (args.packageApp) {

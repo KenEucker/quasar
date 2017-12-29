@@ -5,7 +5,7 @@ let gulp = require('gulp'),
 	insert = require('gulp-insert'),
 	prompt = require('inquirer'),
 	sass = require('dart-sass')
-concat = require('gulp-concat'),
+	concat = require('gulp-concat'),
 	flatmap = require('gulp-flatmap'),
 	babel = require('gulp-babel'),
 	spawn = require("child_process"),
@@ -20,7 +20,7 @@ concat = require('gulp-concat'),
 	unzip = require("extract-zip"),
 	path = require('path'),
 	mv = require('mv')
-colors = require('colors'),
+	colors = require('colors'),
 	os = require('os'),
 	promise = require('bluebird'),
 	lastLine = require('last-line'),
@@ -41,7 +41,7 @@ const logFin = (message = 'FiN!', obj, color = colors.green) => { log(message, o
 const log = (message, obj, status = null, title = '', color = colors.grey) => {
 	let logger = console;
 	let logPrefix = `<~-`, logPostfix = `${logPrefix[1]}${logPrefix.replace('<', '>')[0]}`;
-	message = `${logDate ? `[${new Date(Date.now()).toLocaleString('en-US')}]` : ``}${title.length ? ` ${title}:` : ''} ${message}`;
+	message = `${logDate ? `[${new Date(Date.now()).toLocaleString('en-US')}]` : ``}${title.length ? ` ${title}:` : ''} ${message} `;
 	message = `${logPrefix}${message}${logPostfix}`;
 	logSeverity = Array.isArray(logSeverity) ? logSeverity[logSeverity.length - 1] : logSeverity;
 
@@ -185,6 +185,7 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 			overwriteTargetFileFromTemplate: true,
 			cleanUpTargetFileTemplate: false,
 			buildCompletedSuccessfully: false,
+			excludeOutputFileFromUpload: true,
 			logToFile: '.log',
 			qType
 		},
@@ -246,7 +247,10 @@ const spawnCommand = (argsFile, args = [], command = `node`, synchronous = false
 		.on("close", (msg) => { logInfo("command ended with message: ", msg); });
 }
 
-const getTaskNames = (dir) => {
+const getTaskNames = (dir = null) => {
+	if(!dir) {
+		dir = path.resolve(config.tasksFolder);
+	}
 	return getFilenamesInDirectory(dir, ['js'], true);
 }
 
@@ -340,7 +344,32 @@ const fromDir = (startPath, filter, extension = '') => {
 	return found;
 }
 
-const runTask = (task, end = () => { }) => {
+const loadTasks = (taskPaths = null, loadDefaults = true) => {
+	let tasks = [];
+
+	if (!taskPaths && loadDefaults) {
+		const defaultTasks = getTaskNames();
+		taskPaths = defaultTasks.map(taskPath => path.resolve(`${config.tasksFolder}/${taskPath}`));
+		logInfo(`Loaded default quasars (${defaultTasks})`);
+	} else if (!taskPaths) {
+		return null;
+	}
+
+	for(var task of [].concat(taskPaths)) {
+		let newTask = null;
+		try {
+			newTask = require(task);
+		} catch (e) {
+			task = `${config.tasksFolder}/${task}`;
+			newTask = require(task);
+		} finally {
+			tasks.push(newTask.qType);
+		}
+	}
+	return tasks;
+}
+
+const runTask = (task, end = () => { logFin(`quasar ${task} ended`) }) => {
 	return new promise((resolve, reject) => {
 		if (gulp.hasTask(task)) {
 			runSequence(task, end);
@@ -352,22 +381,18 @@ const runTask = (task, end = () => { }) => {
 	})
 }
 
-const quasarSelectPrompt = (quasArgs) => {
-	return new promise((resolve, reject) => {
-		const tasksPath = path.resolve('./tasks/');
-		let availableTasks = getTaskNames(tasksPath);
-
-		return prompt.prompt([{
-			type: 'list',
-			name: 'task',
-			message: `Select the type of quasar you want to launch:\n`,
-			choices: availableTasks
-		}]).then(res => {
-			if (gulp.hasTask(res.task)) {
-				gulp.start(res.task);
-				return resolve();
-			}
-		});
+const quasarSelectPrompt = (quasArgs = {}) => {
+	return promptConsole([{
+		type: 'list',
+		name: 'task',
+		message: `Select the type of quasar you want to launch:\n`,
+		choices: quasArgs.availableTasks || ["uhhh nevermind"]
+	}], res => {
+		if(res.task !== "uhhh nevermind") {
+			runTask(res.task);
+		} else {
+			logFin("Allllllrrrriiiiiiiggggghhhhhttttttyyyyyy thhhheeennnnn");
+		}
 	})
 }
 
@@ -411,7 +436,6 @@ const convertPromptToJsonSchemaFormProperty = (prompt) => {
 	let title = prompt.message,
 		type = prompt.type,
 		_default = prompt.default;
-
 	let property = {
 		type,
 		title
@@ -551,7 +575,7 @@ const moveTargetFilesToRootOfAssetsPath = (quasArgs) => {
 					quasArgs.targetFilePath = targetFilePath;
 					let remove = baseDir.replace(quasArgs.assetsFolder, '').substr(1).split('/');
 					remove = path.resolve(`${quasArgs.assetsFolder}/${remove[0]}`);
-					del(path.resolve(remove));
+					del.sync(path.resolve(remove));
 
 					return resolve(quasArgs);
 				});
@@ -561,13 +585,14 @@ const moveTargetFilesToRootOfAssetsPath = (quasArgs) => {
 	});
 }
 
-const copyFilesFromTemplatesFolderToOutput = (quasArgs, files) => {
+const copyFilesFromTemplatesFolderToOutput = (quasArgs, files, excludeFiles = []) => {
 	return new promise((resolve, reject) => {
 		const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
 		logInfo(`copying files (${files.join()}) from ${quasArgs.templatesFolder}/ to ${destinationPath}`);
 
 		files = files.map(file => `${quasArgs.templatesFolder}/${file}`);
-		gulp.src(files, { base: quasArgs.templatesFolder })
+		excludeFiles = excludeFiles.map(excludeFile => `!${quasArgs.sourceFolder}/${excludeFile}`);
+		return gulp.src(excludeFiles.concat(files), { base: quasArgs.templatesFolder })
 			.pipe(gulp.dest(destinationPath))
 			.on('end', () => {
 				return resolve(quasArgs);
@@ -586,6 +611,32 @@ const copyFilesFromAssetsFolderToOutput = (quasArgs, files, excludeFiles = null)
 		files = files.map(file => `${quasArgs.assetsFolder}/${file}`);
 		excludeFiles = excludeFiles.map(excludeFile => `!${quasArgs.assetsFolder}/${excludeFile}`);
 		return gulp.src(excludeFiles.concat(files), { base: quasArgs.assetsFolder })
+			.pipe(gulp.dest(destinationPath))
+			.on('end', () => {
+				return resolve(quasArgs);
+			});
+	});
+}
+
+const copyFilesFromSourcesFolderToOutput = (quasArgs, files = null, excludeFiles = []) => {
+	return new promise((resolve, reject) => {
+		if (!files && quasArgs.source && quasArgs.source.length) {
+			if (quasArgs.sourceExt === '.zip') {
+				return unpackFiles(quasArgs)
+					.then(() => { return copyFilesFromAssetsFolderToOutput(quasArgs, ['**']) })
+					.then(resolve);
+			}
+			files = [`${quasArgs.source}${quasArgs.sourceExt}`];
+		} else {
+			return resolve(quasArgs);
+		}
+
+		const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
+		logInfo(`copying files (${files.join()}) from ${quasArgs.sourceFolder}/ to ${destinationPath}`);
+
+		files = files.map(file => `${quasArgs.sourceFolder}/${file}`);
+		excludeFiles = excludeFiles.map(excludeFile => `!${quasArgs.sourceFolder}/${excludeFile}`);
+		return gulp.src(excludeFiles.concat(files), { base: quasArgs.sourceFolder })
 			.pipe(gulp.dest(destinationPath))
 			.on('end', () => {
 				return resolve(quasArgs);
@@ -660,7 +711,7 @@ const unpackFiles = (quasArgs) => {
 			logInfo(`${destinationPathExists ? `overwriting files in assets folder ${destinationPath}` : `leaving files in unpack destination (${destinationPath}) unmodified`}`);
 
 			if (destinationPathExists) {
-				del(destinationPath);
+				del.sync(destinationPath);
 			}
 		}
 		mkdir(destinationPath);
@@ -819,7 +870,7 @@ const uploadFileToS3 = (Bucket, Key, Body, callback, ACL = 'public-read') => {
 }
 
 // Upload resources to S3
-const uploadFiles = (quasArgs) => {
+const uploadFiles = (quasArgs, excludeFiles = []) => {
 	return new promise((resolve, reject) => {
 		if (!quasArgs.uploadToS3) {
 			return resolve();
@@ -834,7 +885,11 @@ const uploadFiles = (quasArgs) => {
 			var config = JSON.parse(fs.readFileSync(configFilename));
 			let s3 = gulpS3(config);
 
-			gulp.src(`${fromLocalDirectory}**`)
+			if (quasArgs.excludeOutputFileFromUpload) {
+				excludeFiles.push(`${quasArgs.output}${quasArgs.outputExt}`);
+			}
+			excludeFiles = excludeFiles.map(excludeFile => `!${fromLocalDirectory}${excludeFile}`);
+			return gulp.src(excludeFiles.concat(`${fromLocalDirectory}**`))
 				.pipe(s3({
 					Bucket: toS3BucketPath,
 					ACL: 'public-read'
@@ -880,6 +935,7 @@ const outputToHtmlFile = (quasArgs) => {
 
 const init = (appRoot = process.cwd()) => {
 	config = require(`${appRoot}/config.js`);
+	config.init(appRoot);
 }
 
 init();
@@ -891,6 +947,7 @@ module.exports = {
 	compileScriptsToAssetsFolder,
 	compileTargetFileToAssetsFolder,
 	copyFilesFromAssetsFolderToOutput,
+	copyFilesFromSourcesFolderToOutput,
 	copyFilesFromTemplatesFolderToOutput,
 	copyTemplateFilesToAssetsPath,
 	definitelyCallFunction,
@@ -905,6 +962,7 @@ module.exports = {
 	init,
 	initialPrompt,
 	injectCode,
+	loadTasks,
 	logAsync,
 	log,
 	logInfo,
