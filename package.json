@@ -1,5 +1,5 @@
 {
-  "name": "quasar--lib",
+  "name": "quasar~lib",
   "version": "0.4.0",
   "description": "A light version of the quasi app runtime",
   "main": "quasar.js",
