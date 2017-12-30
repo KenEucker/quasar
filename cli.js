@@ -1,7 +1,7 @@
 const gulp = require('gulp'),
 	requireDir = require('require-dir'),
 	fs = require('fs'),
-	rename = require('gulp-rename'),
+	//rename = require('gulp-rename'),
 	path = require('path'),
 	promise = require('bluebird'),
 	yargs = require('yargs'),
@@ -14,20 +14,21 @@ const gulp = require('gulp'),
 	mkdir = require('mkdirp-sync'),
 	// packager = require('electron-packager'),
 	api = require('./api');
-requireDir('./tasks/');
+//requireDir('./tasks/');
 
 class CLI {
 	constructor() {
 		this._app = api.app;
 		this.port = process.env.PORT || '3720';
-		
-		mkdir(lib.config.jobsFolder);
-		mkdir(`${lib.config.jobsFolder}/started`);
-		mkdir(`${lib.config.jobsFolder}/queued`);
-		mkdir(`${lib.config.jobsFolder}/completed`);
+		this._jobsFolder = lib.config.jobsFolder || `${process.cwd()}/jobs`;
+
+		mkdir(this._jobsFolder);
+		mkdir(`${this._jobsFolder}/started`);
+		mkdir(`${this._jobsFolder}/queued`);
+		mkdir(`${this._jobsFolder}/completed`);
 
 		gulp.task(`watchJobs`, () => {
-			const jobQueueFolder = `${lib.config.jobsFolder}/queued`;
+			const jobQueueFolder = `${this._jobsFolder}/queued`;
 			
 			lib.logSuccess(`watching folder ${jobQueueFolder} for new or changed files to build from`);
 			return watch(`${jobQueueFolder}/*.json`, { ignoreInitial: true })
@@ -41,21 +42,12 @@ class CLI {
 		}
 	}
 
-	get app() {
-		return this._app;
+	get jobsFolder() {
+		return this._jobsFolder;
 	}
 
-	promptUser() {
-		let availableTasks = lib.getTaskNames(lib.config.tasksFolder);
-
-		return lib.promptConsole([{
-			type: 'list',
-			name: 'task',
-			message: `Select the type of quasar you want to launch`,
-			choices: availableTasks
-		}], res => {
-			lib.runTask(res.task);
-		});
+	get app() {
+		return this._app;
 	}
 
 	transformToProcessArgs(data, file) {
@@ -155,8 +147,9 @@ class CLI {
 			args = Object.assign(defaults, yargs.argv, args);
 			this.port = args.port;
 
-			// console.log(`Application root folder: ${args.appRoot}`);
-			// lib.init(args.appRoot);
+			console.log(`Application root folder: ${args.appRoot}`);
+			lib.init(args.appRoot);
+			args.availableTasks = lib.loadTasks(args.loadTasks, args.loadDefaultTasks);
 			
 			lib.logInfo(`Running the qausar cli under the process: ${process.title}`);
 			if(args.reRunLastSuccessfulBuild || args.reRun) {
@@ -180,7 +173,7 @@ class CLI {
 				});
 			} else if (args.runStandalone) {
 				return lib.definitelyCallFunction(() => {
-					this.promptUser();
+					lib.quasarSelectPrompt(args);
 					return resolve();
 				});
 			} else if (args.packageApp) {

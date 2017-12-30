@@ -283,7 +283,11 @@ const spawnCommand = (argsFile, args = [], command = `node`, synchronous = false
 		.on("close", (msg) => { logInfo("command ended with message: ", msg); });
 }
 
-const getTaskNames = (dir) => {
+const getTaskNames = (dir = null) => {
+	if(!dir) {
+		dir = path.resolve(config.tasksFolder);
+	}
+
 	return getFilenamesInDirectory(dir, ['js'], true);
 }
 
@@ -377,7 +381,7 @@ const fromDir = (startPath, filter, extension = '') => {
 	return found;
 }
 
-const runTask = (task, end = () => { }) => {
+const runTask = (task, end = () => { logFin(`quasar ${task} ended`) }) => {
 	return new promise((resolve, reject) => {
 		if (gulp.hasTask(task)) {
 			runSequence(task, end);
@@ -391,21 +395,47 @@ const runTask = (task, end = () => { }) => {
 
 const quasarSelectPrompt = (quasArgs) => {
 	return new promise((resolve, reject) => {
-		const tasksPath = path.resolve('./tasks/');
-		let availableTasks = getTaskNames(tasksPath);
+		let availableTasks = getTaskNames(quasArgs.tasksPath);
 
-		return prompt.prompt([{
+		return promptConsole([{
 			type: 'list',
 			name: 'task',
 			message: `Select the type of quasar you want to launch`,
-			choices: availableTasks
-		}]).then(res => {
-			if (gulp.hasTask(res.task)) {
-				gulp.start(res.task);
-				return resolve();
-			}
+			choices: quasArgs.availableTasks || ["uhhh nevermind"]
+			}], (res) => {
+				if(res.task !== "uhhh nevermind") {
+					runTask(res.task);
+				} else {
+					logFin("Allllllrrrriiiiiiiggggghhhhhttttttyyyyyy thhhheeennnnn");
+				}
 		});
 	})
+}
+
+const loadTasks = (taskPaths = null, loadDefaults = true) => {
+	let tasks = [];
+
+	if (!taskPaths && loadDefaults) {
+		const defaultTasks = getTaskNames();
+		taskPaths = defaultTasks.map(taskPath => path.resolve(`${config.tasksFolder}/${taskPath}`));
+		logInfo(`Loaded default quasars (${defaultTasks})`);
+	} else if (!taskPaths) {
+		return null;
+	}
+
+	for(var task of [].concat(taskPaths)) {
+		let newTask = null;
+		try {
+			newTask = require(task);
+		} catch (e) {
+			task = `${config.tasksFolder}/${task}`;
+			newTask = require(task);
+		} finally {
+			newTask.init(null, config.dirname, config);
+			tasks.push(newTask.qType);
+		}
+	}
+	return tasks;
 }
 
 const promptUser = (quasArgs) => {
@@ -1001,7 +1031,10 @@ const outputToHtmlFile = (quasArgs) => {
 }
 
 const init = (appRoot = process.cwd()) => {
-	config = require(`${appRoot}/config.js`);
+	try {
+		config = require(`${appRoot}/config.js`);
+	} catch(e) {
+	}
 }
 
 init();
@@ -1029,6 +1062,7 @@ module.exports = {
 	init,
 	promptUser,
 	injectCode,
+	loadTasks,
 	logAsync,
 	log,
 	logInfo,
