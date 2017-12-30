@@ -72,6 +72,10 @@ body {
         padding: 1em;
         padding-bottom: 4em;
 
+        .text-danger {
+            color: red;
+        }
+
         form {
             .form-group.field {
                 padding: 20px 0;
