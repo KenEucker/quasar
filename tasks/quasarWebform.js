@@ -1,5 +1,5 @@
 let gulp = require('gulp'),
-	promise = require('bluebird'),
+	promise = Promise, // require('bluebird'),
 	colors = require('colors'),
 	file = require('gulp-file'),
 	runSequence = require('run-sequence');
@@ -7,6 +7,8 @@ let gulp = require('gulp'),
 const qType = path.basename(__filename).split('.')[0];
 let lib = null;
 let quasArgs = {};
+
+// console.log('required');
 
 const task = () => {
 	return lib.injectCode(quasArgs)
@@ -101,6 +103,7 @@ const registerTasks = () => {
 		return run({ domain: 'quasar', signal: 'Webform', output: 'index.html', overwriteDestinationPath: true });
 	});
 	gulp.task(`${qType}`, [`${qType}:build`]);
+	// console.log('registered');
 }
 
 const init = (_lib = null, dirname = process.cwd(), config = null) => {
@@ -116,6 +119,7 @@ const init = (_lib = null, dirname = process.cwd(), config = null) => {
 		requiredArgsValidation: validateRequiredArgs
 	}, false);
 
+	// console.log('initialized');
 	return quasArgs;
 }
 

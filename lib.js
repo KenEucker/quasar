@@ -3,29 +3,29 @@ let gulp = require('gulp'),
 	rename = require('gulp-rename'),
 	inject = require('gulp-inject-string'),
 	insert = require('gulp-insert'),
-	prompt = require('inquirer'),
-	sass = require('dart-sass')
 	concat = require('gulp-concat'),
 	flatmap = require('gulp-flatmap'),
+	mustache = require('gulp-mustache'),
+	browserify = require('gulp-browserify'),
 	babel = require('gulp-babel'),
 	spawn = require("child_process"),
+	prompt = require('inquirer'),
+	sass = require('dart-sass')
 	gulpS3 = require('gulp-s3-upload'),
 	runSequence = require('run-sequence'),
 	aws = require('aws-sdk'),
 	through = require('through2'),
-	mustache = require('gulp-mustache'),
-	browserify = require('gulp-browserify'),
 	del = require('del'),
-	vinylPaths = require('vinyl-paths'),
 	unzip = require("extract-zip"),
 	path = require('path'),
 	colors = require('colors'),
 	os = require('os'),
-	promise = require('bluebird'),
 	lastLine = require('last-line'),
 	fs = require('fs'),
 	yargs = require('yargs'),
-	mkdir = require('mkdirp-sync');
+	promise = Promise, //require('bluebird'),
+	mkdir = require('mkdirp-sync'),
+	tryRequire = require('try-require');
 
 let config = {};
 
@@ -416,23 +416,26 @@ const loadTasks = (taskPaths = null, loadDefaults = true) => {
 	let tasks = [];
 
 	if (!taskPaths && loadDefaults) {
-		const defaultTasks = getTaskNames();
-		taskPaths = defaultTasks.map(taskPath => path.resolve(`${config.tasksFolder}/${taskPath}`));
-		logInfo(`Loaded default quasars (${defaultTasks})`);
+		taskPaths = getTaskNames();
+		logInfo(`Loading default quasars (${taskPaths})`);
 	} else if (!taskPaths) {
 		return null;
 	}
 
 	for(var task of [].concat(taskPaths)) {
-		let newTask = null;
-		try {
-			newTask = require(task);
-		} catch (e) {
-			task = `${config.tasksFolder}/${task}`;
-			newTask = require(task);
-		} finally {
+		let resolvedFilePath = tryRequire.resolve(task), newTask = null;
+		resolvedFilePath = resolvedFilePath ? `${resolvedFilePath}.js` : null;
+
+		if(!resolvedFilePath) {
+			resolvedFilePath = tryRequire.resolve(`${config.tasksFolder}/${task}.js`);
+		}
+
+		if (resolvedFilePath) {
+			newTask = require(resolvedFilePath);
 			newTask.init(null, config.dirname, config);
 			tasks.push(newTask.qType);
+		} else {
+			logError(`could not load task at ${task} or ${resolvedFilePath}`);
 		}
 	}
 	return tasks;

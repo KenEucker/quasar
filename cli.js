@@ -1,31 +1,22 @@
 const gulp = require('gulp'),
-	requireDir = require('require-dir'),
 	fs = require('fs'),
 	//rename = require('gulp-rename'),
 	path = require('path'),
-	promise = require('bluebird'),
+	promise = Promise, // require('bluebird'),
 	yargs = require('yargs'),
 	watch = require('gulp-watch'),
 	spawn = require('child_process'),
 	jsonTransform = require('gulp-json-transform'),
-	del = require('del'),
-	vinylPaths = require('vinyl-paths'),
-	lib = require('./lib'),
+	lib = require('./lib.js'),
 	mkdir = require('mkdirp-sync'),
 	// packager = require('electron-packager'),
 	api = require('./api');
-//requireDir('./tasks/');
 
 class CLI {
 	constructor() {
 		this._app = api.app;
 		this.port = process.env.PORT || '3720';
 		this._jobsFolder = lib.config.jobsFolder || `${process.cwd()}/jobs`;
-
-		mkdir(this._jobsFolder);
-		mkdir(`${this._jobsFolder}/started`);
-		mkdir(`${this._jobsFolder}/queued`);
-		mkdir(`${this._jobsFolder}/completed`);
 
 		gulp.task(`watchJobs`, () => {
 			const jobQueueFolder = `${this._jobsFolder}/queued`;
@@ -147,7 +138,8 @@ class CLI {
 			args = Object.assign(defaults, yargs.argv, args);
 			this.port = args.port;
 
-			console.log(`Application root folder: ${args.appRoot}`);
+			// console.log(`Application root folder: ${args.appRoot}`);
+			this.init(args.appRoot);
 			lib.init(args.appRoot);
 			args.availableTasks = lib.loadTasks(args.loadTasks, args.loadDefaultTasks);
 			
@@ -184,6 +176,15 @@ class CLI {
 				});
 			}
 		});
+	}
+
+	init(dirname = process.cwd()) {
+		this._jobsFolder = `${dirname}/jobs`;
+
+		mkdir(this._jobsFolder);
+		mkdir(`${this._jobsFolder}/started`);
+		mkdir(`${this._jobsFolder}/queued`);
+		mkdir(`${this._jobsFolder}/completed`);
 	}
 }
 

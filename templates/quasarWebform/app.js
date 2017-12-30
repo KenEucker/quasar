@@ -3,10 +3,8 @@ let express = require('express'),
     yargs = require('yargs'),
     path = require('path'),
     fs = require('fs'),
-    multer  = require('multer'),
     mkdir = require('mkdirp-sync'),
-    bodyParser = require('body-parser'),
-    jsonPromise = require('express-json-promise');
+    bodyParser = require('body-parser');
 
 let PORT = process.env.PORT || '3720',
     app = null,

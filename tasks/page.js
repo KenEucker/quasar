@@ -1,6 +1,8 @@
 let gulp = require('gulp'),
-	promise = require('bluebird'),
+	promise = Promise, // require('bluebird'),
 	colors = require('colors');
+
+// console.log('required');
 
 const qType = path.basename(__filename).split('.')[0];
 let lib = null;
@@ -70,6 +72,7 @@ const registerTasks = () => {
 		}
 	});
 	gulp.task(`${qType}`, [`${qType}:build`]);
+	// console.log('registered');
 }
 
 const init = (_lib = null, dirname = process.cwd(), config = null) => {
@@ -96,6 +99,7 @@ const init = (_lib = null, dirname = process.cwd(), config = null) => {
 			outputExt: '.html',
 			requiredArgsValidation: validateRequiredArgs });
 
+	// console.log('initialized');
 	return quasArgs;
 }
 
