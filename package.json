@@ -6,7 +6,7 @@
   "productName": "quasar",
   "dependencies": {
     "adm-zip": "^0.4.7",
-    "aws-sdk": "^2.175.0",
+    "aws-sdk": "^2.176.0",
     "axios": "^0.17.1",
     "babel-core": "^6.26.0",
     "babel-polyfill": "^6.26.0",

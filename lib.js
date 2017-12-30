@@ -19,7 +19,6 @@ let gulp = require('gulp'),
 	vinylPaths = require('vinyl-paths'),
 	unzip = require("extract-zip"),
 	path = require('path'),
-	mv = require('mv')
 	colors = require('colors'),
 	os = require('os'),
 	promise = require('bluebird'),
@@ -559,7 +558,7 @@ const findTargetFile = (quasArgs) => {
 
 		if (!targetFilePath) {
 			const oldestTargetFilePath = targetFilePath;
-			targetFilePath = fromDir(`${quasArgs.assetsFolder}`, `${quasArgs.target}`, `.html`);
+			targetFilePath = fromDir(`${quasArgs.assetsFolder}`, `${quasArgs.target}`);
 
 			if (targetFilePath) {
 				log(`did not find targetFile at ${oldTargetFilePath} or at ${oldestTargetFilePath} but found one at -> ${targetFilePath}`);
@@ -594,14 +593,14 @@ const moveTargetFilesToRootOfAssetsPath = (quasArgs) => {
 		if (targetFilePath !== `${quasArgs.assetsFolder}/${quasArgs.target}`) {
 			const baseDir = path.dirname(targetFilePath);
 			// logInfo(`Moving files from deep folder structure (${baseDir}) to base assets path (${quasArgs.assetsFolder})`);
-			gulp.src(`${baseDir}/**`)
+			return gulp.src(`${baseDir}/**`)
 				.pipe(gulp.dest(quasArgs.assetsFolder))
 				.on('error', (err) => {
 					logError(`error copying files: ${err}`);
 					return reject(quasArgs);
 				})
 				.on('end', () => {
-					logInfo(`files moved from deep folder structure (${baseDir}) to base assets path (${quasArgs.assetsFolder})`);
+					logSuccess(`files moved from deep folder structure (${baseDir}) to base assets path (${quasArgs.assetsFolder})`);
 					quasArgs.targetFilePath = targetFilePath;
 					let remove = baseDir.replace(quasArgs.assetsFolder, '').substr(1).split('/');
 					remove = path.resolve(`${quasArgs.assetsFolder}/${remove[0]}`);
@@ -637,7 +636,7 @@ const copyFilesFromAssetsFolderToOutput = (quasArgs, files, excludeFiles = null)
 			excludeFiles = [`${quasArgs.target}`, `${quasArgs.qType}.html`, `${quasArgs.qType}.css`, `${quasArgs.qType}.js`];
 		}
 		logInfo(`copying files (${files.join()}) from ${quasArgs.assetsFolder}/ to ${destinationPath}`);
-
+		logInfo(`exluding the files ${excludeFiles}`);
 		files = files.map(file => `${quasArgs.assetsFolder}/${file}`);
 		excludeFiles = excludeFiles.map(excludeFile => `!${quasArgs.assetsFolder}/${excludeFile}`);
 		return gulp.src(excludeFiles.concat(files), { base: quasArgs.assetsFolder })
@@ -690,15 +689,17 @@ const copyTemplateFilesToAssetsPath = (quasArgs) => {
 		}
 
 		const outfile1 = fs.readFileSync(targetFilePath, 'utf-8');
-		const outputTargetFilePath = `${quasArgs.assetsFolder}/${quasArgs.target}`;
+		let target = targetFilePath.split('/').pop();
+		const outputTargetFilePath = `${quasArgs.assetsFolder}/${target}`;
 
 		if (!outfile1) {
 			quasArgs.targetFilePath = targetFilePath;
 		}
 
-		log(`copying target file to assets path: ${outputTargetFilePath}`);
+		log(`copying target file from ${quasArgs.targetFilePath} to assets path: ${outputTargetFilePath}`);
 		fs.writeFileSync(outputTargetFilePath, outfile1);
 		quasArgs.targetFilePath = outputTargetFilePath;
+		quasArgs.target = outputTargetFilePath.split('/').pop();
 	}
 	if (fs.existsSync(cssAssetPath)) {
 		const outfile2 = fs.readFileSync(cssAssetPath, 'utf-8');
@@ -732,8 +733,12 @@ const copyTemplateFilesToAssetsPath = (quasArgs) => {
 // Unpack input files
 const unpackFiles = (quasArgs) => {
 	return new promise((resolve, reject) => {
+		if (!quasArgs.unpackFiles || !quasArgs.source) {
+			return resolve(quasArgs);
+		}
+
 		const destinationPath = path.resolve(`${quasArgs.assetsFolder}`);
-		const destinationPathExists = fs.existsSync(path.resolve(`${destinationPath}/${quasArgs.target}`));
+		const destinationPathExists = fs.existsSync(destinationPath);
 		if (!quasArgs.overwriteUnpackDestination && destinationPathExists) {
 			logError(`files have already been unpacked, run again with option --overwriteUnpackDestination=true to overwite files.`);
 			return resolve(quasArgs);
@@ -746,17 +751,12 @@ const unpackFiles = (quasArgs) => {
 		}
 		mkdir(destinationPath);
 
-		if (!quasArgs.unpackFiles || !quasArgs.source) {
-			return resolve(quasArgs);
-		}
-
 		const zipFilePath = path.resolve(`${quasArgs.sourceFolder}/${quasArgs.source}${quasArgs.sourceExt}`);
-		log(`unpacking source files from (${zipFilePath}) to the folder (${destinationPath}) before building output`);
-
 		if (!fs.existsSync(zipFilePath)) {
 			logError(`source could not be found`, zipFilePath);
 			return reject();
 		}
+		log(`unpacking source files from (${zipFilePath}) to the folder (${destinationPath}) before building output`);
 
 		unzip(zipFilePath, { dir: destinationPath }, (err) => {
 			// extraction is complete. make sure to handle the err
