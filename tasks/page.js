@@ -81,7 +81,9 @@ const init = () => {
 		}, {
 			type: 'input',
 			name: 'body',
-			message: 'Enter the body text'
+			message: 'Enter the body text',
+			default: '',
+			optional: true
 		}],
 		{
 			outputExt: '.html',

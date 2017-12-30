@@ -100,17 +100,23 @@ const log = (message, obj, status = null, title = '', color = colors.grey) => {
 
 	return;
 }
-const logSuccessfulOutputToFile = (quasArgs) => {
+
+const getActualArgObjects = (quasArgs, onlyObjects = null) => {
 	const noArgTypes = ['object', 'function'];
 	const skipKeys = ['/bin/zsh', '$0', 'noPrompt'];
 	let recordedKeys = [];
-	const cliArgs = Object.keys(quasArgs).map((k) => {
-		const skipValue = noArgTypes.indexOf(typeof quasArgs[k]) != -1 || skipKeys.indexOf(k) != -1 || recordedKeys.indexOf(k) != -1;
+
+	return Object.keys(quasArgs).map((k) => {
+		const skipValue = noArgTypes.indexOf(typeof quasArgs[k]) != -1 || skipKeys.indexOf(k) != -1 || recordedKeys.indexOf(k) != -1 || (onlyObjects ? onlyObjects.indexOf(k) == -1 : false);
 		if (!skipValue) {
 			recordedKeys.push(k);
 			return `--${k}=\"${quasArgs[k]}\"`;
 		}
 	});
+}
+
+const logSuccessfulOutputToFile = (quasArgs) => {
+	const cliArgs = getActualArgObjects(quasArgs);
 	const logFilePath = path.resolve(`${quasArgs.dirname}/${quasArgs.logToFile}`);
 	fs.appendFileSync(logFilePath, `node cli.js ${cliArgs.join(' ')} --noPrompt=true\r\n`, (err) => {
 		if (err) throw err;
@@ -441,7 +447,7 @@ const getQuasarPromptQuestions = (quasArgs) => {
 	}, {
 		type: 'confirm',
 		name: 'askOptionalQuestions',
-		message: 'Enter the name of the signal to be used when compiling quasars',
+		message: 'Show additional settings?',
 		default: false
 	}];
 }
@@ -488,6 +494,7 @@ const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
 	let title = prompt.message || '',
 		widget = prompt.type || 'input',
 		help = prompt.help || '';
+		classNames = '',
 		options = {},
 		ui = {};
 
@@ -508,10 +515,16 @@ const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
 			}
 			break;
 	}
+	
+	if (prompt.optional) {
+		classNames += 'optional hide';
+	}
 
 	return {
+		'ui:title': title,
 		'ui:widget': widget,
 		'ui:options': options,
+		classNames,
 		help
 	};
 }
@@ -970,6 +983,7 @@ module.exports = {
 	findOutputDirectory,
 	findTargetFile,
 	fromDir,
+	getActualArgObjects,
 	getQuasArgs,
 	getFilenamesInDirectory,
 	getTaskNames,
