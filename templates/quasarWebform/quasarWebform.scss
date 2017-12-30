@@ -74,14 +74,12 @@ body {
 
         form {
             .form-group.field {
+                padding: 20px 0;
+
                 label {
                     font-size: 1rem;
                     color: black;
                     font-family: 'Roboto', sans-serif;
-                }
-
-                .field-boolean {
-                    padding-bottom: 2em;
                 }
             }
 
