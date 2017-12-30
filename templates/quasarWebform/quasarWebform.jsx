@@ -170,8 +170,10 @@ const finalTouches = () => {
     const file = document.querySelector('input[type=file]');
     // file.setAttribute('accept', 'application/zip');
     hideOrShowAdditionalSettings();
-    app.querySelectorAll('label[for=root_askOptionalQuestions]').parentNode.querySelectorAll('input').forEach((field) => {
-        field.addEventListener('click', function() { hideOrShowAdditionalSettings(this.value == "true", findAncestor(this, 'form')) });
+    app.querySelectorAll('label[for=root_askOptionalQuestions]').forEach((radio) => {
+        radio.parentNode.querySelectorAll('input').forEach((field) => {
+            field.addEventListener('click', function() { hideOrShowAdditionalSettings(this.value == "true", findAncestor(this, 'form')) });
+        });
     });
 }
 
