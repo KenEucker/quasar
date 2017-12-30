@@ -25,7 +25,7 @@ const getQuasarPrompts = () => {
 }
 
 const validateRequiredArgs = (args = {}) => {
-	return new Promise((resolve, reject) => {
+	return new promise((resolve, reject) => {
 		// Merge options with passed in parameters
 		quasArgs = Object.assign(quasArgs, args);
 	
