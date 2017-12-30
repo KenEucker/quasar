@@ -21,11 +21,16 @@ class CLI {
 		this._app = api.app;
 		this.port = process.env.PORT || '3720';
 		
+		mkdir(lib.config.jobsFolder);
+		mkdir(`${lib.config.jobsFolder}/started`);
+		mkdir(`${lib.config.jobsFolder}/queued`);
+		mkdir(`${lib.config.jobsFolder}/completed`);
+
 		gulp.task(`watchJobs`, () => {
-			mkdir(path.resolve(lib.config.dirname, 'jobs'));
+			const jobQueueFolder = `${lib.config.jobsFolder}/queued`;
 			
-			lib.logSuccess(`watching folder /jobs/ for new or changed files to build from`);
-			return watch('jobs/queued/*.json', { ignoreInitial: true })
+			lib.logSuccess(`watching folder ${jobQueueFolder} for new or changed files to build from`);
+			return watch(`${jobQueueFolder}/*.json`, { ignoreInitial: true })
 				.pipe(jsonTransform(this.transformToProcessArgs));
 		});
 		
@@ -41,8 +46,7 @@ class CLI {
 	}
 
 	promptUser() {
-		const tasksPath = path.resolve('./tasks/');
-		let availableTasks = lib.getTaskNames(tasksPath);
+		let availableTasks = lib.getTaskNames(lib.config.tasksFolder);
 
 		return lib.promptConsole([{
 			type: 'list',

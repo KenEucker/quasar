@@ -30,7 +30,7 @@ let gulp = require('gulp'),
 let config = {};
 
 // Logger
-let logToFile = yargs.argv.logToFile, logDate = yargs.argv.logDate, logSeverity = yargs.argv.logSeverity;
+let logToFile = yargs.argv.logFile || false, logDate = yargs.argv.logDate, logSeverity = yargs.argv.logSeverity;
 const logAsync = (message, obj, status = null, title = '', color = colors.grey) => { return new promise((resolve, reject) => { log(message, obj, status, color); return resolve(); }) }
 const logData = (message, obj, color = colors.yellow) => { log(message, obj, 'info', 'data', color) }
 const logInfo = (message, obj, color = colors.yellow) => { log(message, obj, 'info', 'info', color) }
@@ -114,35 +114,46 @@ const getActualArgObjects = (quasArgs, onlyObjects = null) => {
 	});
 }
 
-const logSuccessfulOutputToFile = (quasArgs) => {
-	const cliArgs = getActualArgObjects(quasArgs);
-	const logFilePath = path.resolve(`${quasArgs.dirname}/${quasArgs.logToFile}`);
-	fs.appendFileSync(logFilePath, `node cli.js ${cliArgs.join(' ')} --noPrompt=true\r\n`, (err) => {
-		if (err) throw err;
-		logSuccess(`Logged to logfile: ${logFilePath}`);
-	});
+const logArgsToFile = (quasArgs, toStatus = 'started') => {
+	if(logToFile) {
+		const logFilePath = path.resolve(`${quasArgs.dirname}/${quasArgs.logFile}`);
+		const cliArgs = getActualArgObjects(quasArgs);
+		fs.appendFileSync(logFilePath, `node cli.js ${cliArgs.join(' ')} --noPrompt=true\r\n`, (err) => {
+			if (err) throw err;
+			logSuccess(`Logged to logfile: ${logFilePath}`);
+		});
+	}
 
 	if (quasArgs.argsFile && fs.existsSync(quasArgs.argsFile)) {
-		fromFile = JSON.parse(fs.readFileSync(quasArgs.argsFile));
-		fromFile.completed = true;
-		fromFile.outputFilePath = `${quasArgs.dirname}${getQuasarOutputPath(quasArgs)}/${quasArgs.output}${quasArgs.outputExt}`;
-		fs.writeFileSync(quasArgs.argsFile.replace(`/queued`, `/completed`), JSON.stringify(fromFile));
+		quasArgs.outputFilePath = `${quasArgs.dirname}${getQuasarOutputPath(quasArgs)}/${quasArgs.output}${quasArgs.outputExt}`;
 		fs.unlink(quasArgs.argsFile);
 	}
+
+	quasArgs.argsFile = quasArgs.argsFile.replace(`/${quasArgs.status}`, `/${toStatus}`);
+	quasArgs.status = toStatus;
+
+	logInfo(`writing to build file: ${quasArgs.argsFile}`);
+	fs.writeFileSync(quasArgs.argsFile, JSON.stringify(quasArgs));
 }
 
 const runLastSuccessfulBuild = (quasArgs = null) => {
 	return new promise((resolve, reject) => {
 		if (!quasArgs) {
-			quasArgs = { logToFile: `.log`, dirname: config.dirname };
+			quasArgs = { logFile: `.log`, dirname: config.dirname };
 		}
-		const logFilePath = path.resolve(`${quasArgs.dirname}/${quasArgs.logToFile}`);
+		const logFilePath = path.resolve(`${quasArgs.dirname}/${quasArgs.logFile}`);
 		let command = null;
 
 		if (fs.existsSync(logFilePath)) {
 			lastLine(logFilePath, function (err, command) {
-				if (err) { logError(`Could not read last line from logfile: ${logFilePath}`) }
-
+				if (err) { 
+					logError(`Could not read last line from logfile: ${logFilePath}`);
+					return reject();
+			 	}
+				if (!command.length) {
+					logError(`Nothing in logfile: ${logFilePath}`);
+					return reject();
+				}
 				logSuccess(`Running the last found command in the logfile`);
 				command = command.replace(`node cli.js`, ``);
 				let args = command.split(' ');
@@ -158,25 +169,33 @@ const runLastSuccessfulBuild = (quasArgs = null) => {
 }
 
 const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addDefaultRequiredArgs = true) => {
-	let fromFile = {};
+	let fromFile = {}, 
+		jobTimestamp = Date.now(), 
+		argsFile = yargs.argv.argsFile, 
+		status = 'started',
+		argsFileExists = argsFile && fs.existsSync(argsFile),
+		assetsFolder = `${config.assetsFolder}/${qType}`;
 
 	// If the argsFile parameter is set and the file exists, load parameters from file
-	if (yargs.argv.argsFile && fs.existsSync(yargs.argv.argsFile)) {
-		fromFile = JSON.parse(fs.readFileSync(yargs.argv.argsFile));
-
+	if (argsFileExists) {
+		fromFile = JSON.parse(fs.readFileSync(argsFile));
+		jobTimestamp = (argsFile.split('_').pop() || '').replace('.json');
+		status = 'queued';
 	}
 
 	const quasArgs = Object.assign(
 		// Defaults
 		{
+			jobTimestamp,
 			dirname: config.dirname,
 			outputFolder: config.outputFolder,
 			sourceFolder: config.sourceFolder,
-			assetsFolder: qType ? `${config.assetsFolder}/${qType}` : undefined,
+			jobsFolder: config.jobsFolder,
 			templatesFolder: qType ? `${config.templatesFolder}/${qType}` : undefined,
-			targetFilePath: qType ? `${config.assetsFolder}/${qType}/${qType}.html` : undefined,
-			stylesAsset: qType ? `${config.assetsFolder}/${qType}/${qType}.css` : undefined,
-			scriptsAsset: qType ? `${config.assetsFolder}/${qType}/${qType}.js` : undefined,
+			assetsFolder: qType ? assetsFolder : undefined,
+			targetFilePath: qType ? `${assetsFolder}/${qType}.html` : undefined,
+			stylesAsset: qType ? `${assetsFolder}/${qType}.css` : undefined,
+			scriptsAsset: qType ? `${assetsFolder}/${qType}.js` : undefined,
 			target: qType ? `${qType}.html` : undefined,
 			bucket: '%AWS%',
 			sourceExt: '.zip',
@@ -189,9 +208,12 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 			overwriteUnpackDestination: true,
 			overwriteTargetFileFromTemplate: true,
 			cleanUpTargetFileTemplate: false,
+			useJobTimestampForBuild: true,
 			buildCompletedSuccessfully: false,
 			excludeOutputFileFromUpload: true,
-			logToFile: '.log',
+			logFile: '.log',
+			argsFile: argsFile || `${config.jobsFolder}/${status}/${qType}_${jobTimestamp}.json`,
+			status,
 			qType
 		},
 		// CLI args
@@ -199,7 +221,16 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 		// Loaded from file with arg --argsFile
 		fromFile);
 
-	return registerRequiredQuasArgs(quasArgs, requiredArgs, nonRequiredArgs, addDefaultRequiredArgs);
+	if (quasArgs.useJobTimestampForBuild) {
+		quasArgs.assetsFolder = `${quasArgs.assetsFolder}_${quasArgs.jobTimestamp}`;
+		quasArgs.targetFilePath = `${quasArgs.assetsFolder}/${qType}.html`;
+		quasArgs.stylesAsset = `${quasArgs.assetsFolder}/${qType}.css`;
+		quasArgs.scriptsAsset = `${quasArgs.assetsFolder}/${qType}.js`;
+	}
+
+	const initalArgs = registerRequiredQuasArgs(quasArgs, requiredArgs, nonRequiredArgs, addDefaultRequiredArgs);
+
+	return initalArgs;
 }
 
 const definitelyCallFunction = (cb, resolve = null) => {
@@ -957,7 +988,13 @@ const outputToHtmlFile = (quasArgs) => {
 				}
 				logSuccess(`Output file saved as: ${quasArgs.dirname}${outputPath}/${quasArgs.output}${quasArgs.outputExt}`);
 				quasArgs.buildCompletedSuccessfully = true;
-				logSuccessfulOutputToFile(quasArgs);
+				logArgsToFile(quasArgs, 'completed');
+
+				if(quasArgs.useJobTimestampForBuild) {
+					logInfo(`cleaning up after job: ${quasArgs.jobTimestamp}`);
+					logInfo(`cleaning up assets folder: ${quasArgs.assetsFolder}`);
+					del(quasArgs.assetsFolder);
+				}
 				return resolve(quasArgs);
 			});
 	})
