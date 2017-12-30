@@ -12,6 +12,14 @@ body {
         font-size: 2em;
     }
 
+    .hide {
+        display: none;
+    }
+
+    .show {
+        display: block;
+    }
+
     .mdl-layout__header, .mdl-layout__drawer, .mdl-layout-title, .mdl-layout-heading {
         font-family: space_age !important;
     }

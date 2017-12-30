@@ -65,7 +65,7 @@ gulp.task(`${qType}:precompile`, () => {
 	tasks.forEach((task) => {
 		const taskFile = require(`./${task}.js`)
 		const taskPrompts = taskFile.getQuasarPrompts();
-		let required = [], properties = {}, uiSchema = {};
+		let required = [], properties = {}, uiSchema = {}, formData = {};
 
 		taskPrompts.forEach((prompt) => {
 			const name = prompt.name;
@@ -74,6 +74,7 @@ gulp.task(`${qType}:precompile`, () => {
 			}
 			properties[name] = lib.convertPromptToJsonSchemaFormProperty(prompt);
 			uiSchema[name] = lib.convertPromptToJsonSchemaUIFormProperty(prompt);
+			formData[name] = prompt.default;
 		});
 		const schema = {
 			title: `Quasar::${task} -- ${taskFile.purpose}`,
@@ -81,7 +82,7 @@ gulp.task(`${qType}:precompile`, () => {
 			required: required,
 			properties: properties
 		};
-		formsData.push({ name: task, schema: schema, uiSchema: uiSchema, formData: quasArgs });
+		formsData.push({ name: task, schema: schema, uiSchema: uiSchema, formData: formData });
 	});
 
 	const formDataJsonString = JSON.stringify(formsData);
@@ -91,7 +92,7 @@ gulp.task(`${qType}:precompile`, () => {
 	return file('quasarWebform.mustache.json', JSON.stringify(templateData), { src: true })
 		.pipe(gulp.dest(`${quasArgs.templatesFolder}`));
 });
-gulp.task(`${qType}:compile`, function(callback) {
+gulp.task(`${qType}:compile`, (callback) => {
 	runSequence(`${qType}:precompile`,
 				`${qType}:compile:sources`,
 				callback);
