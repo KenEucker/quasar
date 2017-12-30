@@ -114,12 +114,24 @@ const init = () => {
 		required: true
 	}, {
 		type: 'input',
-		name: 'bgColor',
-		message: 'Skin BG Color(HEX):'
+		name: 'backgroundColor',
+		message: 'background color'
 	}, {
 		type: 'input',
 		name: 'output',
-		message: `Enter the output filename postfix (default extension .txt):`,
+		message: `Enter the output filename postfix (default extension .txt)`,
+		optional: true
+	}, {
+		type: 'input',
+		name: 'clickUrl',
+		message: `Enter the click URL`,
+		default: '!! PASTE CLICK URL HERE !!',
+		optional: true
+	}, {
+		type: 'input',
+		name: 'impressionTracker',
+		message: `Enter the impression tracker URL`,
+		default: '!! PASTE IMPRESSION TRACKER URL HERE !!',
 		optional: true
 	}, {
 		type: 'confirm',
@@ -127,13 +139,16 @@ const init = () => {
 		message: `Upload assets to S3?`,
 		default: false,
 		optional: true
+	}, {
+		type: 'confirm',
+		name: 'preload',
+		message: `Preload the skins?`,
+		default: true,
+		optional: true
 	}]),
 		{
 			qType: qType,
-			clickUrl: '!! PASTE CLICK URL HERE !!',
-			impressionTracker: '!! PASTE IMPRESSION TRACKER URL HERE !!',
 			sourceExt: '.zip',
-			preload: true,
 			requiredArgsValidation: validateRequiredArgs
 		}, false);
 }

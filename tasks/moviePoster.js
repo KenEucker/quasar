@@ -92,26 +92,40 @@ const init = () => {
 	}, {
 		type: 'input',
 		name: 'imageName',
-		message: `enter the name of the image (source) ${colors.yellow('(optional)')})\n`
+		message: `enter the name of the image (source)`,
+		optional: true
 	}, {
 		type: 'input',
 		name: 'clickURL',
-		message: `Enter the click URL ${colors.yellow('(optional)')}:`,
-		default: '!! PASTE CLICK URL HERE !!'
+		message: `Enter the click URL:`,
+		default: '!! PASTE CLICK URL HERE !!',
+		optional: true
 	}, {
 		type: 'input',
 		name: 'output',
-		message: `Enter the output filename postfix (default extension .txt ${colors.yellow('(optional)')}):\n`
+		message: `Enter the output filename postfix (default extension .txt:`,
+		optional: true
+	}, {
+		type: 'input',
+		name: 'clickUrl',
+		message: `Enter the click URL`,
+		default: '!! PASTE CLICK URL HERE !!',
+		optional: true
+	}, {
+		type: 'input',
+		name: 'impressionTracker',
+		message: `Enter the impression tracker URL`,
+		default: '!! PASTE IMPRESSION TRACKER URL HERE !!',
+		optional: true
 	}, {
 		type: 'confirm',
 		name: 'uploadToS3',
-		message: `Upload assets to S3? ${colors.yellow('(optional)')}`,
-		default: false
+		message: `Upload assets to S3?`,
+		default: false,
+		optional: true
 	}]),
 		{
 			qType: qType,
-			clickUrl: '!! PASTE CLICK URL HERE !!',
-			impressionTracker: '!! PASTE IMPRESSION TRACKER URL HERE !!',
 			sourceExt: '.jpg',
 			requiredArgsValidation: validateRequiredArgs
 		}, false);

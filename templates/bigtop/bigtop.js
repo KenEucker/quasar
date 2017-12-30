@@ -1,6 +1,6 @@
 var campaignClickUrl = '<%= clickUrl %>';
-var windowTarget = '<%= windowTarget %>';
+var clickTarget = '<%= clickTarget %>';
 document.querySelector('.image').onclick = function() {
-	var win = window.parent.open(campaignClickUrl, windowTarget);
+	var win = window.parent.open(campaignClickUrl, clickTarget);
 	if(win) { win.focus(); }
 };

@@ -1,7 +1,7 @@
 var campaignClickUrl = 'PLACE CLICK URL HERE!';
 var clickIDs = [ <%= hypeElements %> ];
 var dtadsCampaign = '<%= client %>_<%= campaign %>';
-var windowTarget = '<%= clickTarget %>';
+var clickTarget = '<%= clickTarget %>';
 var gaID = "<%= googleAnalyticsID %>";
 var gaTracker = "gaTracker";
 
@@ -90,7 +90,7 @@ function addClickEvent(el = null, clickName = null, clickUrl = null, clickID = n
 			window.ga(gaTracker + '.send', 'event', dtadsCampaign, 'click', clickName, {nonInteraction: true});
 
 			if(this.className.indexOf('h-no-click-url') == -1) {
-				var win = window.parent.open(campaignClickUrl, windowTarget);
+				var win = window.parent.open(campaignClickUrl, clickTarget);
 				if(win) { win.focus(); }
 			}
 		};

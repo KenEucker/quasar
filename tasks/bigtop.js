@@ -66,6 +66,30 @@ const validateRequiredArgs = (args) => {
 			dtAdsArgs.output = `${dtAdsArgs.campaign}_${dtAdsArgs.qType}`;
 		}
 
+		switch (dtAdsArgs.clickTarget) {
+			default:
+			case '':
+			case 'default':
+				dtAdsArgs.clickTarget = '';
+				break;
+
+			case 'same window':
+				dtAdsArgs.clickTarget = '_self';
+				break;
+
+			case 'new tab':
+				dtAdsArgs.clickTarget = '_blank';
+				break;
+
+			case 'parent':
+				dtAdsArgs.clickTarget = '_parent';
+				break;
+
+			case 'top':
+				dtAdsArgs.clickTarget = '_top';
+				break;
+		}
+
 		dtAdsArgs = lib.copyTemplateFilesToAssetsPath(dtAdsArgs);
 		return resolve(dtAdsArgs);
 	});
@@ -84,13 +108,13 @@ const init = () => {
 	dtAdsArgs = lib.getQuasArgs(qType, lib.getCampaignPromptQuestions().concat([{
 		type: 'list',
 		name: 'source',
-		message: `Select the source image for the skin`,
+		message: `Select the source image for the bigtop`,
 		choices: ['none'].concat(lib.getFilenamesInDirectory(lib.config.sourceFolder, ['jpg'])),
 		required: true
 	}, {
 		type: 'input',
 		name: 'imageName',
-		message: `enter the name of the source image (default extention .jpg)\n`,
+		message: `enter the name of the source image (default extention .jpg)`,
 		optional: true
 	}, {
 		type: 'input',
@@ -98,16 +122,28 @@ const init = () => {
 		message: `Enter the output filename postfix (default extension .txt)`,
 		optional: true
 	}, {
+		type: 'input',
+		name: 'clickUrl',
+		message: `Enter the click URL`,
+		default: '!! PASTE CLICK URL HERE !!',
+		optional: true
+	}, {
 		type: 'confirm',
 		name: 'uploadToS3',
 		message: `Upload assets to S3?`,
 		default: false,
 		optional: true
+	}, {
+		type: 'list',
+		name: 'clickTarget',
+		// TODO: add better question intelligence here for the different ways to open a new window on click
+		message: `How should the window open when clicked?`,
+		default: 'default',
+		choices: ['default', 'same window', 'new tab'], //, 'parent','top']
+		optional: true
 	}]),
 		{
 			qType: qType,
-			clickUrl: '!! PASTE CLICK URL HERE !!',
-			windowTarget: '_blank',
 			sourceExt: '.jpg',
 			requiredArgsValidation: validateRequiredArgs
 		}, false);

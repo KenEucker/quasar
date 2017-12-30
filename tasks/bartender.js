@@ -66,6 +66,30 @@ const validateRequiredArgs = (args) => {
 			dtAdsArgs.output = `${dtAdsArgs.campaign}_${dtAdsArgs.qType}`;
 		}
 
+		switch (dtAdsArgs.clickTarget) {
+			default:
+			case '':
+			case 'default':
+				dtAdsArgs.clickTarget = '';
+				break;
+
+			case 'same window':
+				dtAdsArgs.clickTarget = '_self';
+				break;
+
+			case 'new tab':
+				dtAdsArgs.clickTarget = '_blank';
+				break;
+
+			case 'parent':
+				dtAdsArgs.clickTarget = '_parent';
+				break;
+
+			case 'top':
+				dtAdsArgs.clickTarget = '_top';
+				break;
+		}
+
 		dtAdsArgs = lib.copyTemplateFilesToAssetsPath(dtAdsArgs);
 		return resolve();
 	});
@@ -98,19 +122,42 @@ const init = () => {
 		name: 'output',
 		message: `Enter the output filename postfix (default extension .txt):`,
 		optional: true
-	},{
+	}, {
+		type: 'input',
+		name: 'clickUrl',
+		message: `Enter the click URL`,
+		default: '!! PASTE CLICK URL HERE !!',
+		optional: true
+	}, {
+		type: 'input',
+		name: 'impressionTracker',
+		message: `Enter the impression tracker URL`,
+		default: '!! PASTE IMPRESSION TRACKER URL HERE !!',
+		optional: true
+	}, {
+		type: 'input',
+		name: 'backgroundColor',
+		message: 'background color',
+		default: 'transparent',
+		optional: true
+	}, {
+		type: 'list',
+		name: 'clickTarget',
+		// TODO: add better question intelligence here for the different ways to open a new window on click
+		message: `How should the window open when clicked?`,
+		default: 'default',
+		optional: true,
+		choices: ['default', 'same window', 'new tab']//, 'parent','top']
+	}, {
 		type: 'confirm',
 		name: 'uploadToS3',
 		message: `Upload assets to S3?`,
 		default: false,
 		optional: true
+	
 	}]),
 		{
 			qType: qType,
-			clickUrl: '!! PASTE CLICK URL HERE !!',
-			impressionTracker: '!! PASTE IMPRESSION TRACKER URL HERE !!',
-			backgroundColor: 'transparent',
-			clickTarget: '_blank',
 			adHtml: '',
 			sourceExt: '.jpg',
 			requiredArgsValidation: validateRequiredArgs
