@@ -41,8 +41,8 @@ const logFin = (message = 'FiN!', obj, color = colors.green) => { log(message, o
 const log = (message, obj, status = null, title = '', color = colors.grey) => {
 	let logger = console;
 	let logPrefix = `<~-`, logPostfix = `${logPrefix[1]}${logPrefix.replace('<', '>')[0]}`;
-	message = `${logDate ? `[${new Date(Date.now()).toLocaleString('en-US')}]` : ``}${title.length ? ` ${title}:` : ''} ${message}`;
-	message = `${logPrefix}${message}${logPostfix}`;
+	message = `${logDate ? `[${new Date(Date.now()).toLocaleString('en-US')}] ` : ``}${title.length ? ` ${title}: ` : ''}${message}`;
+	message = `${logPrefix} ${message} ${logPostfix}`;
 	logSeverity = Array.isArray(logSeverity) ? logSeverity[logSeverity.length - 1] : logSeverity;
 
 	switch (status) {
@@ -378,10 +378,10 @@ const quasarSelectPrompt = (quasArgs) => {
 	})
 }
 
-const promptUser = (quasArgs) => { 
+const promptUser = (quasArgs) => {
 	return promptConsole(quasArgs.requiredArgs, (userResponse) => {
-		if(userResponse.askOptionalQuestions) {
-			return promptConsole(quasArgs.requiredArgs, (res) => { quasArgs.requiredArgsValidation(Object.assign(userResponse, res)) }, true );
+		if (userResponse.askOptionalQuestions) {
+			return promptConsole(quasArgs.requiredArgs, (res) => { quasArgs.requiredArgsValidation(Object.assign(userResponse, res)) }, true);
 		} else {
 			return quasArgs.requiredArgsValidation(userResponse);
 		}
@@ -406,7 +406,7 @@ const promptConsole = (questions, getResults, showOptional = false, optionalOnly
 			addQuestion = true;
 		}
 
-		if(addQuestion) {
+		if (addQuestion) {
 			questionsToAsk.push(question);
 		}
 	});
@@ -494,7 +494,7 @@ const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
 	let title = prompt.message || '',
 		widget = prompt.type || 'input',
 		help = prompt.help || '';
-		classNames = '',
+	classNames = '',
 		options = {},
 		ui = {};
 
@@ -515,7 +515,7 @@ const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
 			}
 			break;
 	}
-	
+
 	if (prompt.optional) {
 		classNames += 'optional hide';
 	}
