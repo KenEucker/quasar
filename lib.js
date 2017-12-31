@@ -220,6 +220,7 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 			useJobTimestampForBuild: false,
 			buildCompletedSuccessfully: false,
 			excludeOutputFileFromUpload: true,
+			outputVersion: 1,
 			logFile: '.log',
 			argsFile: argsFile || `${config.jobsFolder}/${status}/${qType}_${jobTimestamp}.json`,
 			status,
@@ -1015,8 +1016,18 @@ const uploadFiles = (quasArgs, excludeFiles = []) => {
 const outputToHtmlFile = (quasArgs) => {
 	return new promise((resolve, reject) => {
 		const outputPath = getQuasarOutputPath(quasArgs);
+		let outputFile = `${quasArgs.dirname}${outputPath}/${quasArgs.outputVersion == 1 ? quasArgs.output : `${quasArgs.output}_${quasArgs.outputVersion}`}${quasArgs.outputExt}`;
 		log(`Applying the following parameters to the template (${quasArgs.targetFilePath}) and building output`);
 		log(`data:`, quasArgs);
+
+		if(fs.existsSync(outputFile)) {
+			while(fs.existsSync(outputFile)) {
+				quasArgs.outputVersion += 1;
+				quasArgs.output = `${quasArgs.output}_${quasArgs.outputVersion}`;
+				outputFile = `${quasArgs.dirname}${outputPath}/${quasArgs.output}${quasArgs.outputExt}`;
+			}
+			logInfo(`existing version detected, version number (${quasArgs.outputVersion}) appended to outputFile`);
+		}
 
 		return gulp.src(quasArgs.targetFilePath)
 			.pipe(template(quasArgs))
@@ -1035,7 +1046,7 @@ const outputToHtmlFile = (quasArgs) => {
 					logInfo(`Removing templated file ${quasArgs.targetFilePath}`);
 					fs.unlink(quasArgs.targetFilePath);
 				}
-				logSuccess(`Output file saved as: ${quasArgs.dirname}${outputPath}/${quasArgs.output}${quasArgs.outputExt}`);
+				logSuccess(`Output file saved as: ${outputFile}`);
 				quasArgs.buildCompletedSuccessfully = true;
 				logArgsToFile(quasArgs, 'completed');
 
