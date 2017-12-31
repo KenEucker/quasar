@@ -1023,9 +1023,9 @@ const outputToHtmlFile = (quasArgs) => {
 		if(fs.existsSync(outputFile)) {
 			while(fs.existsSync(outputFile)) {
 				quasArgs.outputVersion += 1;
-				quasArgs.output = `${quasArgs.output}_${quasArgs.outputVersion}`;
-				outputFile = `${quasArgs.dirname}${outputPath}/${quasArgs.output}${quasArgs.outputExt}`;
+				outputFile = `${quasArgs.dirname}${outputPath}/${quasArgs.output}_${quasArgs.outputVersion}${quasArgs.outputExt}`;
 			}
+			quasArgs.output = `${quasArgs.output}_${quasArgs.outputVersion}`;
 			logInfo(`existing version detected, version number (${quasArgs.outputVersion}) appended to outputFile`);
 		}
 
