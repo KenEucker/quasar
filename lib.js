@@ -8,10 +8,10 @@ let gulp = require('gulp'),
 	mustache = require('gulp-mustache'),
 	browserify = require('gulp-browserify'),
 	babel = require('gulp-babel'),
+	gulpS3 = require('gulp-s3-upload'),
 	spawn = require("child_process"),
 	prompt = require('inquirer'),
 	sass = require('dart-sass')
-	gulpS3 = require('gulp-s3-upload'),
 	runSequence = require('run-sequence'),
 	aws = require('aws-sdk'),
 	through = require('through2'),
@@ -115,7 +115,7 @@ const getActualArgObjects = (quasArgs, onlyObjects = null) => {
 }
 
 const logArgsToFile = (quasArgs, toStatus = 'started') => {
-	if(logToFile) {
+	if (logToFile) {
 		const logFilePath = path.resolve(`${quasArgs.dirname}/${quasArgs.logFile}`);
 		const cliArgs = getActualArgObjects(quasArgs);
 		fs.appendFileSync(logFilePath, `node cli.js ${cliArgs.join(' ')} --noPrompt=true\r\n`, (err) => {
@@ -146,10 +146,10 @@ const runLastSuccessfulBuild = (quasArgs = null) => {
 
 		if (fs.existsSync(logFilePath)) {
 			lastLine(logFilePath, function (err, command) {
-				if (err) { 
+				if (err) {
 					logError(`Could not read last line from logfile: ${logFilePath}`);
 					return reject();
-			 	}
+				}
 				if (!command.length) {
 					logError(`Nothing in logfile: ${logFilePath}`);
 					return reject();
@@ -169,10 +169,10 @@ const runLastSuccessfulBuild = (quasArgs = null) => {
 }
 
 const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addDefaultRequiredArgs = true) => {
-	let fromFile = {}, 
-		jobTimestamp = Date.now(), 
+	let fromFile = {},
+		jobTimestamp = Date.now(),
 		cliArgs = {};
-		argsFile = yargs.argv.argsFile, 
+	argsFile = yargs.argv.argsFile,
 		status = 'started',
 		argsFileExists = argsFile && fs.existsSync(argsFile),
 		assetsFolder = `${config.assetsFolder}/${qType}`;
@@ -185,7 +185,7 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 	}
 
 	// HACK for falsey values in yargs and multi values
-	Object.keys(yargs.argv).forEach((k) => { 
+	Object.keys(yargs.argv).forEach((k) => {
 		const v = yargs.argv[k];
 		let arg = Array.isArray(v) ? v[v.length - 1] : v;
 		arg = arg == "true" || arg == "false" ? arg == "true" : arg;
@@ -294,7 +294,7 @@ const spawnCommand = (argsFile, args = [], command = `node`, synchronous = false
 }
 
 const getTaskNames = (dir = null) => {
-	if(!dir) {
+	if (!dir) {
 		dir = path.resolve(config.tasksFolder);
 	}
 
@@ -412,12 +412,12 @@ const quasarSelectPrompt = (quasArgs) => {
 			name: 'task',
 			message: `Select the type of quasar you want to launch`,
 			choices: quasArgs.availableTasks || ["uhhh nevermind"]
-			}], (res) => {
-				if(res.task !== "uhhh nevermind") {
-					runTask(res.task);
-				} else {
-					logFin("Allllllrrrriiiiiiiggggghhhhhttttttyyyyyy thhhheeennnnn");
-				}
+		}], (res) => {
+			if (res.task !== "uhhh nevermind") {
+				runTask(res.task);
+			} else {
+				logFin("Allllllrrrriiiiiiiggggghhhhhttttttyyyyyy thhhheeennnnn");
+			}
 		});
 	})
 }
@@ -432,11 +432,11 @@ const loadTasks = (taskPaths = null, loadDefaults = true) => {
 		return null;
 	}
 
-	for(var task of [].concat(taskPaths)) {
+	for (var task of [].concat(taskPaths)) {
 		let resolvedFilePath = tryRequire.resolve(task), newTask = null;
 		resolvedFilePath = resolvedFilePath ? `${resolvedFilePath}.js` : null;
 
-		if(!resolvedFilePath) {
+		if (!resolvedFilePath) {
 			resolvedFilePath = tryRequire.resolve(`${config.tasksFolder}/${task}.js`);
 		}
 
@@ -1015,17 +1015,18 @@ const uploadFiles = (quasArgs, excludeFiles = []) => {
 // Compile the quasar into the output folder
 const outputToHtmlFile = (quasArgs) => {
 	return new promise((resolve, reject) => {
+		const versionPrefix = `_v`;
 		const outputPath = getQuasarOutputPath(quasArgs);
-		let outputFile = `${quasArgs.dirname}${outputPath}/${quasArgs.outputVersion == 1 ? quasArgs.output : `${quasArgs.output}_${quasArgs.outputVersion}`}${quasArgs.outputExt}`;
+		let outputFile = `${quasArgs.dirname}${outputPath}/${quasArgs.outputVersion == 1 ? quasArgs.output : `${quasArgs.output}${versionPrefix}${quasArgs.outputVersion}`}${quasArgs.outputExt}`;
 		log(`Applying the following parameters to the template (${quasArgs.targetFilePath}) and building output`);
 		log(`data:`, quasArgs);
 
-		if(fs.existsSync(outputFile)) {
-			while(fs.existsSync(outputFile)) {
+		if (fs.existsSync(outputFile)) {
+			while (fs.existsSync(outputFile)) {
 				quasArgs.outputVersion += 1;
-				outputFile = `${quasArgs.dirname}${outputPath}/${quasArgs.output}_${quasArgs.outputVersion}${quasArgs.outputExt}`;
+				outputFile = `${quasArgs.dirname}${outputPath}/${quasArgs.output}${versionPrefix}${quasArgs.outputVersion}${quasArgs.outputExt}`;
 			}
-			quasArgs.output = `${quasArgs.output}_${quasArgs.outputVersion}`;
+			quasArgs.output = `${quasArgs.output}${versionPrefix}${quasArgs.outputVersion}`;
 			logInfo(`existing version detected, version number (${quasArgs.outputVersion}) appended to outputFile`);
 		}
 
@@ -1037,9 +1038,9 @@ const outputToHtmlFile = (quasArgs) => {
 				extname: quasArgs.outputExt
 			}))
 			.pipe(gulp.dest(quasArgs.dirname))
-			.on('error', (err) => { 
-				logError(`Error outputing file (${quasArgs.targetFilePath})`, err); 
-				return reject(); 
+			.on('error', (err) => {
+				logError(`Error outputing file (${quasArgs.targetFilePath})`, err);
+				return reject();
 			})
 			.on('end', () => {
 				if (quasArgs.cleanUpTargetFileTemplate && (quasArgs.targetFilePath.indexOf(`${quasArgs.output}${quasArgs.outputExt}`) == -1)) {
@@ -1050,7 +1051,7 @@ const outputToHtmlFile = (quasArgs) => {
 				quasArgs.buildCompletedSuccessfully = true;
 				logArgsToFile(quasArgs, 'completed');
 
-				if(quasArgs.useJobTimestampForBuild) {
+				if (quasArgs.useJobTimestampForBuild) {
 					logInfo(`cleaning up after job: ${quasArgs.jobTimestamp}`);
 					logInfo(`cleaning up assets folder: ${quasArgs.assetsFolder}`);
 					del(quasArgs.assetsFolder);
@@ -1061,9 +1062,8 @@ const outputToHtmlFile = (quasArgs) => {
 }
 
 const init = (appRoot = process.cwd()) => {
-	try {
+	if (tryRequire.resolve(`${appRoot}/config.js`)) {
 		config = require(`${appRoot}/config.js`);
-	} catch(e) {
 	}
 }
 
