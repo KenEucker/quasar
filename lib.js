@@ -203,8 +203,8 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 			templatesFolder: qType ? `${config.templatesFolder}/${qType}` : undefined,
 			assetsFolder: qType ? assetsFolder : undefined,
 			targetFilePath: qType ? `${assetsFolder}/${qType}.html` : undefined,
-			stylesAsset: qType ? `${assetsFolder}/${qType}.css` : undefined,
-			scriptsAsset: qType ? `${assetsFolder}/${qType}.js` : undefined,
+			stylesPreAsset: qType ? `${assetsFolder}/${qType}.css` : undefined,
+			scriptsPostAsset: qType ? `${assetsFolder}/${qType}.js` : undefined,
 			target: qType ? `${qType}.html` : undefined,
 			bucket: '%AWS%',
 			sourceExt: '.zip',
@@ -212,8 +212,8 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 			cdnUrlStart: 'https://cdn.com/',
 			uploadToS3: false,
 			unpackFiles: true,
-			cssInjectLocation: '</head>',
-			jsInjectLocation: '</body>',
+			cssInjectLocations: ['<head>', '</head>'],
+			jsInjectLocations: ['<body>', '</body>'],
 			overwriteUnpackDestination: true,
 			overwriteTargetFileFromTemplate: true,
 			cleanUpTargetFileTemplate: false,
@@ -233,8 +233,8 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 	if (quasArgs.useJobTimestampForBuild) {
 		quasArgs.assetsFolder = `${quasArgs.assetsFolder}_${quasArgs.jobTimestamp}`;
 		quasArgs.targetFilePath = `${quasArgs.assetsFolder}/${qType}.html`;
-		quasArgs.stylesAsset = `${quasArgs.assetsFolder}/${qType}.css`;
-		quasArgs.scriptsAsset = `${quasArgs.assetsFolder}/${qType}.js`;
+		quasArgs.stylesPreAsset = `${quasArgs.assetsFolder}/${qType}.css`;
+		quasArgs.scriptsPostAsset = `${quasArgs.assetsFolder}/${qType}.js`;
 	}
 
 	const initalArgs = registerRequiredQuasArgs(quasArgs, requiredArgs, nonRequiredArgs, addDefaultRequiredArgs);
@@ -784,7 +784,7 @@ const copyTemplateFilesToAssetsPath = (quasArgs) => {
 		const outputCssAssetPath = `${quasArgs.assetsFolder}/${quasArgs.qType}.css`;
 
 		if (!outfile2) {
-			quasArgs.stylesAsset = cssAssetPath;
+			quasArgs.stylesPreAsset = cssAssetPath;
 		}
 
 		log(`copying css asset file to assets path: ${outputCssAssetPath}`);
@@ -796,12 +796,12 @@ const copyTemplateFilesToAssetsPath = (quasArgs) => {
 		const outputJsAssetPath = `${quasArgs.assetsFolder}/${quasArgs.qType}.js`;
 
 		if (!outfile3) {
-			quasArgs.scriptsAsset = jsAssetPath;
+			quasArgs.scriptsPostAsset = jsAssetPath;
 		}
 
 		log(`copying js asset file to assets path: ${outputJsAssetPath}`);
 		fs.writeFileSync(outputJsAssetPath, outfile3);
-		quasArgs.scriptsAsset = outputJsAssetPath;
+		quasArgs.scriptsPostAsset = outputJsAssetPath;
 	}
 	return quasArgs;
 	//	return resolve(quasArgs);
@@ -894,55 +894,56 @@ const compileTargetFileToAssetsFolder = (quasArgs) => {
 		.on('end', () => { logInfo(`Documents compiled into ${quasArgs.assetsFolder}/${quasArgs.qType}.html`); })
 }
 
+const injectFilesIntoStream = (quasArgs, filePath, contents, injectionTarget, injectionTag) => {
+	if (filePath) {
+		let fileContents = fs.readFileSync(filePath, 'utf8');
+		const injectionLocation = contents.search(injectionTarget);
+		fileContents = fileContents.length ? `<${injectionTag}>\n${fileContents}\n</${injectionTag}>\n` : ``;
+
+		if (injectionLocation == -1) {
+			logInfo(`injection location not found: '${injectionTarget}', using default location of prepending to document`);
+			return `${fileContents}\n<!-- End Of Automatic Css Injection -->\n${contents}`;
+		} else if (fileContents) {
+			log(`injecting`);
+			return `${contents.substring(0, injectionLocation)}${fileContents}${contents.substring(injectionLocation)}`;
+		}
+	}
+
+	return contents;
+}
+
 // Inject the code into the html file before applying template vars
 const injectCode = (quasArgs) => {
 	return new promise((resolve, reject) => {
 		const urlToPrependCDNLink = quasArgs.target ? quasArgs.target.replace('.html', '') : quasArgs.targetFilePath.split('/').pop().replace('.html', '');
 		const cdnTemplate = `<%= cdnUrlStart %><%= bucketPath %>/`;
-		const css = fs.existsSync(quasArgs.stylesAsset) ? quasArgs.stylesAsset : false;
-		const js = fs.existsSync(quasArgs.scriptsAsset) ? quasArgs.scriptsAsset : false;
+		const preCss = fs.existsSync(quasArgs.stylesPreAsset) ? quasArgs.stylesPreAsset : null;
+		const postCss = fs.existsSync(quasArgs.stylesPostAsset) ? quasArgs.stylesPostAsset : null;
+		const preJs = fs.existsSync(quasArgs.scriptsPreAsset) ? quasArgs.scriptsPreAsset : null;
+		const postJs = fs.existsSync(quasArgs.scriptsPostAsset) ? quasArgs.scriptsPostAsset : null;
 
 		log('injecting public code prior to applying template parameters');
 		log(`getting assets from (${quasArgs.assetsFolder})`);
-		log(`getting template file (${quasArgs.targetFilePath.replace(quasArgs.assetsFolder, '')}) and assets(css:${css ? quasArgs.stylesAsset.replace(quasArgs.assetsFolder, '') : 'none'}   js: ${js ? quasArgs.scriptsAsset.replace(quasArgs.assetsFolder, '') : 'none'})`);
+		log(`getting template file (${quasArgs.targetFilePath.replace(quasArgs.assetsFolder, '')}) and assets(css - pre:${preCss ? path.basename(preCss) : ``}, post: ${postCss ? path.basename(postCss) : ``}   js: pre:${preJs ? path.basename(preJs) : ``}, post: ${postJs ? path.basename(postJs) : ``})`);
 
 		return gulp.src(quasArgs.targetFilePath, { base: quasArgs.dirname })
 			.pipe(inject.before(`${urlToPrependCDNLink}.`, cdnTemplate))
 			// Add the default css injectionLocationString to the beginning of the document if the injectionLocationString was not found
 			.pipe(insert.transform((contents, file) => {
-				if (css) {
-					let cssContents = fs.readFileSync(css, 'utf8');
-					const injectionLocation = contents.search(quasArgs.cssInjectLocation);
-					cssContents = cssContents.length ? `<style>\n${cssContents}\n</style>\n` : ``;
-
-					if (injectionLocation == -1) {
-						logInfo(`css injection location not found: '${quasArgs.cssInjectLocation}', using default location of prepending to document`);
-						return `${cssContents}\n<!-- End Of Automatic Css Injection -->\n${contents}`;
-					} else if (cssContents) {
-						return `${contents.substring(0, injectionLocation)}${cssContents}${contents.substring(injectionLocation)}`;
-					}
-				}
+				console.log(`ingesting!`);
+				contents = injectFilesIntoStream(quasArgs, preCss, contents, quasArgs.cssInjectLocations.length ? quasArgs.cssInjectLocations[0] : quasArgs.cssInjectLocations, 'style');
+				contents = injectFilesIntoStream(quasArgs, postCss, contents, quasArgs.cssInjectLocations.length > 1 ? quasArgs.cssInjectLocations[1] : quasArgs.cssInjectLocations[0], 'style');
 
 				return contents;
 			}))
 			// Add the default js injectionLocationString to the beginning of the document if the injectionLocationString was not found
 			.pipe(insert.transform((contents, file) => {
-				if (js) {
-					let jsContents = fs.readFileSync(js, 'utf8');
-					jsContents = jsContents.length ? `<script>\n${jsContents}\n</script>\n` : ``;
-					const injectionLocation = contents.search(quasArgs.jsInjectLocation);
-
-					if (injectionLocation == -1) {
-						logInfo(`js injection location not found: '${quasArgs.jsInjectLocation}', using default location of prepending to document`);
-						return `${contents}\n${jsContents}\n<!-- End Of Automatic Js Injection -->\n`;
-					} else if (jsContents) {
-						return `${contents.substring(0, injectionLocation)}${jsContents}${contents.substring(injectionLocation)}`;
-					}
-				}
+				console.log(`double ingesting!`);
+				contents = injectFilesIntoStream(quasArgs, preJs, contents, quasArgs.jsInjectLocations.length ? quasArgs.jsInjectLocations[0] : quasArgs.jsInjectLocations, 'script');
+				contents = injectFilesIntoStream(quasArgs, postJs, contents, quasArgs.jsInjectLocations.length > 1 ? quasArgs.jsInjectLocations[1] : quasArgs.jsInjectLocations[0], 'script');
 
 				return contents;
 			}))
-			//.pipe(inject.before(quasArgs.jsInjectLocation, js))
 			.pipe(inject.append(`\n<!-- Generated by quasar on: ${Date()} by: ${os.hostname} [ https://github.com/KenEucker/quasar ] -->`))
 			.pipe(gulp.dest(quasArgs.dirname))
 			.on('error', (err) => {
