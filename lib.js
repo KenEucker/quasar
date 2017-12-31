@@ -171,6 +171,7 @@ const runLastSuccessfulBuild = (quasArgs = null) => {
 const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addDefaultRequiredArgs = true) => {
 	let fromFile = {}, 
 		jobTimestamp = Date.now(), 
+		cliArgs = {};
 		argsFile = yargs.argv.argsFile, 
 		status = 'started',
 		argsFileExists = argsFile && fs.existsSync(argsFile),
@@ -182,6 +183,14 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 		jobTimestamp = (argsFile.split('_').pop() || '').replace('.json');
 		status = 'queued';
 	}
+
+	// HACK for falsey values in yargs and multi values
+	Object.keys(yargs.argv).forEach((k) => { 
+		const v = yargs.argv[k];
+		let arg = Array.isArray(v) ? v[v.length - 1] : v;
+		arg = arg == "true" || arg == "false" ? arg == "true" : arg;
+		cliArgs[k] = arg;
+	});
 
 	const quasArgs = Object.assign(
 		// Defaults
@@ -208,7 +217,7 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 			overwriteUnpackDestination: true,
 			overwriteTargetFileFromTemplate: true,
 			cleanUpTargetFileTemplate: false,
-			useJobTimestampForBuild: true,
+			useJobTimestampForBuild: false,
 			buildCompletedSuccessfully: false,
 			excludeOutputFileFromUpload: true,
 			logFile: '.log',
@@ -217,7 +226,7 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 			qType
 		},
 		// CLI args
-		yargs.argv,
+		cliArgs,
 		// Loaded from file with arg --argsFile
 		fromFile);
 
@@ -625,13 +634,13 @@ const findTargetFile = (quasArgs) => {
 			targetFilePath = fromDir(`${quasArgs.assetsFolder}`, `${quasArgs.target}`);
 
 			if (targetFilePath) {
-				log(`did not find targetFile at ${oldTargetFilePath} or at ${oldestTargetFilePath} but found one at -> ${targetFilePath}`);
+				// log(`did not find targetFile at ${oldTargetFilePath} or at ${oldestTargetFilePath} but found one at -> ${targetFilePath}`);
 				targetFilePath = path.resolve(targetFilePath);
 			} else {
 				logError(`no targetFile exists at ${oldTargetFilePath} or ${oldestTargetFilePath} or ${targetFilePath}`);
 			}
 		} else {
-			log(`did not find targetFile at ${oldTargetFilePath}, corrected path is: ${targetFilePath}`);
+			// log(`did not find targetFile at ${oldTargetFilePath}, corrected path is: ${targetFilePath}`);
 			targetFilePath = path.resolve(targetFilePath);
 		}
 	}
@@ -713,8 +722,11 @@ const copyFilesFromAssetsFolderToOutput = (quasArgs, files, excludeFiles = null)
 
 const copyFilesFromSourcesFolderToOutput = (quasArgs, files = null, excludeFiles = []) => {
 	return new promise((resolve, reject) => {
+		// log(`copying source file ${quasArgs.source}${quasArgs.sourceExt}, but files ${files}`);
+
 		if (!files && quasArgs.source && quasArgs.source.length) {
 			if (quasArgs.sourceExt === '.zip') {
+				log(`unpacking files from archive ${quasArgs.source}${quasArgs.sourceExt}`);
 				return unpackFiles(quasArgs)
 					.then(() => { return copyFilesFromAssetsFolderToOutput(quasArgs, ['**']) })
 					.then(resolve);
@@ -748,6 +760,7 @@ const copyTemplateFilesToAssetsPath = (quasArgs) => {
 		if (quasArgs.overwriteTargetFileFromTemplate && (targetFilePath === path.resolve(`${quasArgs.assetsFolder}/${quasArgs.qType}.html`))) {
 			const templateTargetFilePath = path.resolve(`${quasArgs.templatesFolder}/${quasArgs.qType}.html`);
 			if (fs.existsSync(templateTargetFilePath)) {
+				log(`clobbering with template targetFile ${templateTargetFilePath}`);
 				targetFilePath = templateTargetFilePath;
 			}
 		}
@@ -756,14 +769,15 @@ const copyTemplateFilesToAssetsPath = (quasArgs) => {
 		let target = targetFilePath.split('/').pop();
 		const outputTargetFilePath = `${quasArgs.assetsFolder}/${target}`;
 
-		if (!outfile1) {
+		if (outfile1) {
+			log(`copying target file from ${targetFilePath} to assets path: ${outputTargetFilePath}`);
+			fs.writeFileSync(outputTargetFilePath, outfile1);
+			quasArgs.targetFilePath = outputTargetFilePath;
+			quasArgs.target = outputTargetFilePath.split('/').pop();
+		} else {
+			logError(`could not read targetFile for copying to assets path ${targetFilePath}`);
 			quasArgs.targetFilePath = targetFilePath;
 		}
-
-		log(`copying target file from ${quasArgs.targetFilePath} to assets path: ${outputTargetFilePath}`);
-		fs.writeFileSync(outputTargetFilePath, outfile1);
-		quasArgs.targetFilePath = outputTargetFilePath;
-		quasArgs.target = outputTargetFilePath.split('/').pop();
 	}
 	if (fs.existsSync(cssAssetPath)) {
 		const outfile2 = fs.readFileSync(cssAssetPath, 'utf-8');
@@ -1010,10 +1024,13 @@ const outputToHtmlFile = (quasArgs) => {
 			.pipe(rename({
 				dirname: outputPath,
 				basename: quasArgs.output,
-				extname: `${quasArgs.outputExt}`
+				extname: quasArgs.outputExt
 			}))
 			.pipe(gulp.dest(quasArgs.dirname))
-			.on('error', (err) => { logError(`Error outputing file (${quasArgs.targetFilePath})`, err); })
+			.on('error', (err) => { 
+				logError(`Error outputing file (${quasArgs.targetFilePath})`, err); 
+				return reject(); 
+			})
 			.on('end', () => {
 				if (quasArgs.cleanUpTargetFileTemplate && (quasArgs.targetFilePath.indexOf(`${quasArgs.output}${quasArgs.outputExt}`) == -1)) {
 					logInfo(`Removing templated file ${quasArgs.targetFilePath}`);

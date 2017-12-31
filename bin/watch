@@ -1,2 +1,2 @@
 #!/bin/bash 
-gulp --gulpfile cli.js --runAsProcess=true --watchJobs=true "$@"
+gulp --gulpfile cli.js --runAsProcess=true --watchJobs=true --useJobTimestampForBuild=true "$@"
