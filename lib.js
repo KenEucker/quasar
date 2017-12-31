@@ -907,6 +907,10 @@ const injectFilesIntoStream = (quasArgs, filePath, contents, injectionTarget, in
 		let injectionLocation = contents.search(injectionTarget);
 		injectionLocation = injectionLocation != -1 && after ? injectionLocation + injectionTarget.length : injectionLocation;
 
+		if (!fileContents.length) {
+			return contents;
+		}
+
 		switch (injectionTag) {
 			case 'style':
 				const cssMinOptions = {};
@@ -956,9 +960,8 @@ const injectCode = (quasArgs) => {
 
 		return gulp.src(quasArgs.targetFilePath, { base: quasArgs.dirname })
 			.pipe(inject.before(`${urlToPrependCDNLink}.`, cdnTemplate))
-			// Add the default css injectionLocationString to the beginning of the document if the injectionLocationString was not found
 			.pipe(insert.transform((contents, file) => {
-				if (quasArgs.minifyStyles) {
+				if (quasArgs.minifyStyles && (preCss || postCss)) {
 					contents = injectFilesIntoStream(quasArgs, preCss, contents, quasArgs.cssInjectLocations.length ? quasArgs.cssInjectLocations[0] : quasArgs.cssInjectLocations, 'style');
 					contents = injectFilesIntoStream(quasArgs, postCss, contents, quasArgs.cssInjectLocations.length > 1 ? quasArgs.cssInjectLocations[1] : quasArgs.cssInjectLocations[0], 'style', false);
 					logInfo(`styles minified`);
@@ -966,9 +969,8 @@ const injectCode = (quasArgs) => {
 
 				return contents;
 			}))
-			// Add the default js injectionLocationString to the beginning of the document if the injectionLocationString was not found
 			.pipe(insert.transform((contents, file) => {
-				if (quasArgs.minifyScripts) {
+				if (quasArgs.minifyScripts && (preJs || postJs)) {
 					contents = injectFilesIntoStream(quasArgs, preJs, contents, quasArgs.jsInjectLocations.length ? quasArgs.jsInjectLocations[0] : quasArgs.jsInjectLocations, 'script');
 					contents = injectFilesIntoStream(quasArgs, postJs, contents, quasArgs.jsInjectLocations.length > 1 ? quasArgs.jsInjectLocations[1] : quasArgs.jsInjectLocations[0], 'script', false);
 					logInfo(`scripts minified`);
