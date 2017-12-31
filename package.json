@@ -29,6 +29,7 @@
     "babel-preset-env": "^1.6.1",
     "babel-preset-react": "^6.24.1",
     "bluebird": "^3.5.1",
+    "clean-css": "^4.1.9",
     "colors": "^1.1.2",
     "dart-sass": "^1.0.0-beta.4",
     "del": "^3.0.0",
@@ -47,6 +48,7 @@
     "gulp-s3-upload": "^1.6.6",
     "gulp-template": "^5.0.0",
     "gulp-watch": "^4.3.11",
+    "html-minifier": "^3.5.8",
     "inquirer": "^4.0.1",
     "last-line": "0.0.3",
     "launch-browser": "^1.0.0",
@@ -56,6 +58,7 @@
     "react-jsonschema-form": "^1.0.0",
     "react-notify-toast": "^0.4.0",
     "run-sequence": "^2.2.0",
-    "try-require": "^1.2.1"
+    "try-require": "^1.2.1",
+    "uglify-es": "^3.3.4"
   }
 }

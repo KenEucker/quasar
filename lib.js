@@ -18,6 +18,9 @@ let gulp = require('gulp'),
 	del = require('del'),
 	unzip = require("extract-zip"),
 	path = require('path'),
+	cssMin = require('clean-css'),
+	jsMin = require('uglify-es'),
+	htmlMin = require('html-minifier'),
 	colors = require('colors'),
 	os = require('os'),
 	lastLine = require('last-line'),
@@ -214,6 +217,9 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 			unpackFiles: true,
 			cssInjectLocations: ['<head>', '</head>'],
 			jsInjectLocations: ['<body>', '</body>'],
+			minifyScripts: true,
+			minifyStyles: true,
+			minifyHtml: true,
 			overwriteUnpackDestination: true,
 			overwriteTargetFileFromTemplate: true,
 			cleanUpTargetFileTemplate: false,
@@ -897,9 +903,30 @@ const compileTargetFileToAssetsFolder = (quasArgs) => {
 
 const injectFilesIntoStream = (quasArgs, filePath, contents, injectionTarget, injectionTag, after = true) => {
 	if (filePath) {
-		let fileContents = fs.readFileSync(filePath, 'utf8');
+		let fileContents = fs.readFileSync(filePath);
 		let injectionLocation = contents.search(injectionTarget);
 		injectionLocation = injectionLocation != -1 && after ? injectionLocation + injectionTarget.length : injectionLocation;
+
+		switch (injectionTag) {
+			case 'style':
+				const cssMinOptions = {};
+				const cssMinified = new cssMin(cssMinOptions).minify(fileContents);
+				if (cssMinified.styles) {
+					fileContents = cssMinified.styles;
+				} else {
+					logError(`error minifying styles: ${cssMinified.error}`);
+				}
+			break;
+			case 'script':
+				const jsMinified = jsMin.minify(fileContents);
+				if (jsMinified.error) {
+					logError(`error minifying scripts: ${jsMinified.error.message}`, jsMinified.error);
+				} else{
+					fileContents = jsMinified.code;
+				}
+
+			break;
+		}
 		fileContents = fileContents.length ? `<${injectionTag}>\n${fileContents}\n</${injectionTag}>\n` : ``;
 
 		if (injectionLocation == -1) {
@@ -931,15 +958,21 @@ const injectCode = (quasArgs) => {
 			.pipe(inject.before(`${urlToPrependCDNLink}.`, cdnTemplate))
 			// Add the default css injectionLocationString to the beginning of the document if the injectionLocationString was not found
 			.pipe(insert.transform((contents, file) => {
-				contents = injectFilesIntoStream(quasArgs, preCss, contents, quasArgs.cssInjectLocations.length ? quasArgs.cssInjectLocations[0] : quasArgs.cssInjectLocations, 'style');
-				contents = injectFilesIntoStream(quasArgs, postCss, contents, quasArgs.cssInjectLocations.length > 1 ? quasArgs.cssInjectLocations[1] : quasArgs.cssInjectLocations[0], 'style', false);
+				if (quasArgs.minifyStyles) {
+					contents = injectFilesIntoStream(quasArgs, preCss, contents, quasArgs.cssInjectLocations.length ? quasArgs.cssInjectLocations[0] : quasArgs.cssInjectLocations, 'style');
+					contents = injectFilesIntoStream(quasArgs, postCss, contents, quasArgs.cssInjectLocations.length > 1 ? quasArgs.cssInjectLocations[1] : quasArgs.cssInjectLocations[0], 'style', false);
+					logInfo(`styles minified`);
+				}
 
 				return contents;
 			}))
 			// Add the default js injectionLocationString to the beginning of the document if the injectionLocationString was not found
 			.pipe(insert.transform((contents, file) => {
-				contents = injectFilesIntoStream(quasArgs, preJs, contents, quasArgs.jsInjectLocations.length ? quasArgs.jsInjectLocations[0] : quasArgs.jsInjectLocations, 'script');
-				contents = injectFilesIntoStream(quasArgs, postJs, contents, quasArgs.jsInjectLocations.length > 1 ? quasArgs.jsInjectLocations[1] : quasArgs.jsInjectLocations[0], 'script', false);
+				if (quasArgs.minifyScripts) {
+					contents = injectFilesIntoStream(quasArgs, preJs, contents, quasArgs.jsInjectLocations.length ? quasArgs.jsInjectLocations[0] : quasArgs.jsInjectLocations, 'script');
+					contents = injectFilesIntoStream(quasArgs, postJs, contents, quasArgs.jsInjectLocations.length > 1 ? quasArgs.jsInjectLocations[1] : quasArgs.jsInjectLocations[0], 'script', false);
+					logInfo(`scripts minified`);
+				}
 
 				return contents;
 			}))
@@ -1036,6 +1069,20 @@ const outputToHtmlFile = (quasArgs) => {
 				dirname: outputPath,
 				basename: quasArgs.output,
 				extname: quasArgs.outputExt
+			}))
+			.pipe(insert.transform((contents, file) => {
+				if (quasArgs.minifyHtml) {
+					const minifiedHtml = htmlMin.minify(contents);
+
+					if(minifiedHtml) {
+						contents = minifiedHtml;
+						logInfo(`html minified`);
+					} else {
+						logError(`error minifying html: ${minifiedHtml}`);
+					}
+				}
+
+				return contents;
 			}))
 			.pipe(gulp.dest(quasArgs.dirname))
 			.on('error', (err) => {
