@@ -894,17 +894,17 @@ const compileTargetFileToAssetsFolder = (quasArgs) => {
 		.on('end', () => { logInfo(`Documents compiled into ${quasArgs.assetsFolder}/${quasArgs.qType}.html`); })
 }
 
-const injectFilesIntoStream = (quasArgs, filePath, contents, injectionTarget, injectionTag) => {
+const injectFilesIntoStream = (quasArgs, filePath, contents, injectionTarget, injectionTag, after = true) => {
 	if (filePath) {
 		let fileContents = fs.readFileSync(filePath, 'utf8');
-		const injectionLocation = contents.search(injectionTarget);
+		let injectionLocation = contents.search(injectionTarget);
+		injectionLocation = injectionLocation != -1 && after ? injectionLocation + injectionTarget.length : injectionLocation;
 		fileContents = fileContents.length ? `<${injectionTag}>\n${fileContents}\n</${injectionTag}>\n` : ``;
 
 		if (injectionLocation == -1) {
 			logInfo(`injection location not found: '${injectionTarget}', using default location of prepending to document`);
 			return `${fileContents}\n<!-- End Of Automatic Css Injection -->\n${contents}`;
 		} else if (fileContents) {
-			log(`injecting`);
 			return `${contents.substring(0, injectionLocation)}${fileContents}${contents.substring(injectionLocation)}`;
 		}
 	}
@@ -930,17 +930,15 @@ const injectCode = (quasArgs) => {
 			.pipe(inject.before(`${urlToPrependCDNLink}.`, cdnTemplate))
 			// Add the default css injectionLocationString to the beginning of the document if the injectionLocationString was not found
 			.pipe(insert.transform((contents, file) => {
-				console.log(`ingesting!`);
 				contents = injectFilesIntoStream(quasArgs, preCss, contents, quasArgs.cssInjectLocations.length ? quasArgs.cssInjectLocations[0] : quasArgs.cssInjectLocations, 'style');
-				contents = injectFilesIntoStream(quasArgs, postCss, contents, quasArgs.cssInjectLocations.length > 1 ? quasArgs.cssInjectLocations[1] : quasArgs.cssInjectLocations[0], 'style');
+				contents = injectFilesIntoStream(quasArgs, postCss, contents, quasArgs.cssInjectLocations.length > 1 ? quasArgs.cssInjectLocations[1] : quasArgs.cssInjectLocations[0], 'style', false);
 
 				return contents;
 			}))
 			// Add the default js injectionLocationString to the beginning of the document if the injectionLocationString was not found
 			.pipe(insert.transform((contents, file) => {
-				console.log(`double ingesting!`);
 				contents = injectFilesIntoStream(quasArgs, preJs, contents, quasArgs.jsInjectLocations.length ? quasArgs.jsInjectLocations[0] : quasArgs.jsInjectLocations, 'script');
-				contents = injectFilesIntoStream(quasArgs, postJs, contents, quasArgs.jsInjectLocations.length > 1 ? quasArgs.jsInjectLocations[1] : quasArgs.jsInjectLocations[0], 'script');
+				contents = injectFilesIntoStream(quasArgs, postJs, contents, quasArgs.jsInjectLocations.length > 1 ? quasArgs.jsInjectLocations[1] : quasArgs.jsInjectLocations[0], 'script', false);
 
 				return contents;
 			}))
