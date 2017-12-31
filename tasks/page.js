@@ -1,11 +1,11 @@
 let gulp = require('gulp'),
-	promise = require('bluebird'),
+	promise = Promise, // require('bluebird'),
 	colors = require('colors');
 
-const config = require(`${process.cwd()}/config.js`);
-const lib = require(`${config.dirname}/lib.js`);
-const qType = path.basename(__filename).split('.')[0];
+// console.log('required');
 
+const qType = path.basename(__filename).split('.')[0];
+let lib = null;
 let quasArgs = {};
 
 const task = () => {
@@ -31,7 +31,7 @@ const getQuasarPrompts = () => {
 }
 
 const validateRequiredArgs = (args = {}) => {
-	return new Promise((resolve, reject) => {
+	return new promise((resolve, reject) => {
 		// Merge options with passed in parameters
 		quasArgs = Object.assign(quasArgs, args);
 		
@@ -62,39 +62,56 @@ const validateRequiredArgs = (args = {}) => {
 	})
 }
 
-gulp.task(`${qType}:build`, () => {
-	if(!quasArgs.noPrompt) {
-		return lib.initialPrompt(quasArgs)
-			.then(task);
-	} else {
-		return run();
-	}
-});
-gulp.task(`${qType}`, [`${qType}:build`]);
+const registerTasks = () => {
+	gulp.task(`${qType}:build`, () => {
+		if(!quasArgs.noPrompt) {
+			return lib.promptUser(quasArgs)
+				.then(task);
+		} else {
+			return run();
+		}
+	});
+	gulp.task(`${qType}`, [`${qType}:build`]);
+	// console.log('registered');
+}
 
-const init = () => {
+const init = (_lib = null, dirname = process.cwd(), config = null) => {
+	if(!_lib) {
+		config = config ? config : require(`${dirname}/config.js`);
+		lib = require(`${config.dirname}/lib.js`);
+	} else {
+		lib = _lib;
+	}
+
 	quasArgs = lib.getQuasArgs(qType, [{
 			type: 'list',
 			name: 'source',
-			message: `Enter the source filename (default .zip):\n`,
+			message: `Enter the source filename (default .zip)`,
 			choices: ['none'].concat(lib.getFilenamesInDirectory(lib.config.sourceFolder, ['zip']))
 		}, {
 			type: 'input',
 			name: 'body',
-			message: 'Enter the body text'
+			message: 'Enter the body text',
+			default: '',
+			optional: true
 		}],
 		{
 			outputExt: '.html',
 			requiredArgsValidation: validateRequiredArgs });
+
+	// console.log('initialized');
+	return quasArgs;
 }
 
-init();
+registerTasks();
+
 module.exports = {
 	purpose: `
 		builds out a single html page from a set of singular assets: css, html, js 
 		with options to import files from an archived source
 	`,
 	getQuasarPrompts,
+	registerTasks,
 	qType,
 	init,
 	run

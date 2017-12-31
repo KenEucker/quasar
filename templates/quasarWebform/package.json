@@ -21,8 +21,6 @@
     "gulp-watch": "^4.3.11",
     "inquirer": "^4.0.0",
     "launch-browser": "^1.0.0",
-    "phantom": "^4.0.9",
-    "require-dir": "^0.3.2",
     "vinyl-paths": "^2.1.0",
     "yargs": "^10.0.3"
   },

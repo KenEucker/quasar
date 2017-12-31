@@ -1,30 +1,40 @@
 const gulp = require('gulp'),
 	fs = require('fs'),
-	rename = require('gulp-rename'),
+	//rename = require('gulp-rename'),
 	path = require('path'),
-	promise = require('bluebird'),
+	promise = Promise, // require('bluebird'),
 	yargs = require('yargs'),
 	watch = require('gulp-watch'),
 	spawn = require('child_process'),
 	jsonTransform = require('gulp-json-transform'),
-	del = require('del'),
-	vinylPaths = require('vinyl-paths'),
-	lib = require('./lib'),
+	lib = require('./lib.js'),
 	mkdir = require('mkdirp-sync'),
 	// packager = require('electron-packager'),
 	api = require('./api');
-
 
 class CLI {
 	constructor() {
 		this._app = api.app;
 		this.port = process.env.PORT || '3720';
+		this._jobsFolder = lib.config.jobsFolder || `${process.cwd()}/jobs`;
+
+		gulp.task(`watchJobs`, () => {
+			const jobQueueFolder = `${this._jobsFolder}/queued`;
+			
+			lib.logSuccess(`watching folder ${jobQueueFolder} for new or changed files to build from`);
+			return watch(`${jobQueueFolder}/*.json`, { ignoreInitial: true })
+				.pipe(jsonTransform(this.transformToProcessArgs));
+		});
 		
 		if ( yargs.argv.runStandalone || yargs.argv.runAsProcess || yargs.argv.packageApp) {
 			return this.run();
 		} else if (process.title == 'gulp') {
 			return this.run({ runStandalone: true });
 		}
+	}
+
+	get jobsFolder() {
+		return this._jobsFolder;
 	}
 
 	get app() {
@@ -81,14 +91,6 @@ class CLI {
 		}
 		
 		if (args.watchJobs) {
-			gulp.task(`watchJobs`, () => {
-				mkdir(path.resolve(lib.config.dirname, 'jobs'));
-				
-				lib.logSuccess(`watching folder /jobs/ for new or changed files to build from`);
-				return watch('jobs/queued/*.json', { ignoreInitial: true })
-					.pipe(jsonTransform(this.transformToProcessArgs));
-			});
-
 			lib.runTask('watchJobs');
 		}
 
@@ -124,12 +126,11 @@ class CLI {
 	run(args = {}) {
 		return new promise((resolve, reject) => {
 			let defaults = {
-				appRoot: process.cwd(),
+				appRoot: path.resolve(process.cwd()),
 				port: this.port,
 				runAsProcess: false,
 				runStandalone: false,
 				watchJobs: false,
-				loadDefaultTasks: true,
 				qType: false,
 				runWebForm: false,
 				autoBuildWebForm: false,
@@ -137,17 +138,18 @@ class CLI {
 			args = Object.assign(defaults, yargs.argv, args);
 			this.port = args.port;
 
-			console.log(`Application root folder: ${args.appRoot}`);
+			// console.log(`Application root folder: ${args.appRoot}`);
+			this.init(args.appRoot);
 			lib.init(args.appRoot);
 			args.availableTasks = lib.loadTasks(args.loadTasks, args.loadDefaultTasks);
-
+			
+			lib.logInfo(`Running the qausar cli under the process: ${process.title}`);
 			if(args.reRunLastSuccessfulBuild || args.reRun) {
 				lib.logInfo(`Running the last recorded successful run from the logfile`);
 				lib.runLastSuccessfulBuild();
 
 				return resolve();
 			} else if(args.runAsProcess) {
-				lib.logInfo(`Running the qausar cli under the process: ${process.title}`);
 				lib.definitelyCallFunction(() => {
 					if(this.runAsProcess(args, resolve, reject)) {
 						return;
@@ -174,6 +176,15 @@ class CLI {
 				});
 			}
 		});
+	}
+
+	init(dirname = process.cwd()) {
+		this._jobsFolder = `${dirname}/jobs`;
+
+		mkdir(this._jobsFolder);
+		mkdir(`${this._jobsFolder}/started`);
+		mkdir(`${this._jobsFolder}/queued`);
+		mkdir(`${this._jobsFolder}/completed`);
 	}
 }
 

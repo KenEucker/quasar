@@ -75,8 +75,7 @@ const createForms = () => {
         var form = document.createElement('div');
         var formTitle = schema.name;
         form.id = formTitle;
-        form.style.display = 'none';
-        form.className = "formContainer";
+        form.className = "formContainer hide";
 
         render((
             <Form
@@ -122,36 +121,59 @@ const createDropdown = () => {
 }
 
 const showForm = (formTitle = null) => {
-    let welcomeMessageDisplay = 'none';
-
     forms.forEach((form) => {
         const formEl = document.getElementById(form);
         if (form == formTitle) {
             selectedForm = form;
-            formEl.style.display = "block";
+            formEl.classList.remove('hide');
+            formEl.classList.add('show');
         } else {
-            formEl.style.display = "none";
+            formEl.classList.remove('show');
+            formEl.classList.add('hide');
         }
     });
 
-    if (!formTitle) {
-        welcomeMessageDisplay = "block";
-        selectedForm = "";
-    }
-
     if (elementsMaterialistic) {
-        document.querySelector('.mdl-layout-title').innerHTML = selectedForm;
-        document.getElementById('welcome').style.display = welcomeMessageDisplay;
+        if (!formTitle) {
+            document.querySelector('.mdl-layout-title').innerHTML = "";
+            document.getElementById('welcome').classList.remove('hide');
+            document.getElementById('welcome').classList.add('show');
+        } else {
+            document.querySelector('.mdl-layout-title').innerHTML = selectedForm;
+            document.getElementById('welcome').classList.remove('show');
+            document.getElementById('welcome').classList.add('hide');
+        }
     }
+}
+
+const hideOrShowAdditionalSettings = (show = false, target = null) => {
+    target = target || document.getElementById("app");
+
+    target.querySelectorAll('.field.optional').forEach((field) => {
+        if(show){
+            field.classList.remove('hide');
+            field.classList.add('show');
+        } else {
+            field.classList.remove('show');
+            field.classList.add('hide');
+        }
+    });
+}
+
+const findAncestor = (el, tag) => {
+    tag = tag.toUpperCase();
+    while ((el = el.parentNode) && (el.tagName != tag));
+    return el;
 }
 
 const finalTouches = () => {
     const file = document.querySelector('input[type=file]');
-    file.setAttribute('accept', 'application/zip');
-
-    // HACK!
-    document.querySelectorAll('.field label.control-label').forEach((label) => {
-        label.innerHTML = label.innerHTML.replace(` [33m(optional)[39m`, '');
+    // file.setAttribute('accept', 'application/zip');
+    hideOrShowAdditionalSettings();
+    app.querySelectorAll('label[for=root_askOptionalQuestions]').forEach((radio) => {
+        radio.parentNode.querySelectorAll('input').forEach((field) => {
+            field.addEventListener('click', function() { hideOrShowAdditionalSettings(this.value == "true", findAncestor(this, 'form')) });
+        });
     });
 }
 
@@ -188,7 +210,7 @@ const makeElementsMaterialistic = () => {
     app.parentNode.insertBefore(materialisticContainer, app);
 
     if (heading) {
-        heading.style.display = "none";
+        heading.classList.add('hide');
     }
 
     materialisticContainer.querySelectorAll('legend').forEach((legend) => {

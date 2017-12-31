@@ -7,5 +7,7 @@ dist
 assets
 public
 jobs
-sources
 node_modules
+sources
+.config
+.log

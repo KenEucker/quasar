@@ -1,14 +1,15 @@
 const electron = require('electron'),
   path = require('path'),
-  quasar = require('./quasar'),
   app = electron.app,
-  BrowserWindow = electron.BrowserWindow,
-  isRunningInAsar = require('electron-is-running-in-asar'),
-  appRoot = isRunningInAsar() ? process.resourcesPath : process.cwd();
-
-let mainWindow, PORT = process.env.PORT || '3720';
+  BrowserWindow = electron.BrowserWindow;
+  // isRunningInAsar = require('electron-is-running-in-asar'),
+  // runningInElectronPackagedApp = isRunningInAsar();
+let appRoot = app.getAppPath(),// runningInElectronPackagedApp ? process.resourcesPath : process.cwd(),
+  quasar = null, mainWindow, PORT = process.env.PORT || '3720';
 
 const electrify = () => {
+  // console.log(`running quasar CLI with API and webform`);
+  quasar = quasar ? quasar : require(`${appRoot}/quasar.js`);
   quasar.runCLI({
         appRoot: appRoot,
         runAsProcess: true,
@@ -17,14 +18,19 @@ const electrify = () => {
         autoBuildWebForm: true,
         runApi: true })
         .then(() => {
-          console.log('Loading electron app...');
+          console.log('Creating app window');
           return createWindow(); });
 }
 
 const createWindow = () => {
     // Create the browser window
     mainWindow = new BrowserWindow({width: 1200, height: 800});
-    const title = process.env.PWD;//app.getAppPath('./');
+    let title = appRoot; // 'quasar'
+    try {
+      quasar = require(`${appRoot}/quasar.js`);
+    } catch (e) {
+      title = `failed: ${e}`;
+    }
     // console.log(title);
     mainWindow.setTitle(title);
     mainWindow.loadURL(`http://localhost:${PORT}`);

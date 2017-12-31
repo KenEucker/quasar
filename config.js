@@ -7,6 +7,7 @@ class Config {
 		this._outputFolder = `${dirname}/public`,
 		this._sourceFolder = `${dirname}/sources`,
 		this._assetsFolder = `${dirname}/assets`,
+		this._jobsFolder = `${dirname}/jobs`,
 		this._tasksFolder = `${dirname}/tasks`,
 		this._templatesFolder = `${dirname}/templates`
 	}
@@ -17,6 +18,10 @@ class Config {
 
 	get node_modules() {
 		return this._node_modules;
+	}
+
+	get jobsFolder() {
+		return this._jobsFolder;
 	}
 
 	get outputFolder() {

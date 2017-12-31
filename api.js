@@ -68,7 +68,6 @@ class Api {
 
 		mkdir(this.sourcesDirectory);
 		mkdir(this.jobsDirectory);
-		mkdir(this.jobsDirectory.replace('/queued', '/completed'));
 
 		this._app.use(bodyParser.json({ limit: '50mb' }));
 		this._app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));

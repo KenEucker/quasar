@@ -12,6 +12,14 @@ body {
         font-size: 2em;
     }
 
+    .hide {
+        display: none;
+    }
+
+    .show {
+        display: block;
+    }
+
     .mdl-layout__header, .mdl-layout__drawer, .mdl-layout-title, .mdl-layout-heading {
         font-family: space_age !important;
     }
@@ -64,8 +72,14 @@ body {
         padding: 1em;
         padding-bottom: 4em;
 
+        .text-danger {
+            color: red;
+        }
+
         form {
             .form-group.field {
+                padding: 20px 0;
+
                 label {
                     font-size: 1rem;
                     color: black;
