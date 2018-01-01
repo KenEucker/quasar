@@ -12,6 +12,7 @@ class Api {
 		this.jobsDirectory = path.resolve(`${process.cwd()}/jobs/queued`)
 		this.sourcesDirectory = path.resolve(`${process.cwd()}/sources/`)
 		this.availableTasks = lib.getTaskNames(path.resolve('./tasks/'));
+		// throw 'API initialized';
 
 		if (yargs.argv.runApiStandalone) {
 			// console.log('running the api standalone');

@@ -1,6 +1,5 @@
 const gulp = require('gulp'),
 	fs = require('fs'),
-	//rename = require('gulp-rename'),
 	path = require('path'),
 	promise = Promise, // require('bluebird'),
 	yargs = require('yargs'),
@@ -8,13 +7,12 @@ const gulp = require('gulp'),
 	spawn = require('child_process'),
 	jsonTransform = require('gulp-json-transform'),
 	lib = require('./lib.js'),
-	mkdir = require('mkdirp-sync'),
 	// packager = require('electron-packager'),
-	api = require('./api');
+	mkdir = require('mkdirp-sync');
 
 class CLI {
 	constructor() {
-		this._app = api.app;
+		// throw 'constructing CLI';
 		this.port = process.env.PORT || '3720';
 		this._jobsFolder = lib.config.jobsFolder || `${process.cwd()}/jobs`;
 
@@ -25,7 +23,7 @@ class CLI {
 			return watch(`${jobQueueFolder}/*.json`, { ignoreInitial: true })
 				.pipe(jsonTransform(this.transformToProcessArgs));
 		});
-		
+
 		if ( yargs.argv.runStandalone || yargs.argv.runAsProcess || yargs.argv.packageApp) {
 			return this.run();
 		} else if (process.title == 'gulp') {
@@ -38,7 +36,7 @@ class CLI {
 	}
 
 	get app() {
-		return this._app;
+		return this._api.app || undefined;
 	}
 
 	transformToProcessArgs(data, file) {
@@ -72,7 +70,7 @@ class CLI {
 			this.webForm = require(webFormPath);
 			this.webForm.init();
 			// console.log('this should attach to the app', api.app);
-			this.webForm.run(api.app, api.port);
+			this.webForm.run(this._api.app, this._api.port);
 
 			return true;
 		}
@@ -87,7 +85,7 @@ class CLI {
 	runAsProcess(args, resolve, reject) {
 		if (args.runApi) {
 			// console.log('this should creat the app');
-			api.run(null, args.port);
+			this._api.run(null, args.port);
 		}
 		
 		if (args.watchJobs) {
@@ -142,7 +140,7 @@ class CLI {
 			this.init(args.appRoot);
 			lib.init(args.appRoot);
 			args.availableTasks = lib.loadTasks(args.loadTasks, args.loadDefaultTasks);
-			
+
 			lib.logInfo(`Running the qausar cli under the process: ${process.title}`);
 			if(args.reRunLastSuccessfulBuild || args.reRun) {
 				lib.logInfo(`Running the last recorded successful run from the logfile`);
@@ -179,12 +177,16 @@ class CLI {
 	}
 
 	init(dirname = process.cwd()) {
+		this._api = require(`${dirname}/api`);
+		this._app = this._api.app;
 		this._jobsFolder = `${dirname}/jobs`;
 
 		mkdir(this._jobsFolder);
 		mkdir(`${this._jobsFolder}/started`);
 		mkdir(`${this._jobsFolder}/queued`);
 		mkdir(`${this._jobsFolder}/completed`);
+
+		// throw 'CLI initialized';
 	}
 }
 

@@ -1,4 +1,5 @@
-let gulp = require('gulp'),
+// throw 'requiring LIB';
+const gulp = require('gulp'),
 	template = require('gulp-template'),
 	rename = require('gulp-rename'),
 	inject = require('gulp-inject-string'),
@@ -25,11 +26,10 @@ let gulp = require('gulp'),
 	os = require('os'),
 	lastLine = require('last-line'),
 	fs = require('fs'),
-	yargs = require('yargs'),
+	yargs = require('yargs');
 	promise = Promise, //require('bluebird'),
 	mkdir = require('mkdirp-sync'),
 	tryRequire = require('try-require');
-
 let config = {};
 
 // Logger
@@ -1116,7 +1116,7 @@ const init = (appRoot = process.cwd()) => {
 	}
 }
 
-init();
+// init();
 
 module.exports = {
 	convertPromptToJsonSchemaFormProperty,
