@@ -1,8 +1,8 @@
 let gulp = require('gulp'),
-	promise = Promise, // require('bluebird'),
 	colors = require('colors'),
 	file = require('gulp-file'),
-	runSequence = require('run-sequence');
+	runSequence = require('run-sequence'),
+	promise = Promise;
 
 const qType = path.basename(__filename).split('.')[0];
 let lib = null;
@@ -12,7 +12,7 @@ let quasArgs = {};
 
 const task = () => {
 	return lib.injectCode(quasArgs)
-		.then(() => { return lib.copyFilesFromTemplatesFolderToOutput(quasArgs, ['app.js', 'package.json', 'img/**', 'fonts/**'])})
+		.then(() => { return lib.copyFilesFromTemplatesFolderToOutput(quasArgs, ['app.js', 'package.json', 'img/**', 'fonts/**']) })
 		.then(() => { return lib.outputToHtmlFile(quasArgs) });
 }
 
@@ -28,11 +28,11 @@ const validateRequiredArgs = (args = {}) => {
 	return new promise((resolve, reject) => {
 		// Merge options with passed in parameters
 		quasArgs = Object.assign(quasArgs, args);
-	
-		if(quasArgs.output && quasArgs.output.length) {
+
+		if (quasArgs.output && quasArgs.output.length) {
 			const split = quasArgs.output.split('.');
 
-			if(split.length > 1) {
+			if (split.length > 1) {
 				quasArgs.outputExt = `.${split.pop()}`;
 				quasArgs.output = quasArgs.output.substr(0, quasArgs.output.length - quasArgs.outputExt.length);
 			}
@@ -56,7 +56,7 @@ const registerTasks = () => {
 	gulp.task(`${qType}:compile:js`, () => {
 		return lib.compileScriptsToAssetsFolder(quasArgs);
 	});
-	gulp.task(`${qType}:compile:sources`, [ `${qType}:compile:js`, `${qType}:compile:css`, `${qType}:compile:html` ]);
+	gulp.task(`${qType}:compile:sources`, [`${qType}:compile:js`, `${qType}:compile:css`, `${qType}:compile:html`]);
 
 	gulp.task(`${qType}:precompile`, () => {
 
@@ -70,7 +70,7 @@ const registerTasks = () => {
 
 			taskPrompts.forEach((prompt) => {
 				const name = prompt.name;
-				if(prompt.required) {
+				if (prompt.required) {
 					required.push(name);
 				}
 				properties[name] = lib.convertPromptToJsonSchemaFormProperty(prompt);
@@ -87,7 +87,7 @@ const registerTasks = () => {
 		});
 
 		const formDataJsonString = JSON.stringify(formsData);
-		
+
 		// Stringify the formData and then put it into a template object to be consumed by the template engine and placed on the page as a JSON object
 		const templateData = { quasarForms: formDataJsonString }
 		return file('quasarWebform.mustache.json', JSON.stringify(templateData), { src: true })
@@ -95,11 +95,11 @@ const registerTasks = () => {
 	});
 	gulp.task(`${qType}:compile`, (callback) => {
 		runSequence(`${qType}:precompile`,
-					`${qType}:compile:sources`,
-					callback);
+			`${qType}:compile:sources`,
+			callback);
 	});
 
-	gulp.task(`${qType}:build`, [ `${qType}:compile` ], (done) => {
+	gulp.task(`${qType}:build`, [`${qType}:compile`], (done) => {
 		return run({ domain: 'quasar', signal: 'Webform', output: 'index.html', overwriteDestinationPath: true });
 	});
 	gulp.task(`${qType}`, [`${qType}:build`]);
@@ -107,7 +107,7 @@ const registerTasks = () => {
 }
 
 const init = (_lib = null, dirname = process.cwd(), config = null) => {
-	if(!_lib) {
+	if (!_lib) {
 		config = config ? config : require(`${dirname}/config.js`);
 		lib = require(`${config.dirname}/lib.js`);
 	} else {

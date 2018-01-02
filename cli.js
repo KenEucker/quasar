@@ -14,22 +14,28 @@ class CLI {
 	constructor() {
 		// throw 'constructing CLI';
 		this.port = process.env.PORT || '3720';
-		this._jobsFolder = lib.config.jobsFolder || `${process.cwd()}/jobs`;
+		this._jobsFolder = lib.getConfig().jobsFolder || `${process.cwd()}/jobs`;
 
 		gulp.task(`watchJobs`, () => {
 			const jobQueueFolder = `${this._jobsFolder}/queued`;
-			
+
 			lib.logSuccess(`watching folder ${jobQueueFolder} for new or changed files to build from`);
 			return watch(`${jobQueueFolder}/*.json`, { ignoreInitial: true })
 				.pipe(jsonTransform(this.transformToProcessArgs));
 		});
 
-		if ( yargs.argv.runStandalone || yargs.argv.runAsProcess || yargs.argv.packageApp) {
+		if (yargs.argv.runStandalone || yargs.argv.runAsProcess || yargs.argv.packageApp) {
 			// throw 'running CLI';
-			return this.run();
+			return this.run()
+				.catch((err) => {
+					lib.logError(`Error running the CLI ${err}`);
+				});
 		} else if (process.title == 'gulp') {
 			// throw 'running CLI';
-			return this.run({ runStandalone: true });
+			return this.run({ runStandalone: true })
+				.catch((err) => {
+					lib.logError(`Error running gulp ${err}`);
+				});
 		}
 		// throw 'constructed CLI';
 	}
@@ -67,7 +73,7 @@ class CLI {
 	spawnWebForm() {
 		const webFormPath = path.resolve(`./public/quasar/Webform/app.js`);
 
-		if(fs.existsSync(webFormPath)) {
+		if (fs.existsSync(webFormPath)) {
 			lib.logInfo(`loading the webform file ${webFormPath}`);
 
 			this.webForm = require(webFormPath);
@@ -90,26 +96,28 @@ class CLI {
 			// console.log('this should creat the app');
 			this._api.run(null, args.port);
 		}
-		
+
 		if (args.watchJobs) {
 			lib.runTask('watchJobs');
 		}
 
 		if (args.runWebForm) {
 			// TODO: use more intelligent path
-			if(!this.spawnWebForm(args.runApi)) {
-				if(args.autoBuildWebForm) {
+			if (!this.spawnWebForm(args.runApi)) {
+				if (args.autoBuildWebForm) {
 					lib.logInfo('automated quasar build of `quasarWebform`');
-						lib.runTask('quasarWebform', () => {
-								lib.logInfo('attempting another run of the quasarWebform');
-								if(!this.spawnWebForm(args.runApi)) {
-									lib.logError(`Can't do that!`);
-								} else {
-									resolve();
-								}
-						});
+					lib.runTask('quasarWebform', () => {
+						lib.logInfo('attempting another run of the quasarWebform');
+						if (!this.spawnWebForm(args.runApi)) {
+							lib.logError(`Can't do that!`);
+							reject();
+							return false;
+						} else {
+							resolve();
+						}
+					});
 
-						return true;
+					return true;
 				} else {
 					lib.logError(`cannot run webform because ${path.resolve(`./public/quasar/Webform/app.js`)} has not been built yet, run again with option --autoBuildWebForm=true to auto build the webform.`);
 					reject();
@@ -135,7 +143,8 @@ class CLI {
 				qType: false,
 				runWebForm: false,
 				autoBuildWebForm: false,
-				runApi: false };
+				runApi: false
+			};
 			args = Object.assign(defaults, yargs.argv, args);
 			this.port = args.port;
 
@@ -145,19 +154,19 @@ class CLI {
 			args.availableTasks = lib.loadTasks(args.loadTasks, args.loadDefaultTasks);
 
 			lib.logInfo(`Running the qausar cli under the process: ${process.title}`);
-			if(args.reRunLastSuccessfulBuild || args.reRun) {
+			if (args.reRunLastSuccessfulBuild || args.reRun) {
 				lib.logInfo(`Running the last recorded successful run from the logfile`);
 				lib.runLastSuccessfulBuild();
 
 				return resolve();
-			} else if(args.runAsProcess) {
+			} else if (args.runAsProcess) {
 				lib.definitelyCallFunction(() => {
-					if(this.runAsProcess(args, resolve, reject)) {
+					if (this.runAsProcess(args, resolve, reject)) {
 						return;
 					}
 				});
 			}
-			
+
 			if (args.qType) {
 				lib.logInfo('automated quasar build from quasArgs');
 				return lib.definitelyCallFunction(() => {
