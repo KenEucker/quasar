@@ -1,6 +1,8 @@
 class quasarRuntime {
     constructor() {
+        // throw 'constructing quasarRuntime';
         this._cli = require('./cli');
+        this._electron = null;
     }
 
     get api() {
@@ -14,6 +16,10 @@ class quasarRuntime {
 
     get cli() {
         return this._cli || undefined;
+    }
+
+    runElectron() {
+        return this._electron = require('electron.js');
     }
 
     runCLI(args = {}) {

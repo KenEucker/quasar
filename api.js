@@ -17,6 +17,7 @@ class Api {
 			// console.log('running the api standalone');
 			this.run(null, yargs.argv.apiPort, true);
 		}
+		// throw 'constructed API';
 	}
 
 	get app() {
@@ -58,6 +59,7 @@ class Api {
 	}
 
 	run(app = null, port = null, start = false) {
+		// throw 'API run';
 		if (!app) {
 			app = express();
 			// console.log('creating the app in api.js');

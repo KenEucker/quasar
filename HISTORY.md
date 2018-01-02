@@ -16,4 +16,4 @@
    0.5.0 - robustness / 2018-01-01
 ==================
 
-  * 
+  * Description changed to "a Quick, Usable, And Simple; Application Runtime" to fit the QUASAR acronym
