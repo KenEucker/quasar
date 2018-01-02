@@ -1,6 +1,6 @@
 let gulp = require('gulp'),
-	promise = Promise, // require('bluebird'),
-	colors = require('colors');
+	colors = require('colors'),
+	promise = Promise;
 
 // console.log('required');
 
@@ -10,16 +10,19 @@ let quasArgs = {};
 
 const task = () => {
 	return lib.unpackFiles(quasArgs)
-	.then(() => { 
-		console.log("injecting assets!");
-		quasArgs = lib.copyTemplateFilesToAssetsPath(quasArgs);
-		return lib.injectCode(quasArgs) })
-	.then(() => { 
-		console.log("moving files!");
-		return lib.copyFilesFromAssetsFolderToOutput(quasArgs, [ '**' ] ) })
-	.then(() => { 
-		console.log("output!");
-		return lib.outputToHtmlFile(quasArgs) })
+		.then(() => {
+			console.log("injecting assets!");
+			quasArgs = lib.copyTemplateFilesToAssetsPath(quasArgs);
+			return lib.injectCode(quasArgs)
+		})
+		.then(() => {
+			console.log("moving files!");
+			return lib.copyFilesFromAssetsFolderToOutput(quasArgs, ['**'])
+		})
+		.then(() => {
+			console.log("output!");
+			return lib.outputToHtmlFile(quasArgs)
+		})
 }
 
 const run = (args = {}) => {
@@ -34,22 +37,22 @@ const validateRequiredArgs = (args = {}) => {
 	return new promise((resolve, reject) => {
 		// Merge options with passed in parameters
 		quasArgs = Object.assign(quasArgs, args);
-		
-		if(quasArgs.source == 'none') {
+
+		if (quasArgs.source == 'none') {
 			quasArgs.source = null;
-		} else if(quasArgs.source && quasArgs.source.length) {
+		} else if (quasArgs.source && quasArgs.source.length) {
 			const split = quasArgs.source.split('.');
 
-			if(split.length > 1) {
+			if (split.length > 1) {
 				quasArgs.sourceExt = `.${split.pop()}`;
 				quasArgs.source = quasArgs.source.substr(0, quasArgs.source.length - quasArgs.sourceExt.length);
 			}
 		}
 
-		if(quasArgs.output && quasArgs.output.length) {
+		if (quasArgs.output && quasArgs.output.length) {
 			const split = quasArgs.output.split('.');
 
-			if(split.length > 1) {
+			if (split.length > 1) {
 				quasArgs.outputExt = `.${split.pop()}`;
 				quasArgs.output = quasArgs.output.substr(0, quasArgs.output.length - quasArgs.outputExt.length);
 			}
@@ -64,7 +67,7 @@ const validateRequiredArgs = (args = {}) => {
 
 const registerTasks = () => {
 	gulp.task(`${qType}:build`, () => {
-		if(!quasArgs.noPrompt) {
+		if (!quasArgs.noPrompt) {
 			return lib.promptUser(quasArgs)
 				.then(task);
 		} else {
@@ -76,7 +79,7 @@ const registerTasks = () => {
 }
 
 const init = (_lib = null, dirname = process.cwd(), config = null) => {
-	if(!_lib) {
+	if (!_lib) {
 		config = config ? config : require(`${dirname}/config.js`);
 		lib = require(`${config.dirname}/lib.js`);
 	} else {
@@ -84,20 +87,21 @@ const init = (_lib = null, dirname = process.cwd(), config = null) => {
 	}
 
 	quasArgs = lib.getQuasArgs(qType, [{
-			type: 'list',
-			name: 'source',
-			message: `Enter the source filename (default .zip)`,
-			choices: ['none'].concat(lib.getFilenamesInDirectory(lib.config.sourceFolder, ['zip']))
-		}, {
-			type: 'input',
-			name: 'body',
-			message: 'Enter the body text',
-			default: '',
-			optional: true
-		}],
+		type: 'list',
+		name: 'source',
+		message: `Enter the source filename (default .zip)`,
+		choices: ['none'].concat(lib.getFilenamesInDirectory(lib.getConfig().sourceFolder, ['zip']))
+	}, {
+		type: 'input',
+		name: 'body',
+		message: 'Enter the body text',
+		default: '',
+		optional: true
+	}],
 		{
 			outputExt: '.html',
-			requiredArgsValidation: validateRequiredArgs });
+			requiredArgsValidation: validateRequiredArgs
+		});
 
 	// console.log('initialized');
 	return quasArgs;

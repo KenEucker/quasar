@@ -27,10 +27,14 @@ const gulp = require('gulp'),
 	lastLine = require('last-line'),
 	fs = require('fs'),
 	yargs = require('yargs');
-	promise = Promise, //require('bluebird'),
 	mkdir = require('mkdirp-sync'),
-	tryRequire = require('try-require');
-let config = {};
+	tryRequire = require('try-require'),
+	promise = Promise;
+let _config = {};
+
+let getConfig = () => {
+	return _config;
+}
 
 // Logger
 let logToFile = yargs.argv.logFile || false, logDate = yargs.argv.logDate, logSeverity = yargs.argv.logSeverity;
@@ -142,7 +146,7 @@ const logArgsToFile = (quasArgs, toStatus = 'started') => {
 const runLastSuccessfulBuild = (quasArgs = null) => {
 	return new promise((resolve, reject) => {
 		if (!quasArgs) {
-			quasArgs = { logFile: `.log`, dirname: config.dirname };
+			quasArgs = { logFile: `.log`, dirname: _config.dirname };
 		}
 		const logFilePath = path.resolve(`${quasArgs.dirname}/${quasArgs.logFile}`);
 		let command = null;
@@ -178,7 +182,7 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 	argsFile = yargs.argv.argsFile,
 		status = 'started',
 		argsFileExists = argsFile && fs.existsSync(argsFile),
-		assetsFolder = `${config.assetsFolder}/${qType}`;
+		assetsFolder = `${_config.assetsFolder}/${qType}`;
 
 	// If the argsFile parameter is set and the file exists, load parameters from file
 	if (argsFileExists) {
@@ -199,11 +203,11 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 		// Defaults
 		{
 			jobTimestamp,
-			dirname: config.dirname,
-			outputFolder: config.outputFolder,
-			sourceFolder: config.sourceFolder,
-			jobsFolder: config.jobsFolder,
-			templatesFolder: qType ? `${config.templatesFolder}/${qType}` : undefined,
+			dirname: _config.dirname,
+			outputFolder: _config.outputFolder,
+			sourceFolder: _config.sourceFolder,
+			jobsFolder: _config.jobsFolder,
+			templatesFolder: qType ? `${_config.templatesFolder}/${qType}` : undefined,
 			assetsFolder: qType ? assetsFolder : undefined,
 			targetFilePath: qType ? `${assetsFolder}/${qType}.html` : undefined,
 			stylesPreAsset: qType ? `${assetsFolder}/${qType}.css` : undefined,
@@ -228,7 +232,7 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 			excludeOutputFileFromUpload: true,
 			outputVersion: 1,
 			logFile: '.log',
-			argsFile: argsFile || `${config.jobsFolder}/${status}/${qType}_${jobTimestamp}.json`,
+			argsFile: argsFile || `${_config.jobsFolder}/${status}/${qType}_${jobTimestamp}.json`,
 			status,
 			qType
 		},
@@ -301,7 +305,7 @@ const spawnCommand = (argsFile, args = [], command = `node`, synchronous = false
 
 const getTaskNames = (dir = null) => {
 	if (!dir) {
-		dir = path.resolve(config.tasksFolder);
+		dir = path.resolve(_config.tasksFolder);
 	}
 
 	return getFilenamesInDirectory(dir, ['js'], true);
@@ -443,12 +447,12 @@ const loadTasks = (taskPaths = null, loadDefaults = true) => {
 		resolvedFilePath = resolvedFilePath ? `${resolvedFilePath}.js` : null;
 
 		if (!resolvedFilePath) {
-			resolvedFilePath = tryRequire.resolve(`${config.tasksFolder}/${task}.js`);
+			resolvedFilePath = tryRequire.resolve(`${_config.tasksFolder}/${task}.js`);
 		}
 
 		if (resolvedFilePath) {
 			newTask = require(resolvedFilePath);
-			newTask.init(null, config.dirname, config);
+			newTask.init(null, _config.dirname, _config);
 			tasks.push(newTask.qType);
 		} else {
 			logError(`could not load task at ${task} or ${resolvedFilePath}`);
@@ -920,16 +924,16 @@ const injectFilesIntoStream = (quasArgs, filePath, contents, injectionTarget, in
 				} else {
 					logError(`error minifying styles: ${cssMinified.error}`);
 				}
-			break;
+				break;
 			case 'script':
 				const jsMinified = jsMin.minify(fileContents);
 				if (jsMinified.error) {
 					logError(`error minifying scripts: ${jsMinified.error.message}`, jsMinified.error);
-				} else{
+				} else {
 					fileContents = jsMinified.code;
 				}
 
-			break;
+				break;
 		}
 		fileContents = fileContents.length ? `<${injectionTag}>\n${fileContents}\n</${injectionTag}>\n` : ``;
 
@@ -991,27 +995,6 @@ const injectCode = (quasArgs) => {
 	})
 }
 
-const uploadFileToS3 = (Bucket, Key, Body, callback, ACL = 'public-read') => {
-	aws.config.loadFromPath('./.config');
-	let s3 = new aws.S3();
-	logInfo('Uploading files to S3');
-
-	const params = {
-		Key: `${Key}`,
-		Bucket,
-		ACL,
-		Body
-	};
-	s3.putObject(params, (err, data) => {
-		if (err) {
-			logError("Error uploading image: ", err);
-		} else {
-			logInfo("Successfully uploaded image on S3", data);
-			if (callback) { callback(data); }
-		}
-	});
-}
-
 // Upload resources to S3
 const uploadFiles = (quasArgs, excludeFiles = []) => {
 	return new promise((resolve, reject) => {
@@ -1025,8 +1008,8 @@ const uploadFiles = (quasArgs, excludeFiles = []) => {
 			const toS3BucketPath = `${quasArgs.bucket}/${quasArgs.bucketPath}`;
 			logInfo(`Uploading files from ${fromLocalDirectory} to the path: ${toS3BucketPath}`);
 
-			var config = JSON.parse(fs.readFileSync(configFilename));
-			let s3 = gulpS3(config);
+			var s3Config = JSON.parse(fs.readFileSync(configFilename));
+			let s3 = gulpS3(s3Config);
 
 			if (quasArgs.excludeOutputFileFromUpload) {
 				excludeFiles.push(`${quasArgs.output}${quasArgs.outputExt}`);
@@ -1076,7 +1059,7 @@ const outputToHtmlFile = (quasArgs) => {
 				if (quasArgs.minifyHtml) {
 					const minifiedHtml = htmlMin.minify(contents);
 
-					if(minifiedHtml) {
+					if (minifiedHtml) {
 						contents = minifiedHtml;
 						logInfo(`html minified`);
 					} else {
@@ -1112,7 +1095,7 @@ const outputToHtmlFile = (quasArgs) => {
 
 const init = (appRoot = process.cwd()) => {
 	if (tryRequire.resolve(`${appRoot}/config.js`)) {
-		config = require(`${appRoot}/config.js`);
+		_config = require(`${appRoot}/config.js`);
 	}
 }
 // throw 'required LIB';
@@ -1134,6 +1117,7 @@ module.exports = {
 	findTargetFile,
 	fromDir,
 	getActualArgObjects,
+	getConfig,
 	getQuasArgs,
 	getFilenamesInDirectory,
 	getTaskNames,
@@ -1161,6 +1145,5 @@ module.exports = {
 	unpackFiles,
 	uploadFiles,
 	// Externally controlled values
-	logToFile,
-	config
+	logToFile
 }
