@@ -23,7 +23,6 @@ class quasarRuntime {
     }
 
     runCLI(args = {}) {
-        // throw 'running CLI';
         return this._cli.run(args);
     }
 

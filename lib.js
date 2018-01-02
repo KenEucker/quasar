@@ -1115,6 +1115,7 @@ const init = (appRoot = process.cwd()) => {
 		config = require(`${appRoot}/config.js`);
 	}
 }
+// throw 'required LIB';
 
 // init();
 

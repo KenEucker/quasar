@@ -20,7 +20,11 @@ const electrify = () => {
 						.then(() => {
 								console.log('Creating app window');
 								return createWindow(title);
-				});
+						})
+						.catch((e) => {
+							title = `failure: ${e}`;
+							return createWindow(title);
+						});
 		} catch (e) {
 				title = `failed: ${e}`;
 				return createWindow(title);
@@ -32,7 +36,7 @@ const createWindow = (title = 'quasar') => {
 		mainWindow = new BrowserWindow({ width: 1200, height: 800 });
 		mainWindow.setTitle(title);
 		mainWindow.loadURL(`http://localhost:${PORT}`);
-		mainWindow.webContents.openDevTools();
+		// mainWindow.webContents.openDevTools();
 
 		mainWindow.on('closed', () => {
 				mainWindow = null

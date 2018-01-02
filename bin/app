@@ -6,4 +6,4 @@ npm update
 echo "Checking for electron installed globally"
 npm list -g electron || npm install -g electron
 echo "Starting electron"
-electron electron
+electron .

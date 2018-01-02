@@ -12,12 +12,12 @@ class Api {
 		this.jobsDirectory = path.resolve(`${process.cwd()}/jobs/queued`)
 		this.sourcesDirectory = path.resolve(`${process.cwd()}/sources/`)
 		this.availableTasks = lib.getTaskNames(path.resolve('./tasks/'));
-		// throw 'API initialized';
 
 		if (yargs.argv.runApiStandalone) {
 			// console.log('running the api standalone');
 			this.run(null, yargs.argv.apiPort, true);
 		}
+		// throw 'constructed API';
 	}
 
 	get app() {
@@ -59,6 +59,7 @@ class Api {
 	}
 
 	run(app = null, port = null, start = false) {
+		// throw 'API run';
 		if (!app) {
 			app = express();
 			// console.log('creating the app in api.js');

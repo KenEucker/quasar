@@ -25,10 +25,13 @@ class CLI {
 		});
 
 		if ( yargs.argv.runStandalone || yargs.argv.runAsProcess || yargs.argv.packageApp) {
+			// throw 'running CLI';
 			return this.run();
 		} else if (process.title == 'gulp') {
+			// throw 'running CLI';
 			return this.run({ runStandalone: true });
 		}
+		// throw 'constructed CLI';
 	}
 
 	get jobsFolder() {
