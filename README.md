@@ -68,5 +68,5 @@ Logging to the console from the CLI happens with data off by default and only th
 - [x] Express based web UI with live preview for quasar building
 - [x] Asset compiler and bundler
 - [x] Builder packaged as an electron application
+- [x] Asset mutation on output (minification, tree shaking, code splitting, uglification)
 - [ ] Image compression before upload
-- [ ] Asset mutation on output (minification, tree shaking, code splitting, uglification)
