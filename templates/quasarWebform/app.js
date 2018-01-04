@@ -1,5 +1,5 @@
 let express = require('express'),
-    launcher = require( 'launch-browser' ),
+    launcher = require('launch-browser'),
     yargs = require('yargs'),
     path = require('path'),
     fs = require('fs'),
@@ -18,33 +18,33 @@ const staticOptions = {
     maxAge: '1d',
     redirect: false,
     setHeaders: function (res, path, stat) {
-    res.set('x-timestamp', Date.now())
+        res.set('x-timestamp', Date.now())
     }
 };
 
 const findOutputDirectory = (startPath, outputDirectory = '', maxLevels = 5) => {
-    if (!fs.existsSync(startPath)){
+    if (!fs.existsSync(startPath)) {
         return;
     }
 
     // If the startPath is the one we are looking for
     let stat = fs.lstatSync(startPath);
-        if(stat.isDirectory() && startPath.split('/').pop() == outputDirectory) {
-            return startPath;
+    if (stat.isDirectory() && startPath.split('/').pop() == outputDirectory) {
+        return startPath;
     }
 
     // If the path we are looking for is a sybling of the startPath
-    const files=fs.readdirSync(startPath);
-    for (let i=0; i < files.length; i++) {
-        const pathname = path.join( startPath, files[i]);
+    const files = fs.readdirSync(startPath);
+    for (let i = 0; i < files.length; i++) {
+        const pathname = path.join(startPath, files[i]);
 
         stat = fs.lstatSync(pathname);
-        if(stat.isDirectory() && pathname.split('/').pop() == outputDirectory) {
+        if (stat.isDirectory() && pathname.split('/').pop() == outputDirectory) {
             return pathname;
         }
     }
 
-    if(maxLevels > 0) {
+    if (maxLevels > 0) {
         return findOutputDirectory(path.resolve(startPath, '../'), outputDirectory, maxLevels - 1);
     } else {
         return;
@@ -65,10 +65,10 @@ const loadingPage = (message = `Loading ...`) => {
                     if(h1) {
                         h1.innerHTML += '.';
                     }
-                }, 500)
+                }, 300)
                 setInterval(function() {
                     window.location.reload(true);
-                }, 3000)
+                }, 1200)
                 </script>
             </body>
         </html>
@@ -80,31 +80,32 @@ const webForm = (app, port = null, start = false) => {
     mkdir(sourcesDirectory);
     PORT = port || PORT;
 
-    app.get('/job/:id', function(req, res){
+    app.get('/job/:id', function (req, res) {
         const jobFile = `${req.params.id}.json`;
         const jobFilePath = `${findOutputDirectory(path.resolve(__dirname), `jobs`)}/completed/${jobFile}`;
 
-        if(fs.existsSync(jobFilePath)) {
-            const jobArgs = JSON.parse(fs.readFileSync(jobFilePath));
-            if(fs.existsSync(jobArgs.outputFilePath)) {
+        if (fs.existsSync(jobFilePath)) {
+            const argsFile = fs.readFileSync(jobFilePath);
+            const jobArgs = JSON.parse(argsFile);
+            if (fs.existsSync(jobArgs.outputFilePath)) {
                 res.sendFile(jobArgs.outputFilePath);
             } else {
                 console.log(`outputFilePath not found: ${jobArgs.outputFilePath}`);
             }
-        } else if (fs.existsSync(jobFilePath.replace('/completed', '/started'))){
-            console.log(`job started: ${jobFile}`);
-            res.send(loadingPage("Job has started but needs to be queued."));
-        } else if (fs.existsSync(jobFilePath.replace('/completed', '/queued'))){
-            console.log(`job not yet started: ${jobFile}`);
+        } else if (fs.existsSync(jobFilePath.replace('/completed', '/created'))) {
+            console.log(`job created: ${jobFile}`);
+            res.send(loadingPage("Job has been created but needs to be queued."));
+        } else if (fs.existsSync(jobFilePath.replace('/completed', '/queued'))) {
+            console.log(`job not yet queued: ${jobFile}`);
             res.send(loadingPage("Building ..."));
         } else {
             res.send("job does not exist");
         }
     });
 
-    app.get('/', function(req, res){
+    app.get('/', function (req, res) {
         const webFormPath = path.resolve(path.join(`${__dirname}/index.html`));
-        if(fs.existsSync(webFormPath)) {
+        if (fs.existsSync(webFormPath)) {
             res.sendFile(webFormPath);
         } else {
             console.log(`could not find quasar Webform, sending loading page`);
@@ -123,9 +124,9 @@ const webForm = (app, port = null, start = false) => {
 const launchInBrowser = () => {
     launcher(`http://localhost:${PORT}`, { browser: ['chrome', 'firefox', 'safari'] }, (e, browser) => {
         if (e) return console.log(e);
-        
+
         browser.on('stop', (code) => {
-            console.log( 'Browser closed with exit code:', code );
+            console.log('Browser closed with exit code:', code);
         });
     })
 }
@@ -154,4 +155,5 @@ const init = () => {
 module.exports = {
     PORT,
     init,
-    run }
+    run
+}

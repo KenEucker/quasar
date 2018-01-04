@@ -13,7 +13,7 @@ const gulp = require('gulp'),
 	spawn = require("child_process"),
 	prompt = require('inquirer'),
 	sass = require('dart-sass')
-	runSequence = require('run-sequence'),
+runSequence = require('run-sequence'),
 	aws = require('aws-sdk'),
 	through = require('through2'),
 	del = require('del'),
@@ -27,11 +27,12 @@ const gulp = require('gulp'),
 	lastLine = require('last-line'),
 	fs = require('fs'),
 	yargs = require('yargs');
-	mkdir = require('mkdirp-sync'),
+mkdir = require('mkdirp-sync'),
 	tryRequire = require('try-require'),
 	promise = Promise;
-let _config = {};
 
+const STATUS_CREATED = 'created', STATUS_QUEUED = 'queued', STATUS_COMPLETED = 'completed';
+let _config = {};
 let getConfig = () => {
 	return _config;
 }
@@ -121,8 +122,8 @@ const getActualArgObjects = (quasArgs, onlyObjects = null) => {
 	});
 }
 
-const logArgsToFile = (quasArgs, toStatus = 'started') => {
-	if (logToFile) {
+const logArgsToFile = (quasArgs, toStatus = null, overwite = false) => {
+	if (logToFile && toStatus == STATUS_COMPLETED) {
 		const logFilePath = path.resolve(`${quasArgs.dirname}/${quasArgs.logFile}`);
 		const cliArgs = getActualArgObjects(quasArgs);
 		fs.appendFileSync(logFilePath, `node cli.js ${cliArgs.join(' ')} --noPrompt=true\r\n`, (err) => {
@@ -131,16 +132,23 @@ const logArgsToFile = (quasArgs, toStatus = 'started') => {
 		});
 	}
 
-	if (quasArgs.argsFile && fs.existsSync(quasArgs.argsFile)) {
-		quasArgs.outputFilePath = `${quasArgs.dirname}${getQuasarOutputPath(quasArgs)}/${quasArgs.output}${quasArgs.outputExt}`;
-		fs.unlink(quasArgs.argsFile);
+	if (overwite || !(quasArgs.status == STATUS_CREATED && toStatus == null)) {
+		if (overwite && quasArgs.status == toStatus) {
+			quasArgs.error = 'WARN: overwriting jobfile. Was this done intentionally?';
+		}
+		if (quasArgs.argsFile && fs.existsSync(quasArgs.argsFile)) {
+			quasArgs.outputFilePath = `${quasArgs.dirname}${getQuasarOutputPath(quasArgs)}/${quasArgs.output}${quasArgs.outputExt}`;
+			fs.unlinkSync(quasArgs.argsFile);
+		}
+
+		quasArgs.argsFile = quasArgs.argsFile.replace(`/${quasArgs.status}`, `/${toStatus}`);
+		quasArgs.status = toStatus;
+
+		logInfo(`writing to build file: ${quasArgs.argsFile}`, JSON.stringify(quasArgs));
+		fs.writeFileSync(quasArgs.argsFile, JSON.stringify(quasArgs));
 	}
 
-	quasArgs.argsFile = quasArgs.argsFile.replace(`/${quasArgs.status}`, `/${toStatus}`);
-	quasArgs.status = toStatus;
-
-	logInfo(`writing to build file: ${quasArgs.argsFile}`);
-	fs.writeFileSync(quasArgs.argsFile, JSON.stringify(quasArgs));
+	return quasArgs;
 }
 
 const runLastSuccessfulBuild = (quasArgs = null) => {
@@ -165,7 +173,7 @@ const runLastSuccessfulBuild = (quasArgs = null) => {
 				command = command.replace(`node cli.js`, ``);
 				let args = command.split(' ');
 				args = args.map(k => { return k.replace(/"/g, '') });
-				spawnCommand(null, args);
+				spawnCommand(args);
 
 				return resolve();
 			});
@@ -180,23 +188,36 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 		jobTimestamp = Date.now(),
 		cliArgs = {};
 	argsFile = yargs.argv.argsFile,
-		status = 'started',
+		status = STATUS_CREATED,
 		argsFileExists = argsFile && fs.existsSync(argsFile),
 		assetsFolder = `${_config.assetsFolder}/${qType}`;
 
 	// If the argsFile parameter is set and the file exists, load parameters from file
 	if (argsFileExists) {
-		fromFile = JSON.parse(fs.readFileSync(argsFile));
-		jobTimestamp = (argsFile.split('_').pop() || '').replace('.json');
-		status = 'queued';
+		const tempFile = fs.readFileSync(argsFile, "utf8");
+		fromFile = JSON.parse(tempFile);
+		jobTimestamp = (argsFile.split('_').pop().split('.')[0]);
 	}
 
 	// HACK for falsey values in yargs and multi values
 	Object.keys(yargs.argv).forEach((k) => {
-		const v = yargs.argv[k];
-		let arg = Array.isArray(v) ? v[v.length - 1] : v;
-		arg = arg == "true" || arg == "false" ? arg == "true" : arg;
-		cliArgs[k] = arg;
+		if (k) {
+			const v = yargs.argv[k];
+			let arg = Array.isArray(v) ? v[v.length - 1] : v;
+			arg = arg == "true" || arg == "false" ? arg == "true" : arg;
+			if (arg != undefined || arg == null) {
+				cliArgs[k] = arg;
+			} else if (Array.isArray(v)) {
+				arg = v[0];
+				if (arg == undefined || arg == null) {
+					return;
+				}
+				cliArgs[k] = arg;
+			} else {
+				return;
+			}
+			// console.log(`set ${k} to ${arg}`);
+		}
 	});
 
 	const quasArgs = Object.assign(
@@ -227,7 +248,7 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 			overwriteUnpackDestination: true,
 			overwriteTargetFileFromTemplate: true,
 			cleanUpTargetFileTemplate: false,
-			useJobTimestampForBuild: false,
+			useJobTimestampForBuild: true,
 			buildCompletedSuccessfully: false,
 			excludeOutputFileFromUpload: true,
 			outputVersion: 1,
@@ -275,7 +296,7 @@ const sassify = (options) => {
 		// }
 		sass.render(options, (err, result) => {
 			if (err) {
-				console.error("Sass Error: " + err.message);
+				logError(`Sass Error: ${err.message}`);
 			}
 			else {
 				file.contents = result.css;
@@ -288,19 +309,19 @@ const sassify = (options) => {
 	})
 }
 
-const spawnCommand = (argsFile, args = [], command = `node`, synchronous = false) => {
+const spawnCommand = (args = [], command = `node`, synchronous = false) => {
 	args.unshift(`cli.js`);
 	log(`Running command ${command} ${args.join(' ')}`);
-	let call = spawn.spawn;
+	const spawnOptions = { stdio: "inherit" };
 
 	if (synchronous) {
-		return spawn.spawnSync(command, args, { stdio: "inherit" });
+		return spawn.spawnSync(command, args, spawnOptions);
 	}
 
-	return spawn.spawn(command, args)
-		.on("error", (error) => { logError('Error: ', error); })
-		.on("data", (data) => { logData("DATA: ", data); })
-		.on("close", (msg) => { logInfo("command ended with message: ", msg); });
+	spawn.spawn(command, args, spawnOptions)
+		.on("error", (error) => { logError(error); })
+		.on("data", (data) => { logData('DATA: ', data); })
+		.on("close", (msg) => { logInfo(`command ended with message: ${msg}`); });
 }
 
 const getTaskNames = (dir = null) => {
@@ -309,6 +330,16 @@ const getTaskNames = (dir = null) => {
 	}
 
 	return getFilenamesInDirectory(dir, ['js'], true);
+}
+
+const queueBuild = (quasArgs) => {
+	if (quasArgs.status != STATUS_QUEUED || !(fs.existsSync(`${quasArgs.jobsFolder}/${STATUS_QUEUED}/${quasArgs.qType}_${quasArgs.jobTimestamp}.json`))) {
+		quasArgs = logArgsToFile(quasArgs, STATUS_QUEUED);
+	} else {
+		quasArgs.status = STATUS_QUEUED;
+	}
+
+	return quasArgs;
 }
 
 const getFilenamesInDirectory = (directory, extensions = [], removeExtension = false) => {
@@ -404,13 +435,21 @@ const fromDir = (startPath, filter, extension = '') => {
 const runTask = (task, end = () => { logFin(`quasar ${task} ended`) }) => {
 	return new promise((resolve, reject) => {
 		if (gulp.hasTask(task)) {
-			runSequence(task, end);
+			try {
+				runSequence(task, end);
+			} catch (e) {
+				logError(e);
+				return reject();
+			}
 			return resolve();
 		} else {
 			logError(`Cannot find gulp task ${task}`);
-			return reject();
+			return reject(task);
 		}
 	})
+		.catch((e) => {
+			logError(e);
+		})
 }
 
 const quasarSelectPrompt = (quasArgs) => {
@@ -680,7 +719,7 @@ const moveTargetFilesToRootOfAssetsPath = (quasArgs) => {
 			return gulp.src(`${baseDir}/**`)
 				.pipe(gulp.dest(quasArgs.assetsFolder))
 				.on('error', (err) => {
-					logError(`error copying files: ${err}`);
+					logError(err);
 					return reject(quasArgs);
 				})
 				.on('end', () => {
@@ -822,7 +861,7 @@ const copyTemplateFilesToAssetsPath = (quasArgs) => {
 // Unpack input files
 const unpackFiles = (quasArgs) => {
 	return new promise((resolve, reject) => {
-		if (!quasArgs.unpackFiles || !quasArgs.source) {
+		if (!quasArgs.unpackFiles || !quasArgs.source || quasArgs.sourceExt != '.zip') {
 			return resolve(quasArgs);
 		}
 
@@ -922,13 +961,13 @@ const injectFilesIntoStream = (quasArgs, filePath, contents, injectionTarget, in
 				if (cssMinified.styles) {
 					fileContents = cssMinified.styles;
 				} else {
-					logError(`error minifying styles: ${cssMinified.error}`);
+					logError(cssMinified.error);
 				}
 				break;
 			case 'script':
 				const jsMinified = jsMin.minify(fileContents);
 				if (jsMinified.error) {
-					logError(`error minifying scripts: ${jsMinified.error.message}`, jsMinified.error);
+					logError(jsMinified.error.message || jsMinified.error);
 				} else {
 					fileContents = jsMinified.code;
 				}
@@ -958,6 +997,7 @@ const injectCode = (quasArgs) => {
 		const preJs = fs.existsSync(quasArgs.scriptsPreAsset) ? quasArgs.scriptsPreAsset : null;
 		const postJs = fs.existsSync(quasArgs.scriptsPostAsset) ? quasArgs.scriptsPostAsset : null;
 
+		quasArgs = queueBuild(quasArgs);
 		log('injecting public code prior to applying template parameters');
 		log(`getting assets from (${quasArgs.assetsFolder})`);
 		log(`getting template file (${quasArgs.targetFilePath.replace(quasArgs.assetsFolder, '')}) and assets(css - pre:${preCss ? path.basename(preCss) : ``}, post: ${postCss ? path.basename(postCss) : ``}   js: pre:${preJs ? path.basename(preJs) : ``}, post: ${postJs ? path.basename(postJs) : ``})`);
@@ -985,7 +1025,8 @@ const injectCode = (quasArgs) => {
 			.pipe(inject.append(`\n<!-- Generated by quasar on: ${Date()} by: ${os.hostname} [ https://github.com/KenEucker/quasar ] -->`))
 			.pipe(gulp.dest(quasArgs.dirname))
 			.on('error', (err) => {
-				logError('error on injection pipeline ', err);
+				logError(err);
+				logArgsToFile(quasArgs, null, true);
 				return reject(err);
 			})
 			.on('end', (msg) => {
@@ -1008,8 +1049,9 @@ const uploadFiles = (quasArgs, excludeFiles = []) => {
 			const toS3BucketPath = `${quasArgs.bucket}/${quasArgs.bucketPath}`;
 			logInfo(`Uploading files from ${fromLocalDirectory} to the path: ${toS3BucketPath}`);
 
-			var s3Config = JSON.parse(fs.readFileSync(configFilename));
-			let s3 = gulpS3(s3Config);
+			const configFile = fs.readFileSync(configFilename);
+			const s3Config = JSON.parse(configFile);
+			const s3 = gulpS3(s3Config);
 
 			if (quasArgs.excludeOutputFileFromUpload) {
 				excludeFiles.push(`${quasArgs.output}${quasArgs.outputExt}`);
@@ -1037,7 +1079,8 @@ const outputToHtmlFile = (quasArgs) => {
 		const outputPath = getQuasarOutputPath(quasArgs);
 		let outputFile = `${quasArgs.dirname}${outputPath}/${quasArgs.outputVersion == 1 ? quasArgs.output : `${quasArgs.output}${versionPrefix}${quasArgs.outputVersion}`}${quasArgs.outputExt}`;
 		log(`Applying the following parameters to the template (${quasArgs.targetFilePath}) and building output`);
-		log(`data:`, quasArgs);
+		log(`Queuing Build with args:`, quasArgs);
+		quasArgs = queueBuild(quasArgs);
 
 		if (fs.existsSync(outputFile)) {
 			while (fs.existsSync(outputFile)) {
@@ -1071,23 +1114,26 @@ const outputToHtmlFile = (quasArgs) => {
 			}))
 			.pipe(gulp.dest(quasArgs.dirname))
 			.on('error', (err) => {
-				logError(`Error outputing file (${quasArgs.targetFilePath})`, err);
+				logError(err);
+				quasArgs.error = err;
+				logArgsToFile(quasArgs, null, true);
 				return reject();
 			})
 			.on('end', () => {
 				if (quasArgs.cleanUpTargetFileTemplate && (quasArgs.targetFilePath.indexOf(`${quasArgs.output}${quasArgs.outputExt}`) == -1)) {
 					logInfo(`Removing templated file ${quasArgs.targetFilePath}`);
-					fs.unlink(quasArgs.targetFilePath);
+					fs.unlinkSync(quasArgs.targetFilePath);
 				}
 				logSuccess(`Output file saved as: ${outputFile}`);
 				quasArgs.buildCompletedSuccessfully = true;
-				logArgsToFile(quasArgs, 'completed');
+				logArgsToFile(quasArgs, STATUS_COMPLETED);
 
 				if (quasArgs.useJobTimestampForBuild) {
 					logInfo(`cleaning up after job: ${quasArgs.jobTimestamp}`);
 					logInfo(`cleaning up assets folder: ${quasArgs.assetsFolder}`);
-					del(quasArgs.assetsFolder);
+					del.sync(quasArgs.assetsFolder);
 				}
+
 				return resolve(quasArgs);
 			});
 	})
@@ -1124,9 +1170,9 @@ module.exports = {
 	getQuasarPromptQuestions,
 	hasQuasarInitialArgs,
 	init,
-	promptUser,
 	injectCode,
 	loadTasks,
+	logArgsToFile,
 	logAsync,
 	log,
 	logInfo,
@@ -1137,7 +1183,9 @@ module.exports = {
 	moveTargetFilesToRootOfAssetsPath,
 	outputToHtmlFile,
 	promptConsole,
+	promptUser,
 	quasarSelectPrompt,
+	queueBuild,
 	registerRequiredQuasArgs,
 	runLastSuccessfulBuild,
 	runTask,
@@ -1145,5 +1193,9 @@ module.exports = {
 	unpackFiles,
 	uploadFiles,
 	// Externally controlled values
-	logToFile
+	logToFile,
+	// CONSTANTS
+	STATUS_CREATED,
+	STATUS_QUEUED,
+	STATUS_COMPLETED
 }
