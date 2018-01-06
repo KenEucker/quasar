@@ -5,7 +5,7 @@ const electron = require('electron'),
 		BrowserWindow = electron.BrowserWindow;
 let quasar = null, mainWindow, PORT = process.env.PORT || '3720', appRoot = app.getAppPath();
 
-const getIconFilePath = (rootPath = process.cwd(), iconName = 'icon', iconExt = '.ico') => {
+const getIconFilePath = (rootPath = appRoot, iconName = 'icon', iconExt = '.ico') => {
 	if (fs.existsSync(`${rootPath}/${iconName}${iconExt}`)) {
 		return `${rootPath}/${iconName}${iconExt}`;
 	}

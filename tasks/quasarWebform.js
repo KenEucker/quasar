@@ -107,7 +107,7 @@ const registerTasks = () => {
 	// console.log('registered');
 }
 
-const init = (_lib = null, applicationRoot = process.cwd(), config = null) => {
+const init = (_lib = null, applicationRoot = process.cwd(), config = null, registerBuildTasks = false) => {
 	if (!_lib) {
 		config = config ? config : require(`${applicationRoot}/config.js`);
 		lib = require(`${config.applicationRoot}/lib.js`);
@@ -120,11 +120,13 @@ const init = (_lib = null, applicationRoot = process.cwd(), config = null) => {
 		requiredArgsValidation: validateRequiredArgs
 	}, false);
 
+	if (registerBuildTasks) {
+		registerTasks();
+	}
+
 	// console.log('initialized');
 	return quasArgs;
 }
-
-registerTasks();
 
 module.exports = {
 	purpose: `

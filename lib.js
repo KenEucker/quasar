@@ -486,6 +486,7 @@ const loadTasks = (taskPaths = null, loadDefaults = true) => {
 
 	if (!taskPaths && loadDefaults) {
 		taskPaths = getTaskNames();
+		taskPaths.splice(taskPaths.indexOf('quasarWebform'), 1);
 		logInfo(`Loading default quasars (${taskPaths})`);
 	} else if (!taskPaths) {
 		return null;
@@ -501,7 +502,7 @@ const loadTasks = (taskPaths = null, loadDefaults = true) => {
 
 		if (resolvedFilePath) {
 			newTask = require(resolvedFilePath);
-			newTask.init(null, _config.applicationRoot, _config);
+			newTask.init(null, _config.applicationRoot, _config, true);
 			tasks.push(newTask.qType);
 		} else {
 			logError(`could not load task at ${task} or ${resolvedFilePath}`);
