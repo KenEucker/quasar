@@ -13,6 +13,7 @@ let quasArgs = {};
 const task = () => {
 	return lib.injectCode(quasArgs)
 		.then(() => { return lib.copyFilesFromTemplatesFolderToOutput(quasArgs, ['app.js', 'package.json', 'img/**', 'fonts/**']) })
+		.then(() => { return lib.copyFilesToOutput(quasArgs, quasArgs.applicationRoot, ['icon.ico']) })
 		.then(() => { return lib.outputToHtmlFile(quasArgs) });
 }
 

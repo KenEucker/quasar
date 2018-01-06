@@ -47,15 +47,14 @@ const logSuccess = (message, obj, color = colors.green) => { log(message, obj, '
 const logDebug = (message, obj, color = colors.blue) => { log(message, obj, 'debug', 'debug', color) }
 const logFin = (message = 'FiN!', obj, color = colors.green) => { log(message, obj, 'fin', 'end', color) }
 const log = (message, obj, type = null, title = '', color = colors.grey) => {
-	if (type == 'error' && logSeverity == 'DEBUG') {
-		return console.log(message);
+	if (type == 'debug' && logSeverity != 'DEBUG') {
+		return;
 	}
 
 	let logger = console;
 	let logPrefix = `<~-`, logPostfix = `${logPrefix[1]}${logPrefix.replace('<', '>')[0]}`;
-	message = `${logDate ? `[${new Date(Date.now()).toLocaleString('en-US')}] ` : ``}${title.length ? ` ${title}: ` : ''}${message}`;
-	message = `${logPrefix} ${message} ${logPostfix}`;
 	logSeverity = Array.isArray(logSeverity) ? logSeverity[logSeverity.length - 1] : logSeverity;
+
 	switch (type) {
 		case null:
 			logger = logger.log;
@@ -65,6 +64,9 @@ const log = (message, obj, type = null, title = '', color = colors.grey) => {
 			if (logToFile) {
 				logger = logger.error;
 			} else {
+				if (logSeverity == 'DEBUG') {
+					console.log(`FULL ERROR:`, message);
+				}
 				logger = logger.error;
 			}
 			break;
@@ -87,6 +89,9 @@ const log = (message, obj, type = null, title = '', color = colors.grey) => {
 			}
 			break;
 	}
+
+	message = `${logDate ? `[${new Date(Date.now()).toLocaleString('en-US')}] ` : ``}${title.length ? ` ${title}: ` : ''}${message}`;
+	message = `${logPrefix} ${message} ${logPostfix}`;
 
 	switch (logSeverity) {
 		case 'ALL':
@@ -742,14 +747,14 @@ const moveTargetFilesToRootOfAssetsPath = (quasArgs) => {
 	});
 }
 
-const copyFilesFromTemplatesFolderToOutput = (quasArgs, files, excludeFiles = []) => {
+const copyFilesToOutput = (quasArgs, fromDirectory, files, excludeFiles = []) => {
 	return new promise((resolve, reject) => {
 		const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
-		logInfo(`copying files (${files.join()}) from ${quasArgs.templatesFolder}/ to ${destinationPath}`);
+		logInfo(`copying files (${files.join()}) from ${fromDirectory}/ to ${destinationPath}`);
 
-		files = files.map(file => `${quasArgs.templatesFolder}/${file}`);
-		excludeFiles = excludeFiles.map(excludeFile => `!${quasArgs.sourceFolder}/${excludeFile}`);
-		return gulp.src(excludeFiles.concat(files), { base: quasArgs.templatesFolder })
+		files = files.map(file => `${fromDirectory}/${file}`);
+		excludeFiles = excludeFiles.map(excludeFile => `!${fromDirectory}/${excludeFile}`);
+		return gulp.src(excludeFiles.concat(files), { base: fromDirectory })
 			.pipe(gulp.dest(destinationPath))
 			.on('end', () => {
 				return resolve(quasArgs);
@@ -757,28 +762,20 @@ const copyFilesFromTemplatesFolderToOutput = (quasArgs, files, excludeFiles = []
 	});
 }
 
+const copyFilesFromTemplatesFolderToOutput = (quasArgs, files, excludeFiles = []) => {
+	return copyFilesToOutput(quasArgs, quasArgs.templatesFolder, files, excludeFiles);
+}
+
 const copyFilesFromAssetsFolderToOutput = (quasArgs, files, excludeFiles = null) => {
-	return new promise((resolve, reject) => {
-		const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
-		if (!excludeFiles) {
-			excludeFiles = [`${quasArgs.target}`, `${quasArgs.qType}.html`, `${quasArgs.qType}.css`, `${quasArgs.qType}.js`];
-		}
-		logInfo(`copying files (${files.join()}) from ${quasArgs.assetsFolder}/ to ${destinationPath}`);
-		logInfo(`exluding the files ${excludeFiles}`);
-		files = files.map(file => `${quasArgs.assetsFolder}/${file}`);
-		excludeFiles = excludeFiles.map(excludeFile => `!${quasArgs.assetsFolder}/${excludeFile}`);
-		return gulp.src(excludeFiles.concat(files), { base: quasArgs.assetsFolder })
-			.pipe(gulp.dest(destinationPath))
-			.on('end', () => {
-				return resolve(quasArgs);
-			});
-	});
+	if (!excludeFiles) {
+		excludeFiles = [`${quasArgs.target}`, `${quasArgs.qType}.html`, `${quasArgs.qType}.css`, `${quasArgs.qType}.js`];
+	}
+
+	return copyFilesToOutput(quasArgs, quasArgs.assetsFolder, files, excludeFiles);
 }
 
 const copyFilesFromSourcesFolderToOutput = (quasArgs, files = null, excludeFiles = []) => {
 	return new promise((resolve, reject) => {
-		// log(`copying source file ${quasArgs.source}${quasArgs.sourceExt}, but files ${files}`);
-
 		if (!files && quasArgs.source && quasArgs.source.length) {
 			if (quasArgs.sourceExt === '.zip') {
 				log(`unpacking files from archive ${quasArgs.source}${quasArgs.sourceExt}`);
@@ -790,17 +787,9 @@ const copyFilesFromSourcesFolderToOutput = (quasArgs, files = null, excludeFiles
 		} else {
 			return resolve(quasArgs);
 		}
-
-		const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
-		logInfo(`copying files (${files.join()}) from ${quasArgs.sourceFolder}/ to ${destinationPath}`);
-
-		files = files.map(file => `${quasArgs.sourceFolder}/${file}`);
-		excludeFiles = excludeFiles.map(excludeFile => `!${quasArgs.sourceFolder}/${excludeFile}`);
-		return gulp.src(excludeFiles.concat(files), { base: quasArgs.sourceFolder })
-			.pipe(gulp.dest(destinationPath))
-			.on('end', () => {
-				return resolve(quasArgs);
-			});
+		
+		return copyFilesToOutput(quasArgs, quasArgs.sourceFolder, files, excludeFiles)
+			.then(resolve);
 	});
 }
 
@@ -1163,6 +1152,7 @@ module.exports = {
 	copyFilesFromAssetsFolderToOutput,
 	copyFilesFromSourcesFolderToOutput,
 	copyFilesFromTemplatesFolderToOutput,
+	copyFilesToOutput,
 	copyTemplateFilesToAssetsPath,
 	definitelyCallFunction,
 	findOutputDirectory,
