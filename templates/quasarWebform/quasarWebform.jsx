@@ -175,6 +175,19 @@ const finalTouches = () => {
             field.addEventListener('click', function() { hideOrShowAdditionalSettings(this.value == "true", findAncestor(this, 'form')) });
         });
     });
+
+    app.querySelectorAll('#root_domain[type=text], #root_signal[type=text], #root_client[type=text], #root_campaign[type=text]').forEach((radio) => {
+        radio.addEventListener('change', function() {
+            const oldVal = this.value;
+            this.value = oldVal.replace(/\s+/g, '_').toLowerCase();
+            if(this.value != oldVal) {
+                const message = document.createElement('span');
+                message.style.color = 'green';
+                message.innerHTML = 'value sanitized';
+                this.parentNode.appendChild(message);
+            }
+        });
+    });
 }
 
 const getMaterialisticFormHeader = () => {

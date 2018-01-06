@@ -12,10 +12,10 @@ npm list -g electron-packager || npm install -g electron-packager
 
 #node cli.js --packageApp=true "$@"
 
-echo "creating the webform project in the public folder"
-bin/cli --logSeverity=NONE --qType=quasarWebform --noPrompt=true --runAsProcess=true
-echo "cleaning up after creating the webform project"
-rm -rf assets
+#echo "creating the webform project in the public folder"
+#bin/cli --logSeverity=NONE --qType=quasarWebform --noPrompt=true --runAsProcess=true
+#echo "cleaning up after creating the webform project"
+#rm -rf assets
 echo "starting electron-packager"
 electron-packager . --out=dist --overwrite=true --electron-version 1.7.10
 echo "Cleaning up after application creation"

@@ -13,7 +13,7 @@ const gulp = require('gulp'),
 	spawn = require("child_process"),
 	prompt = require('inquirer'),
 	sass = require('dart-sass')
-runSequence = require('run-sequence'),
+	runSequence = require('run-sequence').use(gulp),
 	aws = require('aws-sdk'),
 	through = require('through2'),
 	del = require('del'),
@@ -27,7 +27,7 @@ runSequence = require('run-sequence'),
 	lastLine = require('last-line'),
 	fs = require('fs'),
 	yargs = require('yargs');
-mkdir = require('mkdirp-sync'),
+	mkdir = require('mkdirp-sync'),
 	tryRequire = require('try-require'),
 	promise = Promise;
 
@@ -342,6 +342,19 @@ const queueBuild = (quasArgs) => {
 	return quasArgs;
 }
 
+const getIconFilePath = (rootPath = process.cwd(), iconName = 'icon', iconExt = '.ico') => {
+	if (fs.existsSync(`${rootPath}/${iconName}${iconExt}`)) {
+		return `${rootPath}/${iconName}${iconExt}`;
+	}
+
+	const iconExtensionsInOrder = ['ico', 'icns', 'png', 'jpg'], nextIconExtension = iconExtensionsInOrder.indexOf(iconExt);
+	if (nextIconExtension >= 0) {
+		return getIconFilePath(rootPath, nextIconExtension);
+	} else {
+		return false;
+	}
+}
+
 const getFilenamesInDirectory = (directory, extensions = [], removeExtension = false) => {
 	let filenames = [];
 
@@ -375,7 +388,7 @@ const getQuasarOutputPath = (quasArgs = {}) => {
 	return `${quasArgs.outputFolder.replace(quasArgs.dirname, '')}/${quasArgs.domain}/${quasArgs.signal}`;
 }
 
-const findOutputDirectory = (startPath, outputDirectory = 'jobs', maxLevels = 5) => {
+const findOutputDirectory = (startPath = process.cwd(), outputDirectory = 'jobs', maxLevels = 5) => {
 	if (!fs.existsSync(startPath)) {
 		return;
 	}
@@ -432,10 +445,16 @@ const fromDir = (startPath, filter, extension = '') => {
 	return found;
 }
 
+const registerTask = (taskName, chain) => {
+	logInfo(`registering task: ${taskName}`);
+	gulp.task(taskName, chain);
+}
+
 const runTask = (task, end = () => { logFin(`quasar ${task} ended`) }) => {
 	return new promise((resolve, reject) => {
 		if (gulp.hasTask(task)) {
 			try {
+				logInfo(`running task ${task}`);
 				runSequence(task, end);
 			} catch (e) {
 				logError(e);
@@ -553,19 +572,38 @@ const makePromptRequired = function (input) {
 	}, 100);
 }
 
+const makePromptRequiredAndSanitary = function(input) {
+	// Declare function as asynchronous, and save the done callback
+	var done = this.async();
+
+	// Do async stuff
+	setTimeout(function () {
+		if (!input.length) {
+			// Pass the return value in the done callback
+			done('This value is required');
+			return;
+		} else if (/(^\s+|\s)|[A-Z]/g.test(input)) {
+			done('This value cannot contain spaces and must be all lowercase');
+			return;
+		}
+		// Pass the return value in the done callback
+		done(null, true);
+	}, 100);
+}
+
 const getQuasarPromptQuestions = (quasArgs) => {
 	return [{
 		type: 'input',
 		name: 'domain',
 		message: 'Enter the name of the domain to be used in building assets:',
 		required: true,
-		validate: makePromptRequired
+		validate: makePromptRequiredAndSanitary
 	}, {
 		type: 'input',
 		name: 'signal',
 		message: 'Enter the name of the signal to be used when compiling quasars:',
 		required: true,
-		validate: makePromptRequired
+		validate: makePromptRequiredAndSanitary
 	}, {
 		type: 'confirm',
 		name: 'askOptionalQuestions',
@@ -1191,6 +1229,7 @@ module.exports = {
 	quasarSelectPrompt,
 	queueBuild,
 	registerRequiredQuasArgs,
+	registerTask,
 	runLastSuccessfulBuild,
 	runTask,
 	spawnCommand,

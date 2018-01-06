@@ -3,6 +3,7 @@ let express = require('express'),
     yargs = require('yargs'),
     path = require('path'),
     fs = require('fs'),
+    favicon = require('express-favicon'),
     mkdir = require('mkdirp-sync'),
     bodyParser = require('body-parser');
 
@@ -79,6 +80,8 @@ const webForm = (app, port = null, start = false) => {
 
     mkdir(sourcesDirectory);
     PORT = port || PORT;
+    console.log(`${path.resolve(__dirname)}/icon.png`);
+    app.use(favicon(`${findOutputDirectory(__dirname, '../')}/icon.png`));
 
     app.get('/job/:id', function (req, res) {
         const jobFile = `${req.params.id}.json`;

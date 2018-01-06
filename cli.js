@@ -16,8 +16,9 @@ class CLI {
 		// throw 'constructing CLI';
 		this.port = process.env.PORT || '3720';
 		this._jobsFolder = lib.getConfig().jobsFolder || `${process.cwd()}/jobs`;
-
-		gulp.task('watchJobs', () => {
+		console.log('should register watchJobs');
+		lib.registerTask('watchJobs', () => {
+			console.log('spawning watchJobs');
 			return this.spawnWatchjobs(yargs.argv.retryJobs);
 		});
 
@@ -143,6 +144,7 @@ class CLI {
 		}
 
 		if (args.watchJobs) {
+			console.log('runnung gulp task watchJobs');
 			lib.runTask('watchJobs');
 		}
 
