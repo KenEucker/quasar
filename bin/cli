@@ -1,22 +1,3 @@
-#!/bin/bash 
+#!/bin/bash
 
-echo "Cleaning project folder of non-essentials for application"
-bin/clean
-rm -rf sources
-echo "Removing old package files"
-rm -rf dist
-echo "checking for electron installed locally"
-npm list electron || npm install electron
-echo "checking for electron packager"
-npm list -g electron-packager || npm install -g electron-packager
-
-#node cli.js --packageApp=true "$@"
-
-echo "creating the webform project in the public folder"
-node cli.js --runAsProcess=true --logSeverity=NONE --qType=quasarWebform --noPrompt=true
-echo "cleaning up after creating the webform project"
-rm -rf assets
-echo "starting electron-packager"
-electron-packager . --out=dist
-echo "Cleaning up after application creation"
-bin/clean
+node cli.js --runStandalone=true --logSeverity=NODATA --useJobTimestampForBuild=true "$@"

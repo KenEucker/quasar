@@ -141,7 +141,7 @@ const logArgsToFile = (quasArgs, toStatus = null, overwite = false) => {
 			fs.unlinkSync(quasArgs.argsFile);
 		}
 
-		quasArgs.argsFile = quasArgs.argsFile.replace(`/${quasArgs.status}`, `/${toStatus}`);
+		quasArgs.argsFile = quasArgs.argsFile ? quasArgs.argsFile.replace(`/${quasArgs.status}`, `/${toStatus}`) : '';
 		quasArgs.status = toStatus;
 
 		logInfo(`writing to build file: ${quasArgs.argsFile}`, JSON.stringify(quasArgs));
@@ -918,7 +918,11 @@ const compileScriptsToAssetsFolder = (quasArgs) => {
 		// Make it useful
 		.pipe(babel({ presets: ['env', 'react'] }))
 		// Make it compatible
-		.pipe(browserify())
+		.pipe(browserify({
+			ignoreMissing: true,
+			noBuiltins: true,
+			noCommondir: true
+		}))
 		// Ouput single file in asset folder for use with build task
 		.pipe(gulp.dest(`${quasArgs.assetsFolder}`))
 		.on('error', (err) => { logError(err) })

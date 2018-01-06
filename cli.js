@@ -49,7 +49,7 @@ class CLI {
 		if (!fs.existsSync(jobFile)) {
 			return false;
 		}
-		
+
 		const tempFile = fs.readFileSync(jobFile, "utf8");
 		argsFile = JSON.parse(tempFile);
 
@@ -85,9 +85,9 @@ class CLI {
 		const jobQueueFolder = `${this._jobsFolder}/created`;
 		const src = `${jobQueueFolder}/**/*`;
 		lib.logSuccess(`watching folder ${jobQueueFolder} for new or changed files to build from`);
-		return watch(src, { 
-			ignoreInitial: true,
-			verbose: true
+		return watch(src, {
+			ignoreInitial: true
+			// verbose: true
 		}, (file) => {
 			return gulp.src(file.path)
 				.pipe(jsonTransform((data, file) => {

@@ -33,14 +33,18 @@ const electrify = () => {
 
 const createWindow = (title = 'quasar') => {
 		// Create the browser window
-		mainWindow = new BrowserWindow({ width: 1200, height: 800 });
-		mainWindow.setTitle(title);
+		let iconPath = path.join(__dirname, `icon.png`);
+
+		mainWindow = new BrowserWindow({ width: 1200, height: 800, icon: iconPath, show: false });
+		mainWindow.setTitle(fs.existsSync(iconPath) ? title : iconPath);
 		mainWindow.loadURL(`http://localhost:${PORT}`);
 		// mainWindow.webContents.openDevTools();
 
 		mainWindow.on('closed', () => {
 				mainWindow = null
 		})
+
+		mainWindow.show();
 }
 
 app.on('ready', electrify);
