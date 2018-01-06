@@ -20,6 +20,11 @@ const ensureData = (data) => {
     });
     allData.qType = selectedForm;
 
+    allData = ensureFormValueIsSetAndSanitized(allData, "domain");
+    allData = ensureFormValueIsSetAndSanitized(allData, "signal");
+    allData = ensureFormValueIsSetAndSanitized(allData, "client");
+    allData = ensureFormValueIsSetAndSanitized(allData, "campaign");
+
     return allData;
 }
 
@@ -44,6 +49,15 @@ const getData = (uri, data, success = () => { }, error = err => { console.log(er
 }
 
 const onFormChanged = (e) => {
+
+}
+
+const ensureFormValueIsSetAndSanitized = (data, key) => {
+    if (typeof data[key] != 'undefined') {
+        data[key] = sanitizeTextValue(data[key]);
+    }
+
+    return data;
 }
 
 const quasarJobSaved = (response) => {
@@ -66,6 +80,7 @@ const showOutputWindow = () => {
 const onFormSubmitted = (e) => {
     const app = document.getElementById('app');
     app.className += " isBusy";
+
     postData(window.location.origin, ensureData(e.formData), quasarJobSaved);
 }
 
@@ -166,6 +181,10 @@ const findAncestor = (el, tag) => {
     return el;
 }
 
+const sanitizeTextValue = (value) => {
+    return value.replace(/\s+/g, '_').toLowerCase();
+}
+
 const finalTouches = () => {
     const file = document.querySelector('input[type=file]');
     // file.setAttribute('accept', 'application/zip');
@@ -179,7 +198,7 @@ const finalTouches = () => {
     app.querySelectorAll('#root_domain[type=text], #root_signal[type=text], #root_client[type=text], #root_campaign[type=text]').forEach((radio) => {
         radio.addEventListener('change', function() {
             const oldVal = this.value;
-            this.value = oldVal.replace(/\s+/g, '_').toLowerCase();
+            this.value = sanitizeTextValue(oldVal);
             if(this.value != oldVal) {
                 const message = document.createElement('span');
                 message.style.color = 'green';

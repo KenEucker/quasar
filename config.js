@@ -1,19 +1,22 @@
 class Config {
 	constructor() { this.init(process.cwd()) }
 
-	init(dirname) {
-		this._dirname = dirname;
-		this._node_modules = `${dirname}/node_modules`,
-		this._outputFolder = `${dirname}/public`,
-		this._sourceFolder = `${dirname}/sources`,
-		this._assetsFolder = `${dirname}/assets`,
-		this._jobsFolder = `${dirname}/jobs`,
-		this._tasksFolder = `${dirname}/tasks`,
-		this._templatesFolder = `${dirname}/templates`
+	init(applicationRoot, outputRoot = null) {
+		outputRoot = outputRoot ? path.resolve(outputRoot) : applicationRoot;
+
+		this._applicationRoot = applicationRoot;
+		this._templatesFolder = `${applicationRoot}/templates`;
+		this._node_modules = `${applicationRoot}/node_modules`;
+		this._tasksFolder = `${applicationRoot}/tasks`;
+
+		this._outputFolder = `${outputRoot}/public`;
+		this._sourceFolder = `${outputRoot}/sources`;
+		this._assetsFolder = `${outputRoot}/assets`;
+		this._jobsFolder = `${outputRoot}/jobs`;
 	}
 
-	get dirname() {
-		return this._dirname;
+	get applicationRoot() {
+		return this._applicationRoot;
 	}
 
 	get node_modules() {

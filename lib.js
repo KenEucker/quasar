@@ -13,7 +13,7 @@ const gulp = require('gulp'),
 	spawn = require("child_process"),
 	prompt = require('inquirer'),
 	sass = require('dart-sass')
-	runSequence = require('run-sequence').use(gulp),
+runSequence = require('run-sequence'),
 	aws = require('aws-sdk'),
 	through = require('through2'),
 	del = require('del'),
@@ -27,7 +27,7 @@ const gulp = require('gulp'),
 	lastLine = require('last-line'),
 	fs = require('fs'),
 	yargs = require('yargs');
-	mkdir = require('mkdirp-sync'),
+mkdir = require('mkdirp-sync'),
 	tryRequire = require('try-require'),
 	promise = Promise;
 
@@ -43,16 +43,20 @@ const logAsync = (message, obj, status = null, title = '', color = colors.grey) 
 const logData = (message, obj, color = colors.yellow) => { log(message, obj, 'info', 'data', color) }
 const logInfo = (message, obj, color = colors.yellow) => { log(message, obj, 'info', 'info', color) }
 const logError = (message, obj, color = colors.red) => { log(message, obj, 'error', 'error', color) }
-const logSuccess = (message, obj, color = colors.green) => { log(message, obj, 'error', 'success', color) }
+const logSuccess = (message, obj, color = colors.green) => { log(message, obj, 'success', 'success', color) }
+const logDebug = (message, obj, color = colors.blue) => { log(message, obj, 'debug', 'debug', color) }
 const logFin = (message = 'FiN!', obj, color = colors.green) => { log(message, obj, 'fin', 'end', color) }
-const log = (message, obj, status = null, title = '', color = colors.grey) => {
+const log = (message, obj, type = null, title = '', color = colors.grey) => {
+	if (type == 'error' && logSeverity == 'DEBUG') {
+		return console.log(message);
+	}
+
 	let logger = console;
 	let logPrefix = `<~-`, logPostfix = `${logPrefix[1]}${logPrefix.replace('<', '>')[0]}`;
 	message = `${logDate ? `[${new Date(Date.now()).toLocaleString('en-US')}] ` : ``}${title.length ? ` ${title}: ` : ''}${message}`;
 	message = `${logPrefix} ${message} ${logPostfix}`;
 	logSeverity = Array.isArray(logSeverity) ? logSeverity[logSeverity.length - 1] : logSeverity;
-
-	switch (status) {
+	switch (type) {
 		case null:
 			logger = logger.log;
 			break;
@@ -124,7 +128,7 @@ const getActualArgObjects = (quasArgs, onlyObjects = null) => {
 
 const logArgsToFile = (quasArgs, toStatus = null, overwite = false) => {
 	if (logToFile && toStatus == STATUS_COMPLETED) {
-		const logFilePath = path.resolve(`${quasArgs.dirname}/${quasArgs.logFile}`);
+		const logFilePath = path.resolve(`${quasArgs.applicationRoot}/${quasArgs.logFile}`);
 		const cliArgs = getActualArgObjects(quasArgs);
 		fs.appendFileSync(logFilePath, `node cli.js ${cliArgs.join(' ')} --noPrompt=true\r\n`, (err) => {
 			if (err) throw err;
@@ -137,11 +141,11 @@ const logArgsToFile = (quasArgs, toStatus = null, overwite = false) => {
 			quasArgs.error = 'WARN: overwriting jobfile. Was this done intentionally?';
 		}
 		if (quasArgs.argsFile && fs.existsSync(quasArgs.argsFile)) {
-			quasArgs.outputFilePath = `${quasArgs.dirname}${getQuasarOutputPath(quasArgs)}/${quasArgs.output}${quasArgs.outputExt}`;
+			quasArgs.outputFilePath = `${getQuasarOutputPath(quasArgs)}/${quasArgs.output}${quasArgs.outputExt}`;
 			fs.unlinkSync(quasArgs.argsFile);
 		}
 
-		quasArgs.argsFile = quasArgs.argsFile ? quasArgs.argsFile.replace(`/${quasArgs.status}`, `/${toStatus}`) : '';
+		quasArgs.argsFile = quasArgs.argsFile.replace(`/${quasArgs.status}`, `/${toStatus}`);
 		quasArgs.status = toStatus;
 
 		logInfo(`writing to build file: ${quasArgs.argsFile}`, JSON.stringify(quasArgs));
@@ -154,9 +158,9 @@ const logArgsToFile = (quasArgs, toStatus = null, overwite = false) => {
 const runLastSuccessfulBuild = (quasArgs = null) => {
 	return new promise((resolve, reject) => {
 		if (!quasArgs) {
-			quasArgs = { logFile: `.log`, dirname: _config.dirname };
+			quasArgs = { logFile: `.log`, applicationRoot: _config.applicationRoot };
 		}
-		const logFilePath = path.resolve(`${quasArgs.dirname}/${quasArgs.logFile}`);
+		const logFilePath = path.resolve(`${quasArgs.applicationRoot}/${quasArgs.logFile}`);
 		let command = null;
 
 		if (fs.existsSync(logFilePath)) {
@@ -224,7 +228,7 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 		// Defaults
 		{
 			jobTimestamp,
-			dirname: _config.dirname,
+			applicationRoot: _config.applicationRoot,
 			outputFolder: _config.outputFolder,
 			sourceFolder: _config.sourceFolder,
 			jobsFolder: _config.jobsFolder,
@@ -251,6 +255,7 @@ const getQuasArgs = (qType = null, requiredArgs = [], nonRequiredArgs = {}, addD
 			useJobTimestampForBuild: true,
 			buildCompletedSuccessfully: false,
 			excludeOutputFileFromUpload: true,
+			versionOutputFile: true,
 			outputVersion: 1,
 			logFile: '.log',
 			argsFile: argsFile || `${_config.jobsFolder}/${status}/${qType}_${jobTimestamp}.json`,
@@ -342,19 +347,6 @@ const queueBuild = (quasArgs) => {
 	return quasArgs;
 }
 
-const getIconFilePath = (rootPath = process.cwd(), iconName = 'icon', iconExt = '.ico') => {
-	if (fs.existsSync(`${rootPath}/${iconName}${iconExt}`)) {
-		return `${rootPath}/${iconName}${iconExt}`;
-	}
-
-	const iconExtensionsInOrder = ['ico', 'icns', 'png', 'jpg'], nextIconExtension = iconExtensionsInOrder.indexOf(iconExt);
-	if (nextIconExtension >= 0) {
-		return getIconFilePath(rootPath, nextIconExtension);
-	} else {
-		return false;
-	}
-}
-
 const getFilenamesInDirectory = (directory, extensions = [], removeExtension = false) => {
 	let filenames = [];
 
@@ -385,10 +377,10 @@ const getFilenamesInDirectory = (directory, extensions = [], removeExtension = f
 }
 
 const getQuasarOutputPath = (quasArgs = {}) => {
-	return `${quasArgs.outputFolder.replace(quasArgs.dirname, '')}/${quasArgs.domain}/${quasArgs.signal}`;
+	return `${quasArgs.outputFolder.replace(path.resolve(`${quasArgs.outputFolder}../`), '')}/${quasArgs.domain}/${quasArgs.signal}`;
 }
 
-const findOutputDirectory = (startPath = process.cwd(), outputDirectory = 'jobs', maxLevels = 5) => {
+const findOutputDirectory = (startPath, outputDirectory = 'jobs', maxLevels = 5) => {
 	if (!fs.existsSync(startPath)) {
 		return;
 	}
@@ -445,16 +437,10 @@ const fromDir = (startPath, filter, extension = '') => {
 	return found;
 }
 
-const registerTask = (taskName, chain) => {
-	logInfo(`registering task: ${taskName}`);
-	gulp.task(taskName, chain);
-}
-
 const runTask = (task, end = () => { logFin(`quasar ${task} ended`) }) => {
 	return new promise((resolve, reject) => {
 		if (gulp.hasTask(task)) {
 			try {
-				logInfo(`running task ${task}`);
 				runSequence(task, end);
 			} catch (e) {
 				logError(e);
@@ -510,7 +496,7 @@ const loadTasks = (taskPaths = null, loadDefaults = true) => {
 
 		if (resolvedFilePath) {
 			newTask = require(resolvedFilePath);
-			newTask.init(null, _config.dirname, _config);
+			newTask.init(null, _config.applicationRoot, _config);
 			tasks.push(newTask.qType);
 		} else {
 			logError(`could not load task at ${task} or ${resolvedFilePath}`);
@@ -572,38 +558,19 @@ const makePromptRequired = function (input) {
 	}, 100);
 }
 
-const makePromptRequiredAndSanitary = function(input) {
-	// Declare function as asynchronous, and save the done callback
-	var done = this.async();
-
-	// Do async stuff
-	setTimeout(function () {
-		if (!input.length) {
-			// Pass the return value in the done callback
-			done('This value is required');
-			return;
-		} else if (/(^\s+|\s)|[A-Z]/g.test(input)) {
-			done('This value cannot contain spaces and must be all lowercase');
-			return;
-		}
-		// Pass the return value in the done callback
-		done(null, true);
-	}, 100);
-}
-
 const getQuasarPromptQuestions = (quasArgs) => {
 	return [{
 		type: 'input',
 		name: 'domain',
 		message: 'Enter the name of the domain to be used in building assets:',
 		required: true,
-		validate: makePromptRequiredAndSanitary
+		validate: makePromptRequired
 	}, {
 		type: 'input',
 		name: 'signal',
 		message: 'Enter the name of the signal to be used when compiling quasars:',
 		required: true,
-		validate: makePromptRequiredAndSanitary
+		validate: makePromptRequired
 	}, {
 		type: 'confirm',
 		name: 'askOptionalQuestions',
@@ -752,7 +719,7 @@ const moveTargetFilesToRootOfAssetsPath = (quasArgs) => {
 		}
 
 		if (targetFilePath !== `${quasArgs.assetsFolder}/${quasArgs.target}`) {
-			const baseDir = path.dirname(targetFilePath);
+			const baseDir = path.applicationRoot(targetFilePath);
 			// logInfo(`Moving files from deep folder structure (${baseDir}) to base assets path (${quasArgs.assetsFolder})`);
 			return gulp.src(`${baseDir}/**`)
 				.pipe(gulp.dest(quasArgs.assetsFolder))
@@ -765,7 +732,7 @@ const moveTargetFilesToRootOfAssetsPath = (quasArgs) => {
 					quasArgs.targetFilePath = targetFilePath;
 					let remove = baseDir.replace(quasArgs.assetsFolder, '').substr(1).split('/');
 					remove = path.resolve(`${quasArgs.assetsFolder}/${remove[0]}`);
-					del.sync(path.resolve(remove));
+					del.sync(path.resolve(remove), { force:true });
 
 					return resolve(quasArgs);
 				});
@@ -912,7 +879,7 @@ const unpackFiles = (quasArgs) => {
 			logInfo(`${destinationPathExists ? `overwriting files in assets folder ${destinationPath}` : `leaving files in unpack destination (${destinationPath}) unmodified`}`);
 
 			if (destinationPathExists) {
-				del.sync(destinationPath);
+				del.sync(destinationPath, { force:true });
 			}
 		}
 		mkdir(destinationPath);
@@ -956,11 +923,7 @@ const compileScriptsToAssetsFolder = (quasArgs) => {
 		// Make it useful
 		.pipe(babel({ presets: ['env', 'react'] }))
 		// Make it compatible
-		.pipe(browserify({
-			ignoreMissing: true,
-			noBuiltins: true,
-			noCommondir: true
-		}))
+		.pipe(browserify())
 		// Ouput single file in asset folder for use with build task
 		.pipe(gulp.dest(`${quasArgs.assetsFolder}`))
 		.on('error', (err) => { logError(err) })
@@ -1044,7 +1007,7 @@ const injectCode = (quasArgs) => {
 		log(`getting assets from (${quasArgs.assetsFolder})`);
 		log(`getting template file (${quasArgs.targetFilePath.replace(quasArgs.assetsFolder, '')}) and assets(css - pre:${preCss ? path.basename(preCss) : ``}, post: ${postCss ? path.basename(postCss) : ``}   js: pre:${preJs ? path.basename(preJs) : ``}, post: ${postJs ? path.basename(postJs) : ``})`);
 
-		return gulp.src(quasArgs.targetFilePath, { base: quasArgs.dirname })
+		return gulp.src(quasArgs.targetFilePath, { base: quasArgs.applicationRoot })
 			.pipe(inject.before(`${urlToPrependCDNLink}.`, cdnTemplate))
 			.pipe(insert.transform((contents, file) => {
 				if (quasArgs.minifyStyles && (preCss || postCss)) {
@@ -1065,7 +1028,7 @@ const injectCode = (quasArgs) => {
 				return contents;
 			}))
 			.pipe(inject.append(`\n<!-- Generated by quasar on: ${Date()} by: ${os.hostname} [ https://github.com/KenEucker/quasar ] -->`))
-			.pipe(gulp.dest(quasArgs.dirname))
+			.pipe(gulp.dest(quasArgs.applicationRoot))
 			.on('error', (err) => {
 				logError(err);
 				logArgsToFile(quasArgs, null, true);
@@ -1085,7 +1048,7 @@ const uploadFiles = (quasArgs, excludeFiles = []) => {
 			return resolve();
 		}
 
-		const configFilename = `${quasArgs.dirname}/.config`;
+		const configFilename = `${quasArgs.applicationRoot}/.config`;
 		if (fs.existsSync(configFilename)) {
 			const fromLocalDirectory = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}/`;
 			const toS3BucketPath = `${quasArgs.bucket}/${quasArgs.bucketPath}`;
@@ -1119,15 +1082,15 @@ const outputToHtmlFile = (quasArgs) => {
 	return new promise((resolve, reject) => {
 		const versionPrefix = `_v`;
 		const outputPath = getQuasarOutputPath(quasArgs);
-		let outputFile = `${quasArgs.dirname}${outputPath}/${quasArgs.outputVersion == 1 ? quasArgs.output : `${quasArgs.output}${versionPrefix}${quasArgs.outputVersion}`}${quasArgs.outputExt}`;
+		let outputFile = `${outputPath}/${quasArgs.outputVersion == 1 ? quasArgs.output : `${quasArgs.output}${versionPrefix}${quasArgs.outputVersion}`}${quasArgs.outputExt}`;
 		log(`Applying the following parameters to the template (${quasArgs.targetFilePath}) and building output`);
 		log(`Queuing Build with args:`, quasArgs);
 		quasArgs = queueBuild(quasArgs);
 
-		if (fs.existsSync(outputFile)) {
+		if (fs.existsSync(outputFile) && quasArgs.versionOutputFile) {
 			while (fs.existsSync(outputFile)) {
 				quasArgs.outputVersion += 1;
-				outputFile = `${quasArgs.dirname}${outputPath}/${quasArgs.output}${versionPrefix}${quasArgs.outputVersion}${quasArgs.outputExt}`;
+				outputFile = `${outputPath}/${quasArgs.output}${versionPrefix}${quasArgs.outputVersion}${quasArgs.outputExt}`;
 			}
 			quasArgs.output = `${quasArgs.output}${versionPrefix}${quasArgs.outputVersion}`;
 			logInfo(`existing version detected, version number (${quasArgs.outputVersion}) appended to outputFile`);
@@ -1136,7 +1099,7 @@ const outputToHtmlFile = (quasArgs) => {
 		return gulp.src(quasArgs.targetFilePath)
 			.pipe(template(quasArgs))
 			.pipe(rename({
-				dirname: outputPath,
+				// dirname: outputPath,
 				basename: quasArgs.output,
 				extname: quasArgs.outputExt
 			}))
@@ -1154,7 +1117,7 @@ const outputToHtmlFile = (quasArgs) => {
 
 				return contents;
 			}))
-			.pipe(gulp.dest(quasArgs.dirname))
+			.pipe(gulp.dest(outputPath))
 			.on('error', (err) => {
 				logError(err);
 				quasArgs.error = err;
@@ -1173,7 +1136,7 @@ const outputToHtmlFile = (quasArgs) => {
 				if (quasArgs.useJobTimestampForBuild) {
 					logInfo(`cleaning up after job: ${quasArgs.jobTimestamp}`);
 					logInfo(`cleaning up assets folder: ${quasArgs.assetsFolder}`);
-					del.sync(quasArgs.assetsFolder);
+					del.sync(quasArgs.assetsFolder, { force:true });
 				}
 
 				return resolve(quasArgs);
@@ -1181,9 +1144,10 @@ const outputToHtmlFile = (quasArgs) => {
 	})
 }
 
-const init = (appRoot = process.cwd()) => {
+const init = (appRoot = process.cwd(), outRoot = null) => {
 	if (tryRequire.resolve(`${appRoot}/config.js`)) {
 		_config = require(`${appRoot}/config.js`);
+		_config.init(appRoot, outRoot);
 	}
 }
 // throw 'required LIB';
@@ -1214,12 +1178,13 @@ module.exports = {
 	init,
 	injectCode,
 	loadTasks,
+	log,
 	logArgsToFile,
 	logAsync,
-	log,
-	logInfo,
+	logDebug,
 	logError,
 	logFin,
+	logInfo,
 	logSuccess,
 	makePromptRequired,
 	moveTargetFilesToRootOfAssetsPath,
@@ -1229,7 +1194,6 @@ module.exports = {
 	quasarSelectPrompt,
 	queueBuild,
 	registerRequiredQuasArgs,
-	registerTask,
 	runLastSuccessfulBuild,
 	runTask,
 	spawnCommand,

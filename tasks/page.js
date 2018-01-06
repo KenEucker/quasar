@@ -9,7 +9,7 @@ let lib = null;
 let quasArgs = {};
 
 const task = () => {
-	return lib.unpackFiles(quasArgs)
+	return lib.copyFilesFromSourcesFolderToOutput(quasArgs)
 		.then(() => {
 			console.log("injecting assets!");
 			quasArgs = lib.copyTemplateFilesToAssetsPath(quasArgs);
@@ -78,10 +78,10 @@ const registerTasks = () => {
 	// console.log('registered');
 }
 
-const init = (_lib = null, dirname = process.cwd(), config = null) => {
+const init = (_lib = null, applicationRoot = process.cwd(), config = null) => {
 	if (!_lib) {
-		config = config ? config : require(`${dirname}/config.js`);
-		lib = require(`${config.dirname}/lib.js`);
+		config = config ? config : require(`${applicationRoot}/config.js`);
+		lib = require(`${config.applicationRoot}/lib.js`);
 	} else {
 		lib = _lib;
 	}

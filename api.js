@@ -1,6 +1,7 @@
 const express = require('express'),
 	path = require('path'),
 	lib = require('./lib'),
+	os = require('os'),
 	bodyParser = require('body-parser'),
 	jsonPromise = require('express-json-promise');
 
@@ -9,8 +10,8 @@ class Api {
 	constructor() {
 		this.port = process.env.port || '3720'
 		this._app = null
-		this.jobsDirectory = path.resolve(`${process.cwd()}/jobs/created`)
-		this.sourcesDirectory = path.resolve(`${process.cwd()}/sources/`)
+		this.jobsDirectory = `${os.homedir()}/jobs/created`;
+		this.sourcesDirectory = `${os.homedir()}/sources/`;
 		this.availableTasks = lib.getTaskNames(path.resolve('./tasks/'));
 
 		if (yargs.argv.runApiStandalone) {
@@ -26,8 +27,8 @@ class Api {
 
 	createJobFile(args, job, jobFile) {
 		return new Promise((resolve, reject) => {
-			const jobsDirectory = `${lib.findOutputDirectory(path.resolve(__dirname))}/created`;
-			const sourcesDirectory = path.resolve(`${process.cwd()}/sources/`);
+			const jobsDirectory = `${lib.getConfig().jobsFolder}/created`;
+			const sourcesDirectory = lib.getConfig().sourceFolder;
 			const job = `${args.qType}_${Date.now()}`;
 			const jobFile = `${jobsDirectory}/${job}.json`;
 

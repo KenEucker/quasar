@@ -60,7 +60,7 @@ const registerTasks = () => {
 
 	gulp.task(`${qType}:precompile`, () => {
 
-		const tasks = lib.getFilenamesInDirectory(`${quasArgs.dirname}/tasks/`, ['js'], true);
+		const tasks = lib.getFilenamesInDirectory(`${quasArgs.applicationRoot}/tasks/`, ['js'], true);
 		let formsData = [];
 		// format questions for react-jsonshcema-form
 		tasks.forEach((task) => {
@@ -106,10 +106,10 @@ const registerTasks = () => {
 	// console.log('registered');
 }
 
-const init = (_lib = null, dirname = process.cwd(), config = null) => {
+const init = (_lib = null, applicationRoot = process.cwd(), config = null) => {
 	if (!_lib) {
-		config = config ? config : require(`${dirname}/config.js`);
-		lib = require(`${config.dirname}/lib.js`);
+		config = config ? config : require(`${applicationRoot}/config.js`);
+		lib = require(`${config.applicationRoot}/lib.js`);
 	} else {
 		lib = _lib;
 	}

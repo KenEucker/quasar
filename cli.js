@@ -6,6 +6,7 @@ const gulp = require('gulp'),
 	watch = require('gulp-watch'),
 	plumber = require('gulp-plumber'),
 	spawn = require('child_process'),
+	os = require('os'),
 	jsonTransform = require('gulp-json-transform'),
 	lib = require('./lib.js'),
 	// packager = require('electron-packager'),
@@ -14,11 +15,7 @@ const gulp = require('gulp'),
 class CLI {
 	constructor() {
 		// throw 'constructing CLI';
-		this.port = process.env.PORT || '3720';
-		this._jobsFolder = lib.getConfig().jobsFolder || `${process.cwd()}/jobs`;
-		console.log('should register watchJobs');
-		lib.registerTask('watchJobs', () => {
-			console.log('spawning watchJobs');
+		gulp.task('watchJobs', () => {
 			return this.spawnWatchjobs(yargs.argv.retryJobs);
 		});
 
@@ -39,7 +36,15 @@ class CLI {
 	}
 
 	get jobsFolder() {
-		return this._jobsFolder;
+		return lib.getConfig().jobsFolder;
+	}
+
+	get applicationRoot() {
+		return lib.getConfig().applicationRoot;
+	}
+
+	get outputRoot() {
+		return lib.getConfig().outputRoot;
 	}
 
 	get app() {
@@ -83,17 +88,17 @@ class CLI {
 	}
 
 	spawnWatchjobs(retryJobs = true) {
-		const jobQueueFolder = `${this._jobsFolder}/created`;
+		const jobQueueFolder = `${this.jobsFolder}/created`;
 		const src = `${jobQueueFolder}/**/*`;
 		lib.logSuccess(`watching folder ${jobQueueFolder} for new or changed files to build from`);
 		return watch(src, {
-			ignoreInitial: true
-			// verbose: true
+			ignoreInitial: true,
+			verbose: true
 		}, (file) => {
 			return gulp.src(file.path)
 				.pipe(jsonTransform((data, file) => {
-				return this.processArgsFile(file.path, data);
-			}))
+					return this.processArgsFile(file.path, data);
+				}))
 
 			const fileNotQueuedError = this.getJobError(file.path);
 			if (fileNotQueuedError) {
@@ -105,15 +110,14 @@ class CLI {
 				}
 			}
 		})
-		.pipe(plumber())
+			.pipe(plumber())
 	}
 
-
 	spawnWebForm() {
-		const webFormPath = path.resolve(`./public/quasar/Webform/app.js`);
+		const webFormPath = `${this.applicationRoot}/public/quasar/Webform/app.js`;
 
 		if (fs.existsSync(webFormPath)) {
-			lib.logInfo(`loading the webform file ${webFormPath}`);
+			lib.logInfo(`loading the webform application ${webFormPath}`);
 
 			this.webForm = require(webFormPath);
 			this.webForm.init();
@@ -144,7 +148,6 @@ class CLI {
 		}
 
 		if (args.watchJobs) {
-			console.log('runnung gulp task watchJobs');
 			lib.runTask('watchJobs');
 		}
 
@@ -165,7 +168,7 @@ class CLI {
 
 					return true;
 				} else {
-					lib.logError(`cannot run webform because ${path.resolve(`./public/quasar/Webform/app.js`)} has not been built yet, run again with option --autoBuildWebForm=true to auto build the webform.`);
+					lib.logError(`cannot run webform because ${this.applicationRoot}/public/quasar/Webform/app.js has not been built yet, run again with option --autoBuildWebForm=true to auto build the webform.`);
 					return reject();
 				}
 			} else {
@@ -192,9 +195,7 @@ class CLI {
 			args = Object.assign(defaults, yargs.argv, args);
 			this.port = args.port;
 
-			// console.log(`Application root folder: ${args.appRoot}`);
 			this.init(args.appRoot);
-			lib.init(args.appRoot);
 			args.availableTasks = lib.loadTasks(args.loadTasks, args.loadDefaultTasks);
 
 			lib.logInfo(`Running the qausar cli under the process: ${process.title}`);
@@ -222,7 +223,7 @@ class CLI {
 					});
 				}
 			} catch (e) {
-				console.log(e);
+				// console.log(e);
 				args.error = e;
 				lib.logArgsToFile(args, null, true);
 				return reject(e);
@@ -230,15 +231,20 @@ class CLI {
 		});
 	}
 
-	init(dirname = process.cwd()) {
-		this._api = require(`${dirname}/api`);
-		this._app = this._api.app;
-		this._jobsFolder = `${dirname}/jobs`;
+	init(appRoot = process.cwd(), outRoot = `${os.homedir()}/Documents/Quasar/`) {
+		lib.init(appRoot, outRoot);
 
-		mkdir(this._jobsFolder);
-		mkdir(`${this._jobsFolder}/created`);
-		mkdir(`${this._jobsFolder}/queued`);
-		mkdir(`${this._jobsFolder}/completed`);
+		lib.logDebug(`Application root folder: ${appRoot}`);
+		lib.logDebug(`Output root folder: ${outRoot}`);
+
+		this._api = require(`${this.applicationRoot}/api.js`);
+		this._app = this._api.app;
+		this.port = process.env.PORT || '3720';
+
+		mkdir(this.jobsFolder);
+		mkdir(`${this.jobsFolder}/created`);
+		mkdir(`${this.jobsFolder}/queued`);
+		mkdir(`${this.jobsFolder}/completed`);
 
 		// throw 'CLI initialized';
 	}

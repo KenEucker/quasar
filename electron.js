@@ -1,5 +1,6 @@
 const electron = require('electron'),
 		path = require('path'),
+		fs = require('fs'),
 		app = electron.app,
 		BrowserWindow = electron.BrowserWindow;
 let quasar = null, mainWindow, PORT = process.env.PORT || '3720', appRoot = app.getAppPath();
@@ -46,12 +47,12 @@ const electrify = () => {
 
 const createWindow = (title = 'quasar') => {
 		// Create the browser window
-		const iconPath = "ico"; //getIconFilePath(appRoot);
+		const iconPath = getIconFilePath(appRoot);
 
 		mainWindow = new BrowserWindow({ width: 1200, height: 800, icon: iconPath, show: false });
 		mainWindow.setTitle(fs.existsSync(iconPath) ? title : iconPath);
 		mainWindow.loadURL(`http://localhost:${PORT}`);
-		mainWindow.webContents.openDevTools();
+		// mainWindow.webContents.openDevTools();
 
 		mainWindow.on('closed', () => {
 				mainWindow = null
