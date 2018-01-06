@@ -16,8 +16,9 @@ class CLI {
 		// throw 'constructing CLI';
 		this.port = process.env.PORT || '3720';
 		this._jobsFolder = lib.getConfig().jobsFolder || `${process.cwd()}/jobs`;
-
-		gulp.task('watchJobs', () => {
+		console.log('should register watchJobs');
+		lib.registerTask('watchJobs', () => {
+			console.log('spawning watchJobs');
 			return this.spawnWatchjobs(yargs.argv.retryJobs);
 		});
 
@@ -49,7 +50,7 @@ class CLI {
 		if (!fs.existsSync(jobFile)) {
 			return false;
 		}
-		
+
 		const tempFile = fs.readFileSync(jobFile, "utf8");
 		argsFile = JSON.parse(tempFile);
 
@@ -85,9 +86,9 @@ class CLI {
 		const jobQueueFolder = `${this._jobsFolder}/created`;
 		const src = `${jobQueueFolder}/**/*`;
 		lib.logSuccess(`watching folder ${jobQueueFolder} for new or changed files to build from`);
-		return watch(src, { 
-			ignoreInitial: true,
-			verbose: true
+		return watch(src, {
+			ignoreInitial: true
+			// verbose: true
 		}, (file) => {
 			return gulp.src(file.path)
 				.pipe(jsonTransform((data, file) => {
@@ -143,6 +144,7 @@ class CLI {
 		}
 
 		if (args.watchJobs) {
+			console.log('runnung gulp task watchJobs');
 			lib.runTask('watchJobs');
 		}
 
