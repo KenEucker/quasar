@@ -2,13 +2,13 @@ let gulp = require('gulp'),
 	colors = require('colors'),
 	promise = Promise;
 
-// console.log('required');
-
 const qType = path.basename(__filename).split('.')[0];
 let lib = null;
 let quasArgs = {};
 
 const task = () => {
+	quasArgs = lib.logBuildQueued(quasArgs);
+
 	return lib.copyFilesFromSourcesFolderToOutput(quasArgs)
 		.then(() => {
 			console.log("injecting assets!");
@@ -25,12 +25,31 @@ const task = () => {
 		})
 }
 
-const run = (args = {}) => {
-	return validateRequiredArgs(args).then(task)
-}
+const run = (args = {}) => { return validateRequiredArgs(args).then(task) }
 
-const getQuasarPrompts = () => {
-	return quasArgs.requiredArgs
+const getQuasarPrompts = (_lib = null, config = null) => {
+	if (!_lib) {
+		config = config ? config : require(`${path.resolve('./')}/config.js`);
+		lib = require(`${config.applicationRoot}/lib.js`);
+	} else {
+		lib = _lib;
+	}
+
+	if (!quasArgs.requiredArgs) {
+		quasArgs = lib.registerRequiredQuasArgs(quasArgs, [{
+			type: 'list',
+			name: 'source',
+			message: `Enter the source filename (default .zip)`,
+			choices: ['none'].concat(lib.getFilenamesInDirectory(lib.getConfig().sourceFolder, ['zip']))
+		}, {
+			type: 'input',
+			name: 'body',
+			message: 'Enter the body text',
+			default: '',
+			optional: true
+		}]);
+	}
+	return quasArgs.requiredArgs;
 }
 
 const validateRequiredArgs = (args = {}) => {
@@ -66,6 +85,8 @@ const validateRequiredArgs = (args = {}) => {
 }
 
 const registerTasks = () => {
+	lib.logDebug(`will register task ${quasArgs.qType} and will ${quasArgs.noPrompt ? 'not ' : ''}prompt the user`);
+
 	gulp.task(`${qType}:build`, () => {
 		if (!quasArgs.noPrompt) {
 			return lib.promptUser(quasArgs)
@@ -75,7 +96,8 @@ const registerTasks = () => {
 		}
 	});
 	gulp.task(`${qType}`, [`${qType}:build`]);
-	// console.log('registered');
+
+	lib.logDebug(`did register all tasks for quasar ${quasArgs.qType}`);
 }
 
 const init = (_lib = null, applicationRoot = process.cwd(), config = null, registerBuildTasks = false) => {
@@ -86,18 +108,7 @@ const init = (_lib = null, applicationRoot = process.cwd(), config = null, regis
 		lib = _lib;
 	}
 
-	quasArgs = lib.getQuasArgs(qType, [{
-		type: 'list',
-		name: 'source',
-		message: `Enter the source filename (default .zip)`,
-		choices: ['none'].concat(lib.getFilenamesInDirectory(lib.getConfig().sourceFolder, ['zip']))
-	}, {
-		type: 'input',
-		name: 'body',
-		message: 'Enter the body text',
-		default: '',
-		optional: true
-	}],
+	quasArgs = lib.getQuasArgs(qType, getQuasarPrompts(lib, config),
 		{
 			outputExt: '.html',
 			requiredArgsValidation: validateRequiredArgs
@@ -110,8 +121,6 @@ const init = (_lib = null, applicationRoot = process.cwd(), config = null, regis
 	// console.log('initialized');
 	return quasArgs;
 }
-
-// registerTasks();
 
 module.exports = {
 	purpose: `

@@ -14,11 +14,10 @@ class Api {
 		this.sourcesDirectory = `${os.homedir()}/sources/`;
 		this.availableTasks = lib.getTaskNames(path.resolve('./tasks/'));
 
-		if (yargs.argv.runApiStandalone) {
-			// console.log('running the api standalone');
+		if (yargs.argv.runWebApiStandalone) {
+			lib.logDebug(`will run the api standalone on port: ${yargs.argv.apiPort}`);
 			this.run(null, yargs.argv.apiPort, true);
 		}
-		// throw 'constructed API';
 	}
 
 	get app() {
@@ -58,18 +57,18 @@ class Api {
 
 	sendJobFileQueued(job, jobFile) {
 		return new Promise((resolve, reject) => {
-			// while ( !(fs.existsSync(jobFile.replace(lib.STATUS_CREATED, lib.STATUS_QUEUED)))) {
+			while ( !(fs.existsSync(jobFile.replace(lib.STATUS_CREATED, lib.STATUS_QUEUED)))) {
 
-			// }
+			}
 			return resolve({ status: lib.STATUS_CREATED, job, jobFile });
 		});
 	}
 
 	sendJobFileCompleted(job, jobFile) {
 		return new Promise((resolve, reject) => {
-			// while ( !(fs.existsSync(jobFile.replace(lib.STATUS_QUEUED, lib.STATUS_COMPLETED)))) {
+			while ( !(fs.existsSync(jobFile.replace(lib.STATUS_QUEUED, lib.STATUS_COMPLETED)))) {
 
-			// }
+			}
 			return resolve({ status: lib.STATUS_COMPLETED, job, jobFile });
 		});
 	}
@@ -86,18 +85,13 @@ class Api {
 
 		lib.logInfo(`creating job (${job}) from build arguments received:`);
 		return res.json(this.createJobFile(data, job, jobFile));
-		res.json(this.sendJobFileQueued(job, jobFile));
-		res.json(this.sendJobFileCompleted(job, jobFile));
-
-		return;
 	}
 
 	run(app = null, port = null, start = false) {
 		const self = this;
-		// throw 'API run';
 		if (!app) {
 			app = express();
-			// console.log('creating the app in api.js');
+			// lib.logDebug('will create the app in api.js');
 			start = true;
 		}
 		this.port = port || this.port;
@@ -115,7 +109,7 @@ class Api {
 
 		if (start) {
 			this._app.listen(this.port);
-			// console.log('starting the app in api.js');
+			lib.logDebug('did start the app in api.js');
 		}
 
 		lib.logSuccess(`quasar api running on port:${this.port} at http://localhost:${this.port}`);

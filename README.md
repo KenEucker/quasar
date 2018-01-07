@@ -11,7 +11,7 @@ run `bin/app` to run the entire application in an electron app complete with api
 Usefule commands:
 * `bin/dev` will run `bin/clean` and then `bin/web` so you can test quasar output
 * `bin/clean` will delete the assets and output folders. Use this if you want to do lib testing or new quasar development.
-* `bin/app` takes the has the following default arguments that you can override the cli with --[arg]=[val] _(eg: --runAsProcess=true --runApi=true )_:
+* `bin/app` takes the has the following default arguments that you can override the cli with --[arg]=[val] _(eg: --runAsProcess=true --runWebApi=true )_:
 ```
 defaults = {
 		port: process.env.PORT,
@@ -21,7 +21,7 @@ defaults = {
 		qType: false,
 		runWebForm: false,
 		autoBuildWebForm: false,
-		runApi: false }
+		runWebApi: false }
 ```
 * there is a `.vscode/launch.json` file in the repository that enables debugging of the application in vscode. You can use the above arguments in your IDE and override any of the above arguments.
 
@@ -36,7 +36,7 @@ defaults = {
 
 ## Run as a process
 1. run `bin/cli --runAsProcess=true` to run the application as a process
-	* optionally add the `--runApi=true` argument to run the api @ http://localhost:3720
+	* optionally add the `--runWebApi=true` argument to run the api @ http://localhost:3720
 	* optionally add the `--watchJobs=true` argument to autoload json files to build quasars
 	* optionally add the `--runWebform=true` to run the webform @ http://localhost:3720
 	* optionally add the `--autoBuildWebForm=true` to build the quasarWebform task on startup

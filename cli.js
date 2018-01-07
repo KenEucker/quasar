@@ -5,7 +5,6 @@ const gulp = require('gulp'),
 	yargs = require('yargs'),
 	watch = require('gulp-watch'),
 	plumber = require('gulp-plumber'),
-	spawn = require('child_process'),
 	os = require('os'),
 	jsonTransform = require('gulp-json-transform'),
 	lib = require('./lib.js'),
@@ -15,21 +14,19 @@ const gulp = require('gulp'),
 class CLI {
 	constructor() {
 		// throw 'constructing CLI';
-		gulp.task('watchJobs', () => {
-			return this.spawnWatchjobs(yargs.argv.retryJobs);
-		});
-
 		if (yargs.argv.runStandalone || yargs.argv.runAsProcess || yargs.argv.packageApp) {
 			// throw 'running CLI';
 			return this.run()
 				.catch((err) => {
-					lib.logError(err);
+					console.log(err);
+					lib.logError(err, err);
 				});
 		} else if (process.title == 'gulp') {
 			// throw 'running CLI';
 			return this.run({ runStandalone: true })
 				.catch((err) => {
-					lib.logError(err);
+					console.log(err);
+					lib.logError(err, err);
 				});
 		}
 		// throw 'constructed CLI';
@@ -79,7 +76,8 @@ class CLI {
 			`--qType=${data.qType}`,
 			`--noPrompt=true`,
 			`--runAsProcess=true`,
-			`--argsFile=${argsFile}`
+			`--argsFile=${argsFile}`,
+			`--logSeverity=${yargs.argv.logSeverity}`
 		];
 
 		lib.spawnCommand(cliArgs, 'node', true);
@@ -138,11 +136,11 @@ class CLI {
 		if (args.qType) {
 			lib.logInfo('automated quasar build from quasArgs');
 			lib.definitelyCallFunction(() => {
-				return lib.runTask(args.qType).then(resolve);
+				return lib.runTask(args.qType, true).then(resolve);
 			});
 		}
 
-		if (args.runApi) {
+		if (args.runWebApi) {
 			// console.log('this should creat the app');
 			this._api.run(null, args.port);
 		}
@@ -153,12 +151,12 @@ class CLI {
 
 		if (args.runWebForm) {
 			// TODO: use more intelligent path
-			if (!this.spawnWebForm(args.runApi)) {
+			if (!this.spawnWebForm(args.runWebApi)) {
 				if (args.autoBuildWebForm) {
 					lib.logInfo('automated quasar build of `quasarWebform`');
 					lib.runTask('quasarWebform', () => {
 						lib.logInfo('attempting another run of the quasarWebform');
-						if (!this.spawnWebForm(args.runApi)) {
+						if (!this.spawnWebForm(args.runWebApi)) {
 							lib.logError(`Can't do that!`);
 							return reject();
 						} else {
@@ -190,7 +188,7 @@ class CLI {
 				qType: false,
 				runWebForm: false,
 				autoBuildWebForm: false,
-				runApi: false
+				runWebApi: false
 			};
 			args = Object.assign(defaults, yargs.argv, args);
 			this.port = args.port;
@@ -234,12 +232,16 @@ class CLI {
 	init(appRoot = process.cwd(), outRoot = `${os.homedir()}/Documents/Quasar/`) {
 		lib.init(appRoot, outRoot);
 
-		lib.logDebug(`Application root folder: ${appRoot}`);
-		lib.logDebug(`Output root folder: ${outRoot}`);
+		lib.logDebug(`applicationRoot folder is correct`, appRoot);
+		lib.logDebug(`outputRoot folder is correct`, outRoot);
 
 		this._api = require(`${this.applicationRoot}/api.js`);
 		this._app = this._api.app;
 		this.port = process.env.PORT || '3720';
+
+		lib.registerTask('watchJobs', () => {
+			return this.spawnWatchjobs(yargs.argv.retryJobs);
+		});
 
 		mkdir(this.jobsFolder);
 		mkdir(`${this.jobsFolder}/created`);

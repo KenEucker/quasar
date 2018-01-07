@@ -18,8 +18,20 @@ const getIconFilePath = (rootPath = appRoot, iconName = 'icon', iconExt = '.ico'
 	}
 }
 
+const showErrorWindow = (error) => {
+	const title = `${appRoot} failure: ${error}`;
+	let errorContent = `
+	<div>
+		<h1>Error</h1>
+		<h4>Application RootPath:</h4><span>${appRoot}</span>
+		<h4>Error Message:</h4><span>${error}</span>
+		<h4>Error Stacktrace:</h4><pre>${JSON.stringify(error, null, 2)}</pre>
+	</div>`;
+
+	return createWindow(title, errorContent);
+}
+
 const electrify = () => {
-		let title = appRoot;
 		try {
 				// console.log(`running quasar CLI with API and webform`);
 				quasar = quasar ? quasar : require(`${appRoot}/quasar.js`);
@@ -29,29 +41,31 @@ const electrify = () => {
 								watchJobs: true,
 								runWebForm: true,
 								autoBuildWebForm: true,
-								runApi: true
+								runWebApi: true
 						})
 						.then(() => {
 								console.log('Creating app window');
-								return createWindow(title);
+								return createWindow('quasar');
 						})
 						.catch((e) => {
-							title = `failure: ${e}`;
-							return createWindow(title);
+							return showErrorWindow(e);
 						});
 		} catch (e) {
-				title = `failed: ${e}`;
-				return createWindow(title);
+				return showErrorWindow(e);
 		}
 }
 
-const createWindow = (title = 'quasar') => {
+const createWindow = (title = 'quasar', htmlContent = null) => {
 		// Create the browser window
 		const iconPath = getIconFilePath(appRoot);
 
 		mainWindow = new BrowserWindow({ width: 1200, height: 800, icon: iconPath, show: false });
-		mainWindow.setTitle(fs.existsSync(iconPath) ? title : iconPath);
-		mainWindow.loadURL(`http://localhost:${PORT}`);
+		mainWindow.setTitle(title);
+		if (!htmlContent) {
+			mainWindow.loadURL(`http://localhost:${PORT}`);
+		} else {
+			mainWindow.loadURL("data:text/html;charset=utf-8," + encodeURI(htmlContent));
+		}
 		// mainWindow.webContents.openDevTools();
 
 		mainWindow.on('closed', () => {

@@ -6,6 +6,6 @@ npm update
 echo "Checking for electron installed globally"
 npm list -g electron || npm install -g electron
 echo "creating the webform project in the public folder"
-bin/cli --logSeverity=NONE --qType=quasarWebform --noPrompt=true --runAsProcess=true --outputFolder=./public --versionOutputFile=false
+bin/cli --logSeverity=NONE --qType=quasarWebform --noPrompt=true --loadTasks=quasarWebform --runAsProcess=true --outputFolder=./public --versionOutputFile=false
 echo "Starting electron"
 electron .

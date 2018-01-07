@@ -8,22 +8,16 @@ const qType = path.basename(__filename).split('.')[0];
 let lib = null;
 let quasArgs = {};
 
-// console.log('required');
-
 const task = () => {
+	quasArgs = lib.logBuildQueued(quasArgs);
 	return lib.injectCode(quasArgs)
 		.then(() => { return lib.copyFilesFromTemplatesFolderToOutput(quasArgs, ['app.js', 'package.json', 'img/**', 'fonts/**']) })
 		.then(() => { return lib.copyFilesToOutput(quasArgs, quasArgs.applicationRoot, ['icon.ico']) })
 		.then(() => { return lib.outputToHtmlFile(quasArgs) });
 }
 
-const run = (args = {}) => {
-	return validateRequiredArgs(args).then(task);
-}
-
-const getQuasarPrompts = () => {
-	return quasArgs.requiredArgs;
-}
+const run = (args = {}) => { return validateRequiredArgs(args).then(task) }
+const getQuasarPrompts = () => { return quasArgs.requiredArgs || [] }
 
 const validateRequiredArgs = (args = {}) => {
 	return new promise((resolve, reject) => {
@@ -65,9 +59,13 @@ const registerTasks = () => {
 		let formsData = [];
 		// format questions for react-jsonshcema-form
 		tasks.forEach((task) => {
+			if(task == quasArgs.qType) {
+				return;
+			}
 			const taskFile = require(`./${task}.js`);
-			const taskPrompts = taskFile.getQuasarPrompts();
+			const taskPrompts = taskFile.getQuasarPrompts(lib);
 			let required = [], properties = {}, uiSchema = {}, formData = {};
+			// if(!taskPrompts) { console.log('PROBLEMO!', task, taskPrompts); }
 
 			taskPrompts.forEach((prompt) => {
 				const name = prompt.name;
@@ -104,10 +102,11 @@ const registerTasks = () => {
 		return run({ domain: 'quasar', signal: 'Webform', output: 'index.html', overwriteDestinationPath: true });
 	});
 	gulp.task(`${qType}`, [`${qType}:build`]);
-	// console.log('registered');
+
+	lib.logDebug(`did register all tasks for quasar ${quasArgs.qType}`);
 }
 
-const init = (_lib = null, applicationRoot = process.cwd(), config = null, registerBuildTasks = false) => {
+const init = (_lib = null, applicationRoot = path.resolve('../../'), config = null, registerBuildTasks = false) => {
 	if (!_lib) {
 		config = config ? config : require(`${applicationRoot}/config.js`);
 		lib = require(`${config.applicationRoot}/lib.js`);
@@ -115,7 +114,7 @@ const init = (_lib = null, applicationRoot = process.cwd(), config = null, regis
 		lib = _lib;
 	}
 
-	quasArgs = lib.getQuasArgs(qType, [], {
+	quasArgs = lib.getQuasArgs(qType, getQuasarPrompts(lib, config), {
 		outputExt: '.html',
 		requiredArgsValidation: validateRequiredArgs
 	}, false);

@@ -66,15 +66,14 @@ const quasarJobSaved = (response) => {
     let runningJobHtml = `Job ${job} runnning...`;
 
     notification(runningJobHtml);
-
     const app = document.getElementById('app');
     app.classList.remove('isBusy');
-    const jobWin = window.open(`/job/${job}`, job);
-    jobWin.focus();
+    showOutputWindow(job);
 }
 
-const showOutputWindow = () => {
-
+const showOutputWindow = (job) => {
+    const jobWin = window.open(`/job/${job}`, job);
+    jobWin.focus();
 }
 
 const onFormSubmitted = (e) => {
@@ -237,7 +236,9 @@ const makeElementsMaterialistic = () => {
             ${getMaterialisticFormHeader()}
         </div>
         <main class="mdl-layout__content">
-            <div class="page-content mdl-grid"><div id="welcome" class="formContainer mdl-cell mdl-cell--8-col"><p>Welcome to the quasar build pipeline, where you can get a single html snippet from a series of different configurations.</p></div></div>
+            <div class="page-content mdl-grid">
+                <div id="welcome" class="formContainer mdl-cell mdl-cell--8-col"><p>Welcome to the quasar build pipeline, where you can get a single html snippet from a series of different configurations.</p></div>
+            </div>
         </main>`;
     app.parentNode.insertBefore(materialisticContainer, app);
 

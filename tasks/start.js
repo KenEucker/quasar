@@ -11,15 +11,15 @@ let quasArgs = {};
 // console.log('required');
 
 const task = () => {
-	return lib.runTaskWithArgs(quasArgs);
+	return lib.outputToJsonFile(quasArgs);
 }
 
-const run = (args = {}) => {
-	return validateRequiredArgs(args).then(task);
-}
+const run = (args = {}) => { return validateRequiredArgs(args).then(task) }
+const getQuasarPrompts = (_lib = null, config = null) => {
+	// TODO:
+	let requiredArgs = [];
 
-const getQuasarPrompts = () => {
-	return quasArgs.requiredArgs;
+	return requiredArgs;
 }
 
 const validateRequiredArgs = (args = {}) => {
@@ -45,6 +45,18 @@ const validateRequiredArgs = (args = {}) => {
 }
 
 const registerTasks = () => {
+	gulp.task(`${qType}:build`, () => {
+		if (!quasArgs.noPrompt) {
+			console.log(quasArgs);
+			return lib.promptUser(quasArgs)
+				.then(task);
+		} else {
+			return run();
+		}
+	});
+	gulp.task(`${qType}`, [`${qType}:build`]);
+
+	lib.logDebug(`did register all tasks for quasar ${quasArgs.qType}`);
 }
 
 const init = (_lib = null, applicationRoot = process.cwd(), config = null, registerBuildTasks = false) => {
@@ -53,10 +65,12 @@ const init = (_lib = null, applicationRoot = process.cwd(), config = null, regis
 		lib = require(`${config.applicationRoot}/lib.js`);
 	} else {
 		lib = _lib;
-	}
+    }
+    
 
-	quasArgs = lib.getQuasArgs(qType, [], {
-		outputExt: '.html',
+
+	quasArgs = lib.getQuasArgs(qType, getQuasarPrompts(lib, config), {
+		outputExt: '.json',
 		requiredArgsValidation: validateRequiredArgs
 	}, false);
 

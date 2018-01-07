@@ -55,7 +55,7 @@ const webForm = (app, port = null, start = false) => {
 
     mkdir(sourcesDirectory);
     PORT = port || PORT;
-    console.log(`${path.resolve(__dirname)}/icon.png`);
+
     app.use(favicon(`${outputRoot}/icon.png`));
 
     app.get('/job/:id', function (req, res) {
