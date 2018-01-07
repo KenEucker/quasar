@@ -52,15 +52,15 @@ Files located in the /assets folder are used in build tasks for quasar ouput. Th
 Logging to the console from the CLI happens with data off by default and only the most top level messages. Other debug options are set with the argument `--logSeverity=` and available options are `ALL`,`DEBUG`,`NONE`,`NODATA`. Successful build outputs are logged in a '.log' file in the root of the project.
 
 # Vendors that really make this project possible
-* phantom
-* gulp
-* browserify
-* dart-sass
-* mustache
-* babel
-* react
-* electron
-
+* [phantom](https://github.com/amir20/phantomjs-node)
+* [gulp](https://github.com/gulpjs/gulp)
+* [browserify](https://github.com/browserify/browserify)
+* [dart-sass](https://github.com/sass/dart-sass)
+* [mustache](https://github.com/janl/mustache.js)
+* [babel](https://github.com/babel/babel)
+* [react](https://github.com/facebook/react)
+* [electron](https://github.com/electron/electron)
+* [electron-packager](https://github.com/electron-userland/electron-packager)
 # Roadmap
 ## 1.0.0
 ### Features 
