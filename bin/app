@@ -1,2 +1,2 @@
 #!/bin/bash 
-node cli.js --logSeverity=ALL --runAsProcess=true --runElectronApp=true
+node cli.js --runAsProcess=true --runElectronApp=true

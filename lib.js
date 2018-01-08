@@ -38,7 +38,7 @@ let getConfig = () => {
 }
 
 // Logger
-let logToFile = yargs.argv.logFile || false, logDate = yargs.argv.logDate, logSeverity = Array.isArray(yargs.argv.logSeverity) ? yargs.argv.logSeverity[yargs.argv.logSeverity.length - 1] : yargs.argv.logSeverity ? yargs.argv.logSeverity : '';
+let logToFile = yargs.argv.logFile || false, logDate = yargs.argv.logDate, logSeverity = Array.isArray(yargs.argv.logSeverity) ? yargs.argv.logSeverity[yargs.argv.logSeverity.length - 1] : yargs.argv.logSeverity ? yargs.argv.logSeverity : 'CRITICAL';
 const logAsync = (message, obj, status = null, title = '', color = colors.grey) => { return new promise((resolve, reject) => { log(message, obj, status, color); return resolve(); }) }
 const logData = (message, obj, color = colors.yellow) => { log(message, obj, 'info', 'data', color) }
 const logInfo = (message, obj, color = colors.yellow) => { log(message, obj, 'info', 'info', color) }
@@ -47,7 +47,7 @@ const logSuccess = (message, obj, color = colors.green) => { log(message, obj, '
 const logFin = (message = 'FiN!', obj, color = colors.green) => { log(message, obj, 'fin', 'end', color) }
 const log = (message, obj, type = null, title = '', color = colors.grey) => {
 	if (logSeverity.indexOf(`DEBUG`) == -1) {
-		if (logSeverity == 'SUCCESS' && type != 'success') {
+		if (logSeverity == 'CRITICAL' && !(type == 'success' || type == 'error')) {
 			return;
 		}
 		if (type == 'debug') {

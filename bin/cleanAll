@@ -1,3 +1,3 @@
 #!/bin/bash 
 
-node cli.js --runAsProcess=true --cleanAllOutputFolders=true --cleanDevFolders=true --logSeverity=SUCCESS
+node cli.js --runAsProcess=true --cleanAllOutputFolders=true --cleanDevFolders=true
