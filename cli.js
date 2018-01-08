@@ -8,13 +8,18 @@ const gulp = require('gulp'),
 	os = require('os'),
 	jsonTransform = require('gulp-json-transform'),
 	lib = require('./lib.js'),
-	// packager = require('electron-packager'),
+	electronPackager = require("gulp-electron"),
 	mkdir = require('mkdirp-sync');
 
 class CLI {
 	constructor() {
+		const runOnStart = yargs.argv.runStandalone 
+			|| yargs.argv.runAsProcess
+			|| yargs.argv.packageApp
+			|| yargs.argv.runElectronApp;
+
 		// throw 'constructing CLI';
-		if (yargs.argv.runStandalone || yargs.argv.runAsProcess || yargs.argv.packageApp) {
+		if (runOnStart) {
 			// throw 'running CLI';
 			return this.run()
 				.catch((err) => {
@@ -112,7 +117,7 @@ class CLI {
 	}
 
 	spawnWebForm() {
-		const webFormPath = `${this.applicationRoot}/public/quasar/Webform/app.js`;
+		const webFormPath = `${this.applicationRoot}/app/quasar/Webform/app.js`;
 
 		if (fs.existsSync(webFormPath)) {
 			lib.logInfo(`loading the webform application ${webFormPath}`);
@@ -128,11 +133,68 @@ class CLI {
 		return false;
 	}
 
-	packageElectronApp() {
-		packager({ executableName: 'quasar', platform: 'all' });
+	spawnElectronApp() {
+		lib.spawnCommand(['.'], 'electron', true);
+	}
+
+	packageIntoElectronApp() {
+		const packageJson = require(`${lib.getConfig().applicationRoot}/package.json`);
+		packageJson.name = `quasarWebForm`;
+		packageJson.main = `electron.js`;
+		packageJson.productName = `quasar`;
+
+		return gulp.src('')
+			.pipe(electronPackager({ 
+				src: lib.getConfig().applicationRoot,
+				packageJson: packageJson,
+				release: './dist',
+				cache: './cache',
+				version: packageJson.version,
+				packaging: true,
+				platforms: ['darwin-x64'],
+				platformResources: {
+					darwin: {
+						CFBundleDisplayName: packageJson.name,
+						CFBundleIdentifier: packageJson.name,
+						CFBundleName: packageJson.name,
+						CFBundleVersion: packageJson.version,
+						icon: 'icon.icns'
+					}
+					// win: {
+					// 	"version-string": packageJson.version,
+					// 	"file-version": packageJson.version,
+					// 	"product-version": packageJson.version,
+					// 	"icon": 'icon.ico'
+					// }
+				}
+			}))
+			.pipe(gulp.dest(''));
 	}
 
 	runProcess(args, resolve, reject) {
+		if (args.cleanAllOutputFolders) {
+			lib.cleanOutputFolders(lib.getConfig(), true);
+			lib.logSuccess(`Successfully cleaned output root path ${path.resolve(`${lib.getConfig().outputFolder}`, `../`)}`);
+		}
+
+		if (args.cleanOutputFolder) {
+			lib.cleanOutputFolders(lib.getConfig());
+			lib.logSuccess(`Successfully cleaned output folder path ${lib.getConfig().outputFolder}`);
+		}
+
+		if (args.cleanDevFolders) {
+			lib.cleanDevFolders(lib.getConfig());
+			lib.logSuccess(`Successfully cleaned the dev folder paths in the application root ${lib.getConfig().applicationRoot}`);
+		}
+
+		if(args.runElectronApp) {
+			lib.logInfo('running the webApp in electron');
+			lib.definitelyCallFunction(() => {
+				this.spawnElectronApp();
+			});
+			return resolve();
+		}
+
 		if (args.qType) {
 			lib.logInfo('automated quasar build from quasArgs');
 			lib.definitelyCallFunction(() => {
@@ -141,7 +203,7 @@ class CLI {
 		}
 
 		if (args.runWebApi) {
-			// console.log('this should creat the app');
+			lib.debug(`will run webApi`);
 			this._api.run(null, args.port);
 		}
 
@@ -166,7 +228,7 @@ class CLI {
 
 					return true;
 				} else {
-					lib.logError(`cannot run webform because ${this.applicationRoot}/public/quasar/Webform/app.js has not been built yet, run again with option --autoBuildWebForm=true to auto build the webform.`);
+					lib.logError(`cannot run webform because ${this.applicationRoot}/app/quasar/Webform/app.js has not been built yet, run again with option --autoBuildWebForm=true to auto build the webform.`);
 					return reject();
 				}
 			} else {
@@ -194,8 +256,6 @@ class CLI {
 			this.port = args.port;
 
 			this.init(args.appRoot);
-			args.availableTasks = lib.loadTasks(args.loadTasks, args.loadDefaultTasks);
-
 			lib.logInfo(`Running the qausar cli under the process: ${process.title}`);
 
 			try {
@@ -210,30 +270,32 @@ class CLI {
 					});
 				} else if (args.runStandalone) {
 					return lib.definitelyCallFunction(() => {
+						args.availableTasks = lib.loadTasks(args.loadTasks, args.loadDefaultTasks);
 						lib.quasarSelectPrompt(args);
 						return resolve();
 					});
 				} else if (args.packageApp) {
 					lib.logInfo('packaging into an application');
 					return lib.definitelyCallFunction(() => {
-						this.packageElectronApp();
+						this.packageIntoElectronApp();
 						return resolve();
 					});
 				}
 			} catch (e) {
-				// console.log(e);
 				args.error = e;
+				args.argsFile = args.argsFile || `${this.jobsFolder}/${lib.STATUS_FAILED}/${args.jobTimestamp || Date.now()}.json`;
 				lib.logArgsToFile(args, null, true);
+				lib.logError(e, e);
 				return reject(e);
 			}
 		});
 	}
 
-	init(appRoot = process.cwd(), outRoot = `${os.homedir()}/Documents/Quasar/`) {
+	init(appRoot = process.cwd(), outRoot = `${os.homedir()}/Documents/quasar/`) {
 		lib.init(appRoot, outRoot);
 
-		lib.logDebug(`applicationRoot folder is correct`, appRoot);
-		lib.logDebug(`outputRoot folder is correct`, outRoot);
+		lib.debug(`applicationRoot folder is correct`, appRoot);
+		lib.debug(`outputRoot folder is correct`, outRoot);
 
 		this._api = require(`${this.applicationRoot}/api.js`);
 		this._app = this._api.app;
@@ -244,9 +306,10 @@ class CLI {
 		});
 
 		mkdir(this.jobsFolder);
-		mkdir(`${this.jobsFolder}/created`);
-		mkdir(`${this.jobsFolder}/queued`);
-		mkdir(`${this.jobsFolder}/completed`);
+		mkdir(`${this.jobsFolder}/${lib.STATUS_CREATED}`);
+		mkdir(`${this.jobsFolder}/${lib.STATUS_COMPLETED}`);
+		mkdir(`${this.jobsFolder}/${lib.STATUS_QUEUED}`);
+		mkdir(`${this.jobsFolder}/${lib.STATUS_FAILED}`);
 
 		// throw 'CLI initialized';
 	}

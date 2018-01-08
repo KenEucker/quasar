@@ -31,23 +31,25 @@ const gulp = require('gulp'),
 	tryRequire = require('try-require'),
 	promise = Promise;
 
-const STATUS_CREATED = 'created', STATUS_QUEUED = 'queued', STATUS_COMPLETED = 'completed';
+const STATUS_CREATED = 'created', STATUS_QUEUED = 'queued', STATUS_COMPLETED = 'completed', STATUS_FAILED = 'failed';
 let _config = {};
 let getConfig = () => {
 	return _config;
 }
 
 // Logger
-let logToFile = yargs.argv.logFile || false, logDate = yargs.argv.logDate, logSeverity = Array.isArray(yargs.argv.logSeverity) ? yargs.argv.logSeverity[yargs.argv.logSeverity.length - 1] : yargs.argv.logSeverity;
+let logToFile = yargs.argv.logFile || false, logDate = yargs.argv.logDate, logSeverity = Array.isArray(yargs.argv.logSeverity) ? yargs.argv.logSeverity[yargs.argv.logSeverity.length - 1] : yargs.argv.logSeverity ? yargs.argv.logSeverity : '';
 const logAsync = (message, obj, status = null, title = '', color = colors.grey) => { return new promise((resolve, reject) => { log(message, obj, status, color); return resolve(); }) }
 const logData = (message, obj, color = colors.yellow) => { log(message, obj, 'info', 'data', color) }
 const logInfo = (message, obj, color = colors.yellow) => { log(message, obj, 'info', 'info', color) }
 const logError = (message, obj, color = colors.red) => { log(message, obj, 'error', 'error', color) }
 const logSuccess = (message, obj, color = colors.green) => { log(message, obj, 'success', 'success', color) }
-const logDebug = (message, obj, color = colors.blue) => { log(message, obj, 'debug', 'debug', color) }
 const logFin = (message = 'FiN!', obj, color = colors.green) => { log(message, obj, 'fin', 'end', color) }
 const log = (message, obj, type = null, title = '', color = colors.grey) => {
-	if (logSeverity != 'DEBUG') {
+	if (logSeverity.indexOf(`DEBUG`) == -1) {
+		if (logSeverity == 'SUCCESS' && type != 'success') {
+			return;
+		}
 		if (type == 'debug') {
 			return;
 		}
@@ -94,6 +96,8 @@ const log = (message, obj, type = null, title = '', color = colors.grey) => {
 	const prettyMessage = `${logPrefix} ${datedMessage} ${logPostfix}`;
 
 	switch (logSeverity) {
+		case 'DEBUG-NODATA':
+			obj = null;
 		case 'DEBUG':
 		case 'ALL':
 			logger(color(prettyMessage));
@@ -113,15 +117,19 @@ const log = (message, obj, type = null, title = '', color = colors.grey) => {
 
 		// Logging turned off
 		case 'NONE':
-		case '':
 			break;
 
+		case '':
 		default:
 			logger(color(prettyMessage));
 			break;
 	}
 
 	return;
+}
+
+const debug = (message, obj, condition = true) => { 
+	log(message, obj, 'debug', 'debug', condition ? colors.blue : colors.red) 
 }
 
 const getActualArgObjects = (quasArgs, onlyObjects = null) => {
@@ -161,7 +169,7 @@ const logArgsToFile = (quasArgs, toStatus = null, overwite = false) => {
 		quasArgs.status = toStatus;
 
 		fs.writeFileSync(quasArgs.argsFile, JSON.stringify(quasArgs));
-		logDebug(`did write contents to build file: ${quasArgs.argsFile}`, JSON.stringify(quasArgs));
+		debug(`did write contents to build file: ${quasArgs.argsFile}`, JSON.stringify(quasArgs));
 	}
 
 	return quasArgs;
@@ -232,7 +240,6 @@ const getQuasArgs = (qType = null, requiredArgs = null, nonRequiredArgs = {}, re
 			} else {
 				return;
 			}
-			// console.log(`set ${k} to ${arg}`);
 		}
 	});
 
@@ -330,7 +337,9 @@ const sassify = (options) => {
 }
 
 const spawnCommand = (args = [], command = `node`, synchronous = false) => {
-	args.unshift(`cli.js`);
+	if(command == `node`) {
+		args.unshift(`cli.js`);
+	}
 	log(`Running command ${command} ${args.join(' ')}`);
 	const spawnOptions = { stdio: "inherit" };
 
@@ -364,7 +373,7 @@ const logBuildQueued = (quasArgs) => {
 	} else {
 		quasArgs.status = STATUS_QUEUED;
 	}
-	logDebug(`did queue build with args`, quasArgs);
+	debug(`did queue build with args`, quasArgs);
 
 	return quasArgs;
 }
@@ -474,7 +483,7 @@ const fromDir = (startPath, filter, extension = '') => {
 
 const registerTask = (taskName, chain) => {
 	gulp.task(taskName, chain);
-	logDebug(`did register gulp task ${taskName}`);
+	debug(`did register gulp task ${taskName}`);
 }
 
 const runTask = (task, registerTask = false, end = () => { logFin(`quasar ${task} ended`) }) => {
@@ -484,7 +493,7 @@ const runTask = (task, registerTask = false, end = () => { logFin(`quasar ${task
 		}
 		if (gulp.hasTask(task)) {
 			try {
-				logDebug(`will run task ${task}`);
+				debug(`will run task [${task}]`);
 				runSequence(task, end);
 			} catch (e) {
 				logError(e);
@@ -492,7 +501,7 @@ const runTask = (task, registerTask = false, end = () => { logFin(`quasar ${task
 			}
 			return resolve();
 		} else {
-			logError(`Cannot find gulp task ${task}, trying to run directly`);
+			logError(`Cannot find gulp task ${task}`);
 
 			return reject(task);
 		}
@@ -504,7 +513,7 @@ const runTask = (task, registerTask = false, end = () => { logFin(`quasar ${task
 
 const quasarSelectPrompt = (quasArgs) => {
 	return new promise((resolve, reject) => {
-		let availableTasks = getTaskNames(quasArgs.tasksPath);
+		let availableTasks = getAvailableTaskNames();
 
 		return promptConsole([{
 			type: 'list',
@@ -513,7 +522,7 @@ const quasarSelectPrompt = (quasArgs) => {
 			choices: quasArgs.availableTasks || ["uhhh nevermind"]
 		}], (res) => {
 			if (res.task !== "uhhh nevermind") {
-				runTask(res.task);
+				return runTask(res.task);
 			} else {
 				logFin("Allllllrrrriiiiiiiggggghhhhhttttttyyyyyy thhhheeennnnn");
 			}
@@ -557,6 +566,9 @@ const loadTasks = (taskPaths = null, loadDefaults = true, clobber = true) => {
 }
 
 const promptUser = (quasArgs) => {
+	console.trace();
+	debug(`will prompt the user from the console`, quasArgs.requiredArgs);
+
 	return promptConsole(quasArgs.requiredArgs, (userResponse) => {
 		if (userResponse.askOptionalQuestions) {
 			return promptConsole(quasArgs.requiredArgs, (res) => { quasArgs.requiredArgsValidation(Object.assign(userResponse, res)) }, true);
@@ -582,6 +594,7 @@ const promptConsole = (questions, getResults, showOptional = false, optionalOnly
 			}
 		} else if (!optionalOnly) {
 			addQuestion = true;
+			question.message = colors.cyan.underline(question.message);
 		}
 
 		if (addQuestion) {
@@ -728,11 +741,11 @@ const convertPromptToJsonSchemaUIFormProperty = (prompt) => {
 
 // This method expects that the second parameter `requiredArgs` is an array of objects with the same structure as inquirer's .prompt questions parameter
 // https://www.npmjs.com/package/inquirer#questions
-const registerRequiredQuasArgs = (quasArgs, requiredArgs = [], nonRequiredArgs = {}, addDefaultRequiredArgs = true) => {
+const registerRequiredQuasArgs = (quasArgs, requiredArgs = null, nonRequiredArgs = {}, addDefaultRequiredArgs = true) => {
 	quasArgs = Object.assign(quasArgs, nonRequiredArgs);
 
 	if (!quasArgs.requiredArgs) {
-		logDebug(`will${addDefaultRequiredArgs ? '': ' not'} add default args`, addDefaultRequiredArgs);
+		debug(`[will${addDefaultRequiredArgs ? '': ' not'}] add default args to ${quasArgs.qType}`, addDefaultRequiredArgs);
 		quasArgs.requiredArgs = addDefaultRequiredArgs ? getQuasarPromptQuestions(quasArgs) : quasArgs.requiredArgs;
 	} else {
 		// TODO: update two arrays of objects
@@ -922,6 +935,22 @@ const copyTemplateFilesToAssetsPath = (quasArgs) => {
 	//})
 }
 
+const cleanPaths = (paths, force = false) => {
+	return del.sync(paths, {force: true});
+}
+
+const cleanOutputFolders = (quasArgs, allFolders = false) => {
+	const outputFolders = allFolders ? path.resolve(`${quasArgs.outputFolder}/`, `../`) : quasArgs.outputFolder;
+	debug(`will delete all files in the output path`, outputFolders);
+	return cleanPaths(`${outputFolders}`, true);
+}
+
+const cleanDevFolders = (quasArgs) => {
+	const devPaths = [`${quasArgs.applicationRoot}/app`, `${quasArgs.applicationRoot}/dist`];
+	debug(`will delete all files in the application root paths`, devPaths);
+	return cleanPaths(devPaths);
+}
+
 // Unpack input files
 const unpackFiles = (quasArgs) => {
 	return new promise((resolve, reject) => {
@@ -1066,7 +1095,7 @@ const injectCode = (quasArgs) => {
 		const postJs = fs.existsSync(quasArgs.scriptsPostAsset) ? quasArgs.scriptsPostAsset : null;
 
 		quasArgs = logBuildQueued(quasArgs);
-		log('injecting public code prior to applying template parameters');
+		log('injecting code prior to applying template parameters');
 		log(`getting assets from (${quasArgs.assetsFolder})`);
 		log(`getting template file (${quasArgs.targetFilePath.replace(quasArgs.assetsFolder, '')}) and assets(css - pre:${preCss ? path.basename(preCss) : ``}, post: ${postCss ? path.basename(postCss) : ``}   js: pre:${preJs ? path.basename(preJs) : ``}, post: ${postJs ? path.basename(postJs) : ``})`);
 
@@ -1076,7 +1105,7 @@ const injectCode = (quasArgs) => {
 				if (quasArgs.minifyStyles && (preCss || postCss)) {
 					contents = injectFilesIntoStream(quasArgs, preCss, contents, quasArgs.cssInjectLocations.length ? quasArgs.cssInjectLocations[0] : quasArgs.cssInjectLocations, 'style');
 					contents = injectFilesIntoStream(quasArgs, postCss, contents, quasArgs.cssInjectLocations.length > 1 ? quasArgs.cssInjectLocations[1] : quasArgs.cssInjectLocations[0], 'style', false);
-					logDebug(`styles did minify`);
+					debug(`styles did minify`);
 				}
 
 				return contents;
@@ -1085,7 +1114,7 @@ const injectCode = (quasArgs) => {
 				if (quasArgs.minifyScripts && (preJs || postJs)) {
 					contents = injectFilesIntoStream(quasArgs, preJs, contents, quasArgs.jsInjectLocations.length ? quasArgs.jsInjectLocations[0] : quasArgs.jsInjectLocations, 'script');
 					contents = injectFilesIntoStream(quasArgs, postJs, contents, quasArgs.jsInjectLocations.length > 1 ? quasArgs.jsInjectLocations[1] : quasArgs.jsInjectLocations[0], 'script', false);
-					logDebug(`scripts did minify`);
+					debug(`scripts did minify`);
 				}
 
 				return contents;
@@ -1177,7 +1206,7 @@ const outputToHtmlFile = (quasArgs) => {
 
 					if (minifiedHtml) {
 						contents = minifiedHtml;
-						logDebug(`did minify html`);
+						debug(`did minify html`);
 					} else {
 						logError(`error minifying html: ${minifiedHtml}`);
 					}
@@ -1203,7 +1232,7 @@ const outputToHtmlFile = (quasArgs) => {
 
 				if (quasArgs.useJobTimestampForBuild) {
 					logInfo(`cleaning up after job: ${quasArgs.jobTimestamp}`);
-					logDebug(`did clean up assets folder: ${quasArgs.assetsFolder}`);
+					debug(`did clean up assets folder: ${quasArgs.assetsFolder}`);
 					del.sync(quasArgs.assetsFolder, { force: true });
 				}
 
@@ -1223,6 +1252,8 @@ const init = (appRoot = process.cwd(), outRoot = null) => {
 // init();
 
 module.exports = {
+	cleanDevFolders,
+	cleanOutputFolders,
 	convertPromptToJsonSchemaFormProperty,
 	convertPromptToJsonSchemaUIFormProperty,
 	compileStylesToAssetsFolder,
@@ -1250,7 +1281,7 @@ module.exports = {
 	logArgsToFile,
 	logAsync,
 	log,
-	logDebug,
+	debug,
 	logInfo,
 	logError,
 	logFin,
@@ -1274,5 +1305,6 @@ module.exports = {
 	// CONSTANTS
 	STATUS_CREATED,
 	STATUS_QUEUED,
-	STATUS_COMPLETED
+	STATUS_COMPLETED,
+	STATUS_FAILED
 }

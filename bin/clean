@@ -1,6 +1,3 @@
 #!/bin/bash 
 
-echo "cleaning QUASAR output folders"
-rm -rf assets
-rm -rf public
-rm -rf jobs
+node cli.js --runAsProcess=true --cleanOutputFolder=true --logSeverity=SUCCESS

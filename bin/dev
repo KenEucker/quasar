@@ -2,5 +2,5 @@
 
 clear
 bin/clean
-bin/cli --logSeverity=DEBUG --qType=quasarWebform --noPrompt=true --loadTasks=quasarWebform --runAsProcess=true --outputFolder=./public --versionOutputFile=false "$@"
+bin/buildWebForm
 bin/web

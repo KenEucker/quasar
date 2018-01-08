@@ -77,7 +77,7 @@ const registerTasks = () => {
 				formData[name] = prompt.default;
 			});
 			const schema = {
-				title: `Quasar::${task} -- ${taskFile.purpose}`,
+				title: `quasar::${task} -- ${taskFile.purpose}`,
 				type: "object",
 				required: required,
 				properties: properties
@@ -103,7 +103,7 @@ const registerTasks = () => {
 	});
 	gulp.task(`${qType}`, [`${qType}:build`]);
 
-	lib.logDebug(`did register all tasks for quasar ${quasArgs.qType}`);
+	lib.debug(`did register all tasks for quasar ${quasArgs.qType}`);
 }
 
 const init = (_lib = null, applicationRoot = path.resolve('../../'), config = null, registerBuildTasks = false) => {

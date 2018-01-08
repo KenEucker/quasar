@@ -47,7 +47,6 @@ const validateRequiredArgs = (args = {}) => {
 const registerTasks = () => {
 	gulp.task(`${qType}:build`, () => {
 		if (!quasArgs.noPrompt) {
-			console.log(quasArgs);
 			return lib.promptUser(quasArgs)
 				.then(task);
 		} else {
@@ -56,7 +55,7 @@ const registerTasks = () => {
 	});
 	gulp.task(`${qType}`, [`${qType}:build`]);
 
-	lib.logDebug(`did register all tasks for quasar ${quasArgs.qType}`);
+	lib.debug(`did register all tasks for quasar ${quasArgs.qType}`);
 }
 
 const init = (_lib = null, applicationRoot = process.cwd(), config = null, registerBuildTasks = false) => {

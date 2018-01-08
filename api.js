@@ -15,7 +15,7 @@ class Api {
 		this.availableTasks = lib.getTaskNames(path.resolve('./tasks/'));
 
 		if (yargs.argv.runWebApiStandalone) {
-			lib.logDebug(`will run the api standalone on port: ${yargs.argv.apiPort}`);
+			lib.debug(`will run the api standalone on port [${yargs.argv.apiPort}]`);
 			this.run(null, yargs.argv.apiPort, true);
 		}
 	}
@@ -91,7 +91,7 @@ class Api {
 		const self = this;
 		if (!app) {
 			app = express();
-			// lib.logDebug('will create the app in api.js');
+			// lib.debug('will create the app in api.js');
 			start = true;
 		}
 		this.port = port || this.port;
@@ -109,7 +109,7 @@ class Api {
 
 		if (start) {
 			this._app.listen(this.port);
-			lib.logDebug('did start the app in api.js');
+			lib.debug('did start the app in api.js');
 		}
 
 		lib.logSuccess(`quasar api running on port:${this.port} at http://localhost:${this.port}`);

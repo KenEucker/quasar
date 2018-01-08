@@ -28,15 +28,15 @@ const task = () => {
 const run = (args = {}) => { return validateRequiredArgs(args).then(task) }
 
 const getQuasarPrompts = (_lib = null, config = null) => {
-	if (!_lib) {
-		config = config ? config : require(`${path.resolve('./')}/config.js`);
-		lib = require(`${config.applicationRoot}/lib.js`);
-	} else {
-		lib = _lib;
-	}
-
 	if (!quasArgs.requiredArgs) {
-		quasArgs = lib.registerRequiredQuasArgs(quasArgs, [{
+		if (!_lib) {
+			config = config ? config : require(`${path.resolve('./')}/config.js`);
+			lib = require(`${config.applicationRoot}/lib.js`);
+		} else {
+			lib = _lib;
+		}
+
+		quasArgs = lib.registerRequiredQuasArgs({ qType }, [{
 			type: 'list',
 			name: 'source',
 			message: `Enter the source filename (default .zip)`,
@@ -49,6 +49,7 @@ const getQuasarPrompts = (_lib = null, config = null) => {
 			optional: true
 		}]);
 	}
+
 	return quasArgs.requiredArgs;
 }
 
@@ -85,7 +86,7 @@ const validateRequiredArgs = (args = {}) => {
 }
 
 const registerTasks = () => {
-	lib.logDebug(`will register task ${quasArgs.qType} and will ${quasArgs.noPrompt ? 'not ' : ''}prompt the user`);
+	lib.debug(`will register task [${quasArgs.qType}] and [will${quasArgs.noPrompt ? ' not' : ''}] prompt the user`);
 
 	gulp.task(`${qType}:build`, () => {
 		if (!quasArgs.noPrompt) {
@@ -97,7 +98,7 @@ const registerTasks = () => {
 	});
 	gulp.task(`${qType}`, [`${qType}:build`]);
 
-	lib.logDebug(`did register all tasks for quasar ${quasArgs.qType}`);
+	lib.debug(`did register all tasks for quasar ${quasArgs.qType}`);
 }
 
 const init = (_lib = null, applicationRoot = process.cwd(), config = null, registerBuildTasks = false) => {

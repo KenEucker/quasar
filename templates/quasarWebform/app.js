@@ -11,7 +11,7 @@ let express = require('express'),
 let PORT = process.env.PORT || '3720',
     app = null,
     // TODO: this needs to be templated and load from configuration!
-    outputRoot = `${os.homedir()}/Documents/Quasar/`,
+    outputRoot = `${os.homedir()}/Documents/quasar/`,
     jobsFolder = path.resolve(`${outputRoot}/jobs/`),
     sourcesDirectory = path.resolve(`${outputRoot}/sources/`);
 

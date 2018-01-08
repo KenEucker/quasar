@@ -5,6 +5,7 @@
 
 dist
 assets
+app
 public
 jobs
 node_modules
