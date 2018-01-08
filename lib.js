@@ -566,7 +566,6 @@ const loadTasks = (taskPaths = null, loadDefaults = true, clobber = true) => {
 }
 
 const promptUser = (quasArgs) => {
-	console.trace();
 	debug(`will prompt the user from the console`, quasArgs.requiredArgs);
 
 	return promptConsole(quasArgs.requiredArgs, (userResponse) => {
