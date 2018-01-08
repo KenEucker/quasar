@@ -36,6 +36,7 @@ const getQuasarPrompts = (_lib = null, config = null) => {
 			lib = _lib;
 		}
 
+		lib.debug(`${quasArgs.qType} question generation`);
 		quasArgs = lib.registerRequiredQuasArgs({ qType }, [{
 			type: 'list',
 			name: 'source',

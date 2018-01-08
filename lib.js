@@ -13,7 +13,7 @@ const gulp = require('gulp'),
 	spawn = require("child_process"),
 	prompt = require('inquirer'),
 	sass = require('dart-sass')
-	runSequence = require('run-sequence').use(gulp),
+runSequence = require('run-sequence').use(gulp),
 	aws = require('aws-sdk'),
 	through = require('through2'),
 	del = require('del'),
@@ -27,10 +27,11 @@ const gulp = require('gulp'),
 	lastLine = require('last-line'),
 	fs = require('fs'),
 	yargs = require('yargs');
-	mkdir = require('mkdirp-sync'),
+mkdir = require('mkdirp-sync'),
 	tryRequire = require('try-require'),
 	promise = Promise;
 
+const LOG_DEFAULT = LOG_CRITICAL = 'CRITICAL', LOG_SUCCESS = 'SUCCESS', LOG_DEBUG = 'DEBUG', LOG_DEBUG_NODATA = 'DEBUG-NODATA', LOG_ALL = 'ALL', LOG_DATED = 'DATED', LOG_NODATA = 'NODATA', LOG_NONE = 'NONE', LOG_ERROR = 'ERROR', LOG_INFO = 'INFO', LOG_END = LOG_DONE = 'END';
 const STATUS_CREATED = 'created', STATUS_QUEUED = 'queued', STATUS_COMPLETED = 'completed', STATUS_FAILED = 'failed';
 let _config = {};
 let getConfig = () => {
@@ -38,16 +39,18 @@ let getConfig = () => {
 }
 
 // Logger
-let logToFile = yargs.argv.logFile || false, logDate = yargs.argv.logDate, logSeverity = Array.isArray(yargs.argv.logSeverity) ? yargs.argv.logSeverity[yargs.argv.logSeverity.length - 1] : yargs.argv.logSeverity ? yargs.argv.logSeverity : 'CRITICAL';
-const logAsync = (message, obj, status = null, title = '', color = colors.grey) => { return new promise((resolve, reject) => { log(message, obj, status, color); return resolve(); }) }
-const logData = (message, obj, color = colors.yellow) => { log(message, obj, 'info', 'data', color) }
-const logInfo = (message, obj, color = colors.yellow) => { log(message, obj, 'info', 'info', color) }
-const logError = (message, obj, color = colors.red) => { log(message, obj, 'error', 'error', color) }
-const logSuccess = (message, obj, color = colors.green) => { log(message, obj, 'success', 'success', color) }
-const logFin = (message = 'FiN!', obj, color = colors.green) => { log(message, obj, 'fin', 'end', color) }
-const log = (message, obj, type = null, title = '', color = colors.grey) => {
-	if (logSeverity.indexOf(`DEBUG`) == -1) {
-		if (logSeverity == 'CRITICAL' && !(type == 'success' || type == 'error')) {
+let logToFile = yargs.argv.logFile || false, logDate = yargs.argv.logDate, logSeverity = Array.isArray(yargs.argv.logSeverity) ? yargs.argv.logSeverity[yargs.argv.logSeverity.length - 1] : yargs.argv.logSeverity ? yargs.argv.logSeverity : LOG_DEFAULT;
+logSeverity = logSeverity.toUpperCase();
+const logAsync = (message, obj, type = null, color = colors.grey) => { return new promise((resolve, reject) => { log(message, obj, type, color); return resolve(); }) }
+const logData = (message, obj, color = colors.yellow) => { log(message, obj, LOG_DATA, color) }
+const logInfo = (message, obj, color = colors.yellow) => { log(message, obj, LOG_INFO, color) }
+const logCritical = (message, obj, color = colors.red) => { log(message, obj, LOG_CRITICAL, color) }
+const logError = (message, obj, color = colors.red) => { log(message, obj, LOG_ERROR, color) }
+const logSuccess = (message, obj, color = colors.green) => { log(message, obj, LOG_SUCCESS, color) }
+const logEnd = (message = 'FiN!', obj, color = colors.green) => { log(message, obj, LOG_END, color) }
+const log = (message, obj, type = LOG_INFO, color = colors.grey) => {
+	if (logSeverity.indexOf(LOG_DEBUG) == -1) {
+		if ((logSeverity == LOG_CRITICAL) && ([ LOG_SUCCESS, LOG_ERROR, LOG_CRITICAL ].indexOf(type) == -1)) {
 			return;
 		}
 		if (type == 'debug') {
@@ -92,14 +95,14 @@ const log = (message, obj, type = null, title = '', color = colors.grey) => {
 			break;
 	}
 
-	const datedMessage = `${logDate ? `[${new Date(Date.now()).toLocaleString('en-US')}] ` : ``}${title.length ? ` ${title}: ` : ''}${message}`;
+	const datedMessage = `${logDate ? `[${new Date(Date.now()).toLocaleString('en-US')}] ` : ``}${type && type.length ? ` ${type.toLowerCase()}: ` : ''}${message}`;
 	const prettyMessage = `${logPrefix} ${datedMessage} ${logPostfix}`;
 
 	switch (logSeverity) {
-		case 'DEBUG-NODATA':
+		case LOG_DEBUG_NODATA:
 			obj = null;
-		case 'DEBUG':
-		case 'ALL':
+		case LOG_DEBUG:
+		case LOG_ALL:
 			logger(color(prettyMessage));
 
 			if (obj) {
@@ -107,11 +110,11 @@ const log = (message, obj, type = null, title = '', color = colors.grey) => {
 			}
 			break;
 
-		case 'DATED':
+		case LOG_DATED:
 			logger(color(datedMessage));
 			break;
 
-		case 'NODATA':
+		case LOG_NODATA:
 			logger(color(message));
 			break;
 
@@ -119,7 +122,7 @@ const log = (message, obj, type = null, title = '', color = colors.grey) => {
 		case 'NONE':
 			break;
 
-		case '':
+		case LOG_DEFAULT:
 		default:
 			logger(color(prettyMessage));
 			break;
@@ -128,8 +131,8 @@ const log = (message, obj, type = null, title = '', color = colors.grey) => {
 	return;
 }
 
-const debug = (message, obj, condition = true) => { 
-	log(message, obj, 'debug', 'debug', condition ? colors.blue : colors.red) 
+const debug = (message, obj, condition = true) => {
+	log(message, obj, 'debug', condition ? colors.blue : colors.red)
 }
 
 const getActualArgObjects = (quasArgs, onlyObjects = null) => {
@@ -158,7 +161,7 @@ const logArgsToFile = (quasArgs, toStatus = null, overwite = false) => {
 
 	if (overwite || !(quasArgs.status == STATUS_CREATED && toStatus == null)) {
 		if (overwite && quasArgs.status == toStatus) {
-			quasArgs.error = 'WARN: overwriting jobfile. Was this done intentionally?';
+			quasArgs.error = `${quasArgs.error ? `${quasArgs.error} \n>` : ''}WARN: overwriting jobfile. Was this done intentionally?`;
 		}
 		if (quasArgs.argsFile && fs.existsSync(quasArgs.argsFile)) {
 			quasArgs.outputFilePath = `${getQuasarOutputPath(quasArgs)}/${quasArgs.output}${quasArgs.outputExt}`;
@@ -211,7 +214,7 @@ const getQuasArgs = (qType = null, requiredArgs = null, nonRequiredArgs = {}, re
 	let fromFile = {},
 		jobTimestamp = Date.now(),
 		cliArgs = {};
-		argsFile = yargs.argv.argsFile,
+	argsFile = yargs.argv.argsFile,
 		status = STATUS_CREATED,
 		argsFileExists = argsFile && fs.existsSync(argsFile),
 		assetsFolder = `${_config.assetsFolder}/${qType}`;
@@ -337,7 +340,7 @@ const sassify = (options) => {
 }
 
 const spawnCommand = (args = [], command = `node`, synchronous = false) => {
-	if(command == `node`) {
+	if (command == `node`) {
 		args.unshift(`cli.js`);
 	}
 	log(`Running command ${command} ${args.join(' ')}`);
@@ -486,7 +489,7 @@ const registerTask = (taskName, chain) => {
 	debug(`did register gulp task ${taskName}`);
 }
 
-const runTask = (task, registerTask = false, end = () => { logFin(`quasar ${task} ended`) }) => {
+const runTask = (task, registerTask = false, end = () => { logEnd(`quasar ${task} ended`) }) => {
 	return new promise((resolve, reject) => {
 		if (registerTask) {
 			loadTasks([task]);
@@ -524,7 +527,7 @@ const quasarSelectPrompt = (quasArgs) => {
 			if (res.task !== "uhhh nevermind") {
 				return runTask(res.task);
 			} else {
-				logFin("Allllllrrrriiiiiiiggggghhhhhttttttyyyyyy thhhheeennnnn");
+				logEnd("Allllllrrrriiiiiiiggggghhhhhttttttyyyyyy thhhheeennnnn");
 			}
 		});
 	})
@@ -744,18 +747,18 @@ const registerRequiredQuasArgs = (quasArgs, requiredArgs = null, nonRequiredArgs
 	quasArgs = Object.assign(quasArgs, nonRequiredArgs);
 
 	if (!quasArgs.requiredArgs) {
-		debug(`[will${addDefaultRequiredArgs ? '': ' not'}] add default args to ${quasArgs.qType}`, addDefaultRequiredArgs);
+		debug(`[will${addDefaultRequiredArgs ? '' : ' not'}] add default args to ${quasArgs.qType}`, addDefaultRequiredArgs);
 		quasArgs.requiredArgs = addDefaultRequiredArgs ? getQuasarPromptQuestions(quasArgs) : quasArgs.requiredArgs;
+		quasArgs.requiredArgs = quasArgs.requiredArgs.concat(requiredArgs);
 	} else {
 		// TODO: update two arrays of objects
 	}
 
-	quasArgs.requiredArgs = quasArgs.requiredArgs.concat(requiredArgs);
 	quasArgs.requiredArgs.forEach((arg) => {
 		quasArgs[arg.name] = quasArgs[arg.name] || arg.default || '';
 	});
 
-	// Reorder so the additional is at the end
+	// TODO: Reorder so the add optional question is at the end
 
 	return quasArgs;
 }
@@ -881,6 +884,7 @@ const copyTemplateFilesToAssetsPath = (quasArgs) => {
 	const cssAssetPath = path.resolve(`${quasArgs.templatesFolder}/${quasArgs.qType}.css`);
 	const jsAssetPath = path.resolve(`${quasArgs.templatesFolder}/${quasArgs.qType}.js`);
 
+	debug(`will copy template files to assetsFolder [${quasArgs.assetsFolder}]`, [targetFilePath, cssAssetPath, jsAssetPath]);
 	mkdir(quasArgs.assetsFolder);
 	if (fs.existsSync(targetFilePath)) {
 		if (quasArgs.overwriteTargetFileFromTemplate && (targetFilePath === path.resolve(`${quasArgs.assetsFolder}/${quasArgs.qType}.html`))) {
@@ -905,7 +909,8 @@ const copyTemplateFilesToAssetsPath = (quasArgs) => {
 			quasArgs.targetFilePath = targetFilePath;
 		}
 	}
-	if (fs.existsSync(cssAssetPath)) {
+		if (fs.existsSync(cssAssetPath)) {
+		
 		const outfile2 = fs.readFileSync(cssAssetPath, 'utf-8');
 		const outputCssAssetPath = `${quasArgs.assetsFolder}/${quasArgs.qType}.css`;
 
@@ -935,7 +940,7 @@ const copyTemplateFilesToAssetsPath = (quasArgs) => {
 }
 
 const cleanPaths = (paths, force = false) => {
-	return del.sync(paths, {force: true});
+	return del.sync(paths, { force: true });
 }
 
 const cleanOutputFolders = (quasArgs, allFolders = false) => {
@@ -1283,7 +1288,7 @@ module.exports = {
 	debug,
 	logInfo,
 	logError,
-	logFin,
+	logEnd,
 	logSuccess,
 	makePromptRequired,
 	moveTargetFilesToRootOfAssetsPath,
