@@ -4,7 +4,7 @@ let express = require('express'),
     path = require('path'),
     fs = require('fs'),
     os = require('os'),
-    favicon = require('express-favicon'),
+    favicon = require('serve-favicon'),
     mkdir = require('mkdirp-sync'),
     bodyParser = require('body-parser');
 
@@ -56,7 +56,7 @@ const webForm = (app, port = null, start = false) => {
     mkdir(sourcesDirectory);
     PORT = port || PORT;
 
-    app.use(favicon(`${outputRoot}/icon.png`));
+    app.use(favicon(path.join(__dirname, `/icon.ico`)));
 
     app.get('/job/:id', function (req, res) {
         const jobFile = `${req.params.id}.json`;
@@ -128,8 +128,8 @@ if (yargs.argv.runWebFormStandalone) {
 
 const init = (outRoot = outputRoot) => {
     outputRoot = outRoot,
-    jobsFolder = path.resolve(`${outputRoot}/jobs/`),
-    sourcesDirectory = path.resolve(`${outputRoot}/sources/`);
+        jobsFolder = path.resolve(`${outputRoot}/jobs/`),
+        sourcesDirectory = path.resolve(`${outputRoot}/sources/`);
 }
 
 module.exports = {
