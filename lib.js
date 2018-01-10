@@ -832,7 +832,7 @@ const moveTargetFilesToRootOfAssetsPath = (quasArgs) => {
 	});
 }
 
-const copyFilesToOutput = (quasArgs, fromDirectory, files, excludeFiles = []) => {
+const copyFilesToOutputFolder = (quasArgs, fromDirectory, files, excludeFiles = []) => {
 	return new promise((resolve, reject) => {
 		const destinationPath = `${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`;
 		logInfo(`copying files (${files.join()}) from ${fromDirectory}/ to ${destinationPath}`);
@@ -848,7 +848,7 @@ const copyFilesToOutput = (quasArgs, fromDirectory, files, excludeFiles = []) =>
 }
 
 const copyFilesFromTemplatesFolderToOutput = (quasArgs, files, excludeFiles = []) => {
-	return copyFilesToOutput(quasArgs, quasArgs.templatesFolder, files, excludeFiles);
+	return copyFilesToOutputFolder(quasArgs, quasArgs.templatesFolder, files, excludeFiles);
 }
 
 const copyFilesFromAssetsFolderToOutput = (quasArgs, files, excludeFiles = null) => {
@@ -856,7 +856,7 @@ const copyFilesFromAssetsFolderToOutput = (quasArgs, files, excludeFiles = null)
 		excludeFiles = [`${quasArgs.target}`, `${quasArgs.qType}.html`, `${quasArgs.qType}.css`, `${quasArgs.qType}.js`];
 	}
 
-	return copyFilesToOutput(quasArgs, quasArgs.assetsFolder, files, excludeFiles);
+	return copyFilesToOutputFolder(quasArgs, quasArgs.assetsFolder, files, excludeFiles);
 }
 
 const copyFilesFromSourcesFolderToOutput = (quasArgs, files = null, excludeFiles = []) => {
@@ -873,7 +873,7 @@ const copyFilesFromSourcesFolderToOutput = (quasArgs, files = null, excludeFiles
 			return resolve(quasArgs);
 		}
 
-		return copyFilesToOutput(quasArgs, quasArgs.sourceFolder, files, excludeFiles)
+		return copyFilesToOutputFolder(quasArgs, quasArgs.sourceFolder, files, excludeFiles)
 			.then(resolve);
 	});
 }
@@ -910,7 +910,7 @@ const copyTemplateFilesToAssetsPath = (quasArgs) => {
 		}
 	}
 		if (fs.existsSync(cssAssetPath)) {
-		
+
 		const outfile2 = fs.readFileSync(cssAssetPath, 'utf-8');
 		const outputCssAssetPath = `${quasArgs.assetsFolder}/${quasArgs.qType}.css`;
 
@@ -1245,7 +1245,7 @@ const outputToHtmlFile = (quasArgs) => {
 	})
 }
 
-const init = (appRoot = process.cwd(), outRoot = null) => {
+const init = (appRoot = process.cwd(), outRoot = `${os.homedir()}/Documents/quasar/`) => {
 	if (tryRequire.resolve(`${appRoot}/config.js`)) {
 		_config = require(`${appRoot}/config.js`);
 		_config.init(appRoot, outRoot);
@@ -1266,7 +1266,7 @@ module.exports = {
 	copyFilesFromAssetsFolderToOutput,
 	copyFilesFromSourcesFolderToOutput,
 	copyFilesFromTemplatesFolderToOutput,
-	copyFilesToOutput,
+	copyFilesToOutputFolder,
 	copyTemplateFilesToAssetsPath,
 	definitelyCallFunction,
 	findOutputDirectory,

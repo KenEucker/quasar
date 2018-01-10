@@ -58,29 +58,6 @@ const webForm = (app, port = null, start = false) => {
 
     app.use(favicon(path.join(__dirname, `/icon.ico`)));
 
-    app.get('/job/:id', function (req, res) {
-        const jobFile = `${req.params.id}.json`;
-        const jobFilePath = `${jobsFolder}/completed/${jobFile}`;
-
-        if (fs.existsSync(jobFilePath)) {
-            const argsFile = fs.readFileSync(jobFilePath);
-            const jobArgs = JSON.parse(argsFile);
-            if (fs.existsSync(jobArgs.outputFilePath)) {
-                res.sendFile(jobArgs.outputFilePath);
-            } else {
-                console.log(`outputFilePath not found: ${jobArgs.outputFilePath}`);
-            }
-        } else if (fs.existsSync(jobFilePath.replace('/completed', '/created'))) {
-            console.log(`job created: ${jobFile}`);
-            res.send(loadingPage("Job has been created but needs to be queued."));
-        } else if (fs.existsSync(jobFilePath.replace('/completed', '/queued'))) {
-            console.log(`job not yet queued: ${jobFile}`);
-            res.send(loadingPage("Building ..."));
-        } else {
-            res.send("job does not exist");
-        }
-    });
-
     app.get('/', function (req, res) {
         const webFormPath = path.resolve(path.join(`${__dirname}/index.html`));
         if (fs.existsSync(webFormPath)) {

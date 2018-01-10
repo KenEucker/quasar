@@ -12,7 +12,7 @@ const task = () => {
 	quasArgs = lib.logBuildQueued(quasArgs);
 	return lib.injectCode(quasArgs)
 		.then(() => { return lib.copyFilesFromTemplatesFolderToOutput(quasArgs, ['app.js', 'package.json', 'img/**', 'fonts/**']) })
-		.then(() => { return lib.copyFilesToOutput(quasArgs, quasArgs.applicationRoot, ['icon.ico']) })
+		.then(() => { return lib.copyFilesToOutputFolder(quasArgs, quasArgs.applicationRoot, ['icon.ico']) })
 		.then(() => { return lib.outputToHtmlFile(quasArgs) });
 }
 
@@ -129,7 +129,7 @@ const init = (_lib = null, applicationRoot = path.resolve('../../'), config = nu
 
 module.exports = {
 	purpose: `
-		builds a form using react and the json schema pulled directly from the available quasars 
+		builds a form using react and the json schema pulled directly from the available quasars
 		installed and allows you to run quasar build tasks with a web ui.
 	`,
 	getQuasarPrompts,
