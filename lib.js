@@ -809,7 +809,7 @@ const moveTargetFilesToRootOfAssetsPath = (quasArgs) => {
 		}
 
 		if (targetFilePath !== `${quasArgs.assetsFolder}/${quasArgs.target}`) {
-			const baseDir = path.applicationRoot(targetFilePath);
+			const baseDir = path.dirname(targetFilePath);
 			// logInfo(`Moving files from deep folder structure (${baseDir}) to base assets path (${quasArgs.assetsFolder})`);
 			return gulp.src(`${baseDir}/**`)
 				.pipe(gulp.dest(quasArgs.assetsFolder))
