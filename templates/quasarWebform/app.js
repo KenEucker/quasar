@@ -4,7 +4,7 @@ let express = require('express'),
     path = require('path'),
     fs = require('fs'),
     os = require('os'),
-    favicon = require('express-favicon'),
+    favicon = require('serve-favicon'),
     mkdir = require('mkdirp-sync'),
     bodyParser = require('body-parser');
 
@@ -56,30 +56,7 @@ const webForm = (app, port = null, start = false) => {
     mkdir(sourcesDirectory);
     PORT = port || PORT;
 
-    app.use(favicon(`${outputRoot}/icon.png`));
-
-    app.get('/job/:id', function (req, res) {
-        const jobFile = `${req.params.id}.json`;
-        const jobFilePath = `${jobsFolder}/completed/${jobFile}`;
-
-        if (fs.existsSync(jobFilePath)) {
-            const argsFile = fs.readFileSync(jobFilePath);
-            const jobArgs = JSON.parse(argsFile);
-            if (fs.existsSync(jobArgs.outputFilePath)) {
-                res.sendFile(jobArgs.outputFilePath);
-            } else {
-                console.log(`outputFilePath not found: ${jobArgs.outputFilePath}`);
-            }
-        } else if (fs.existsSync(jobFilePath.replace('/completed', '/created'))) {
-            console.log(`job created: ${jobFile}`);
-            res.send(loadingPage("Job has been created but needs to be queued."));
-        } else if (fs.existsSync(jobFilePath.replace('/completed', '/queued'))) {
-            console.log(`job not yet queued: ${jobFile}`);
-            res.send(loadingPage("Building ..."));
-        } else {
-            res.send("job does not exist");
-        }
-    });
+    app.use(favicon(path.join(__dirname, `/icon.ico`)));
 
     app.get('/', function (req, res) {
         const webFormPath = path.resolve(path.join(`${__dirname}/index.html`));
@@ -128,8 +105,8 @@ if (yargs.argv.runWebFormStandalone) {
 
 const init = (outRoot = outputRoot) => {
     outputRoot = outRoot,
-    jobsFolder = path.resolve(`${outputRoot}/jobs/`),
-    sourcesDirectory = path.resolve(`${outputRoot}/sources/`);
+        jobsFolder = path.resolve(`${outputRoot}/jobs/`),
+        sourcesDirectory = path.resolve(`${outputRoot}/sources/`);
 }
 
 module.exports = {

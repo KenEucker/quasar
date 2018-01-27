@@ -24,6 +24,30 @@ class Api {
 		return this._app;
 	}
 
+	autoReloadingPageWithMessage(message = `Loading ...`) {
+		return `
+			<html>
+				<body>
+					<h1>
+						${message}
+					</h1>
+
+					<script>
+					setInterval(function() {
+						var h1 = document.querySelector('h1');
+						if(h1) {
+							h1.innerHTML += '.';
+						}
+					}, 300)
+					setInterval(function() {
+						window.location.reload(true);
+					}, 1200)
+					</script>
+				</body>
+			</html>
+		`;
+	}
+
 	createJobFile(args, job, jobFile) {
 		return new Promise((resolve, reject) => {
 			const jobsDirectory = `${lib.getConfig().jobsFolder}/created`;
@@ -57,7 +81,7 @@ class Api {
 
 	sendJobFileQueued(job, jobFile) {
 		return new Promise((resolve, reject) => {
-			while ( !(fs.existsSync(jobFile.replace(lib.STATUS_CREATED, lib.STATUS_QUEUED)))) {
+			while (!(fs.existsSync(jobFile.replace(lib.STATUS_CREATED, lib.STATUS_QUEUED)))) {
 
 			}
 			return resolve({ status: lib.STATUS_CREATED, job, jobFile });
@@ -66,15 +90,52 @@ class Api {
 
 	sendJobFileCompleted(job, jobFile) {
 		return new Promise((resolve, reject) => {
-			while ( !(fs.existsSync(jobFile.replace(lib.STATUS_QUEUED, lib.STATUS_COMPLETED)))) {
+			while (!(fs.existsSync(jobFile.replace(lib.STATUS_QUEUED, lib.STATUS_COMPLETED)))) {
 
 			}
 			return resolve({ status: lib.STATUS_COMPLETED, job, jobFile });
 		});
 	}
 
-	onCheckJobFile() {
+	getJob(req, res) {
+		const jobId = req.params.id;
+		const jobStatus = this.getJobStatus(jobId);
+		const jobFilePath = `${lib.getConfig().jobsFolder}/${jobStatus}/${jobId}.json`;
 
+		switch (jobStatus) {
+			default:
+				res.send();
+				break;
+
+			case `created`:
+			case `queued`:
+				res.send(this.autoReloadingPageWithMessage(`Job has been ${jobStatus} ...`));
+				break;
+
+			case `completed`:
+				const argsFile = fs.readFileSync(jobFilePath);
+				const jobArgs = JSON.parse(argsFile);
+				if (fs.existsSync(jobArgs.outputFilePath)) {
+					res.sendFile(jobArgs.outputFilePath);
+				} else {
+					console.log(`outputFilePath not found: ${jobArgs.outputFilePath}`);
+					res.send(jobArgs);
+				}
+				break;
+		}
+	}
+
+	getJobStatus(jobId) {
+		const jobFilePath = `${lib.getConfig().jobsFolder}/completed/${jobId}.json`;
+
+		if (fs.existsSync(jobFilePath)) {
+			return `completed`;
+		} else if (fs.existsSync(jobFilePath.replace('/completed', '/created'))) {
+			return `created`;
+		} else if (fs.existsSync(jobFilePath.replace('/completed', '/queued'))) {
+			return `queued`;
+		}
+		return null;
 	}
 
 	onTaskDataReceived(req, res) {
@@ -102,10 +163,13 @@ class Api {
 
 		this._app.use(bodyParser.json({ limit: '50mb' }));
 		this._app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
-
 		this._app.use(jsonPromise());
 
-		this._app.post('/', function (req, res) { self.onTaskDataReceived(req, res); });
+
+		this._app.get('/job/:id',
+			function (req, res) { self.getJob(req, res); });
+		this._app.post('/',
+			function (req, res) { self.onTaskDataReceived(req, res); });
 
 		if (start) {
 			this._app.listen(this.port);
