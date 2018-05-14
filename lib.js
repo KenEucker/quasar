@@ -476,7 +476,7 @@ const fromDir = (startPath, filter, extension = '') => {
 			found = fromDir(filename, filter, extension); //recurse
 		} else if (!filter.length && `.${filename.split('.').pop()}` == extension) {
 			return filename;
-		} else if (filename.indexOf(filter) >= 0) {
+		} else if (`${filename.split('/').pop()}` == `${filter}${extension}`) {
 			return filename;
 		};
 	};
@@ -489,8 +489,14 @@ const registerTask = (taskName, chain) => {
 	debug(`did register gulp task ${taskName}`);
 }
 
-const runTask = (task, registerTask = false, end = () => { logEnd(`quasar ${task} ended`) }) => {
+const runTask = (task, registerTask = false, end) => {
 	return new promise((resolve, reject) => {
+		if (!end) {
+			end = () => {
+				logEnd(`quasar ${task} ended`);
+				process.exit();
+			}
+		}
 		if (registerTask) {
 			loadTasks([task]);
 		}
@@ -772,20 +778,20 @@ const findTargetFile = (quasArgs) => {
 
 	if (!fs.existsSync(targetFilePath)) {
 		const oldTargetFilePath = targetFilePath;
-		targetFilePath = fromDir(`${quasArgs.templatesFolder}`, `${quasArgs.target}`, `.html`);
+		targetFilePath = fromDir(`${quasArgs.templatesFolder}`, `${quasArgs.target}`);
 
 		if (!targetFilePath) {
 			const oldestTargetFilePath = targetFilePath;
-			targetFilePath = fromDir(`${quasArgs.assetsFolder}`, `${quasArgs.target}`);
+			targetFilePath = fromDir(`${quasArgs.assetsFolder}`, '', `.html`);
 
 			if (targetFilePath) {
-				// log(`did not find targetFile at ${oldTargetFilePath} or at ${oldestTargetFilePath} but found one at -> ${targetFilePath}`);
+				log(`did not find targetFile at ${oldTargetFilePath} or at ${oldestTargetFilePath} but did find a file at -> ${targetFilePath}`);
 				targetFilePath = path.resolve(targetFilePath);
 			} else {
 				logError(`no targetFile exists at ${oldTargetFilePath} or ${oldestTargetFilePath} or ${targetFilePath}`);
 			}
 		} else {
-			// log(`did not find targetFile at ${oldTargetFilePath}, corrected path is: ${targetFilePath}`);
+			log(`did not find targetFile at ${oldTargetFilePath}, corrected path is: ${targetFilePath}`);
 			targetFilePath = path.resolve(targetFilePath);
 		}
 	}
@@ -1179,6 +1185,51 @@ const outputToJsonFile = (quasArgs) => {
 	})
 }
 
+const outputToTextFile = (quasArgs = {}) => {
+	return new promise((resolve, reject) => {
+		const versionPrefix = `_v`;
+		const outputPath = getQuasarOutputPath(quasArgs);
+		let outputFile = `${outputPath}/${quasArgs.outputVersion == 1 ? quasArgs.output : `${quasArgs.output}${versionPrefix}${quasArgs.outputVersion}`}${quasArgs.outputExt}`;
+		quasArgs = logBuildQueued(quasArgs);
+
+		if (fs.existsSync(outputFile) && quasArgs.versionOutputFile) {
+			while (fs.existsSync(outputFile)) {
+				quasArgs.outputVersion += 1;
+				outputFile = `${outputPath}/${quasArgs.output}${versionPrefix}${quasArgs.outputVersion}${quasArgs.outputExt}`;
+			}
+			quasArgs.output = `${quasArgs.output}${versionPrefix}${quasArgs.outputVersion}`;
+			logInfo(`existing version detected, version number (${quasArgs.outputVersion}) appended to outputFile`);
+		}
+
+		return gulp.src(quasArgs.targetFilePath)
+			.pipe(template(quasArgs))
+			.pipe(rename({
+				basename: quasArgs.output,
+				extname: quasArgs.outputExt
+			}))
+			.pipe(gulp.dest(outputPath))
+			.on('error', (err) => {
+				logError(err);
+				quasArgs.error = err;
+				logArgsToFile(quasArgs, null, true);
+				return reject();
+			})
+			.on('end', () => {
+				logSuccess(`Output file saved as: ${outputFile}`);
+				quasArgs.buildCompletedSuccessfully = true;
+				logArgsToFile(quasArgs, STATUS_COMPLETED);
+
+				if (quasArgs.useJobTimestampForBuild) {
+					logInfo(`cleaning up after job: ${quasArgs.jobTimestamp}`);
+					debug(`did clean up assets folder: ${quasArgs.assetsFolder}`);
+					del.sync(quasArgs.assetsFolder, { force: true });
+				}
+
+				return resolve(quasArgs);
+			});
+	})
+}
+
 // Compile the quasar into the output folder
 const outputToHtmlFile = (quasArgs) => {
 	return new promise((resolve, reject) => {
@@ -1278,6 +1329,7 @@ module.exports = {
 	getFilenamesInDirectory,
 	getTaskNames,
 	getQuasarPromptQuestions,
+	getQuasarOutputPath,
 	hasQuasarInitialArgs,
 	init,
 	injectCode,
@@ -1293,6 +1345,7 @@ module.exports = {
 	makePromptRequired,
 	moveTargetFilesToRootOfAssetsPath,
 	outputToHtmlFile,
+	outputToTextFile,
 	promptConsole,
 	promptUser,
 	quasarSelectPrompt,
