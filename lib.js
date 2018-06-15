@@ -260,6 +260,7 @@ const getQuasArgs = (qType = null, requiredArgs = null, nonRequiredArgs = {}, re
 			stylesPreAsset: qType ? `${assetsFolder}/${qType}.css` : undefined,
 			scriptsPostAsset: qType ? `${assetsFolder}/${qType}.js` : undefined,
 			target: qType ? `${qType}.html` : undefined,
+			targetEnvironments: [],
 			bucket: '%AWS%',
 			sourceExt: '.zip',
 			outputExt: '.txt',
@@ -325,7 +326,7 @@ const setSourceAndOutputArgs = (quasArgs) => {
 		}
 	} else {
 		//Default the output filename to the signal
-		quasArgs.output = `${quasArgs.domain}_${quasArgs.signal}_${quasArgs.oType}_${new Date().toLocaleDateString("en-US").replace(/\//g, '_')}_${quasArgs.targetEnvironments.join('-')}`;
+		quasArgs.output = `${quasArgs.domain}_${quasArgs.signal}_${quasArgs.oType}_${new Date().toLocaleDateString("en-US").replace(/\//g, '-')}_${quasArgs.targetEnvironments.join('-')}`;
 	}
 
 	return quasArgs;
