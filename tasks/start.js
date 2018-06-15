@@ -27,17 +27,7 @@ const validateRequiredArgs = (args = {}) => {
 		// Merge options with passed in parameters
 		quasArgs = Object.assign(quasArgs, args);
 
-		if (quasArgs.output && quasArgs.output.length) {
-			const split = quasArgs.output.split('.');
-
-			if (split.length > 1) {
-				quasArgs.outputExt = `.${split.pop()}`;
-				quasArgs.output = quasArgs.output.substr(0, quasArgs.output.length - quasArgs.outputExt.length);
-			}
-		} else {
-			//Default the output filename to the signal
-			quasArgs.output = `${quasArgs.signal}_${quasArgs.qType}`;
-		}
+		quasArgs = lib.setSourceAndOutputArgs(quasArgs);
 		quasArgs = lib.copyTemplateFilesToAssetsPath(quasArgs);
 
 		return resolve(quasArgs);

@@ -304,6 +304,33 @@ const getQuasArgs = (qType = null, requiredArgs = null, nonRequiredArgs = {}, re
 	return quasArgs;
 }
 
+const setSourceAndOutputArgs = (quasArgs) => {
+	if (quasArgs.source == 'none') {
+		quasArgs.source = null;
+	} else if (quasArgs.source && quasArgs.source.length) {
+		const split = quasArgs.source.split('.');
+
+		if (split.length > 1) {
+			quasArgs.sourceExt = `.${split.pop()}`;
+			quasArgs.source = quasArgs.source.substr(0, quasArgs.source.length - quasArgs.sourceExt.length);
+		}
+	}
+
+	if (quasArgs.output && quasArgs.output.length) {
+		const split = quasArgs.output.split('.');
+
+		if (split.length > 1) {
+			quasArgs.outputExt = `.${split.pop()}`;
+			quasArgs.output = quasArgs.output.substr(0, quasArgs.output.length - quasArgs.outputExt.length);
+		}
+	} else {
+		//Default the output filename to the signal
+		quasArgs.output = `${quasArgs.domain}_${quasArgs.signal}_${quasArgs.oType}_${new Date().toLocaleDateString("en-US").replace(/\//g, '_')}_${quasArgs.targetEnvironments.join('-')}`;
+	}
+
+	return quasArgs;
+}
+
 const definitelyCallFunction = (cb, resolve = null) => {
 	if (process.title == 'gulp' && !(gulp.hasTask('default'))) {
 		gulp.task('default', () => {
@@ -1301,6 +1328,7 @@ module.exports = {
 	registerTask,
 	runLastSuccessfulBuild,
 	runTask,
+	setSourceAndOutputArgs,
 	spawnCommand,
 	unpackFiles,
 	uploadFiles,

@@ -59,28 +59,7 @@ const validateRequiredArgs = (args = {}) => {
 		// Merge options with passed in parameters
 		quasArgs = Object.assign(quasArgs, args);
 
-		if (quasArgs.source == 'none') {
-			quasArgs.source = null;
-		} else if (quasArgs.source && quasArgs.source.length) {
-			const split = quasArgs.source.split('.');
-
-			if (split.length > 1) {
-				quasArgs.sourceExt = `.${split.pop()}`;
-				quasArgs.source = quasArgs.source.substr(0, quasArgs.source.length - quasArgs.sourceExt.length);
-			}
-		}
-
-		if (quasArgs.output && quasArgs.output.length) {
-			const split = quasArgs.output.split('.');
-
-			if (split.length > 1) {
-				quasArgs.outputExt = `.${split.pop()}`;
-				quasArgs.output = quasArgs.output.substr(0, quasArgs.output.length - quasArgs.outputExt.length);
-			}
-		} else {
-			//Default the output filename to the signal
-			quasArgs.output = `${quasArgs.signal}_${quasArgs.qType}`;
-		}
+		quasArgs = lib.setSourceAndOutputArgs(quasArgs);
 
 		return resolve(quasArgs);
 	})
