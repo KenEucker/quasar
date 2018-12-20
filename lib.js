@@ -22,6 +22,8 @@ const getDefaultQuasArgs = (qType = null) => {
 			assetsFolder: qType ? `${config.assetsFolder}/${qType}` : undefined,
 			stylesAsset: qType ? `${qType}.css` : undefined,
 			scriptsAsset: qType ? `${qType}.js` : undefined,
+			cssInjectLocation = '</head',
+			jsInjectLocation = '</body',
 			target: qType ? `${qType}.html` : undefined,
 			targetFilePath: qType ? `${config.assetsFolder}/${qType}/${qType}.html` : undefined,
 			bucket: 'ads',
@@ -246,8 +248,8 @@ const hasQuasarAnswers = (quasArgs) => {
 
 const findTargetFile = (quasArgs) => {
 	const signalPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
-	let targetFilePath = path.resolve(`${signalPath}/${quasArgs.target}`);
-
+	let targetFilePath = quasArgs.targetFilePath || path.resolve(`${signalPath}/${quasArgs.target}`);
+	
 	if (!fs.existsSync(targetFilePath)) {
 		const oldTargetFilePath = targetFilePath;
 		targetFilePath = fromDir(`${signalPath}`, `${quasArgs.target}`);
@@ -263,8 +265,8 @@ const findTargetFile = (quasArgs) => {
 
 const copyTargetFileToOutputPath = (quasArgs) => {
 	const signalPath = path.resolve(`${quasArgs.outputFolder}/${quasArgs.domain}/${quasArgs.signal}`);
-	const outputFilePath = path.resolve(`${signalPath}/${quasArgs.target}`);
-	const targetFilePath = quasArgs.targetFilePath && quasArgs.targetFilePath.length ? quasArgs.targetFilePath : findTargetFile(quasArgs);
+	const targetFilePath = findTargetFile(quasArgs);
+	const outputFilePath = fromDir(signalPath, quasArgs.target) || path.resolve(`${signalPath}/${quasArgs.target}`);
 
 	if(fs.existsSync(targetFilePath)) {
 		log(`copying target file to output path: ${outputFilePath}`);
@@ -279,7 +281,7 @@ const copyTargetFileToOutputPath = (quasArgs) => {
 		return outputFilePath;
 	}
 
-	return quasArgs.targetFilePath;
+	return outputFilePath;
 };
 
 // Unpack input files
@@ -326,11 +328,15 @@ const injectCode = (quasArgs) => {
 		const cdnTemplate = `<%= cdnUrlStart %><%= bucketPath %>/`;
 		let css = (quasArgs.stylesAsset && quasArgs.stylesAsset.length) ? `${quasArgs.assetsFolder}/${quasArgs.stylesAsset}` : null;
 		let js = (quasArgs.scriptsAsset && quasArgs.scriptsAsset.length) ? `${quasArgs.assetsFolder}/${quasArgs.scriptsAsset}` : null;
+
+		// TODO: check if injection locations exist or not
 		if(css) {
-			css = fs.existsSync(css) ? `<style>\n${fs.readFileSync(css, 'utf8')}\n</style>\n` : ``;
+			let css_contents = fs.existsSync(css) ? fs.readFileSync(css, 'utf8') : '';
+			css = css_contents.length ? `<style>\n${css_contents}\n</style>\n` : ``;
 		}
 		if(js) {
-			js = fs.existsSync(js) ? `<script>\n${fs.readFileSync(js, 'utf8')}\n</script>\n` : ``;
+			let js_contents = fs.existsSync(js) ? fs.readFileSync(js, 'utf8') : '';
+			js = js_contents.length ? `<script>\n${js_contents}\n</script>\n` : ``;
 		}
 		
 		log('injecting public code prior to applying template parameters');
@@ -339,8 +345,8 @@ const injectCode = (quasArgs) => {
 
 		return gulp.src(quasArgs.targetFilePath, { base: quasArgs.dirname })
 			.pipe(inject.before(`${urlToPrependCDNLink}.`, cdnTemplate))
-			.pipe(inject.before('</head', css))
-			.pipe(inject.before('</body', js))
+			.pipe(inject.before(quasArgs.cssInjectLocation, css))
+			.pipe(inject.before(quasArgs.jsInjectLocation, js))
 			.pipe(gulp.dest(quasArgs.dirname))
 			.on('error', (err) => { 
 				logError('error on injection pipeline ', err); 
