@@ -9,7 +9,7 @@
 			"request": "launch",
 			"name": "Electron Main",
 			"runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
-			"program": "${workspaceFolder}/electron.js",
+			"program": "${workspaceFolder}/src/electron.js",
 			"protocol": "inspector"
 		},
 		{
@@ -17,7 +17,7 @@
 			"request": "launch",
 			"name": "Watch Jobs",
 			"protocol": "inspector",
-			"program": "${workspaceFolder}/cli.js",
+			"program": "${workspaceFolder}/src/cli.js",
 			"args": [
 				"--watchJobs=true"
 			]
@@ -27,7 +27,7 @@
 			"request": "launch",
 			"protocol": "inspector",
 			"name": "Build",
-			"program": "${workspaceFolder}/cli.js",
+			"program": "${workspaceFolder}/src/cli.js",
 			"args": [
 				"--dev=true",
 				"--overwriteUnpackDestination=true"

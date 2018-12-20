@@ -1,0 +1,186 @@
+nav {
+	background-image: url('https://cdn.dtcn.com/quasar/quasar-1.jpg');
+	background-size: cover;
+}
+
+nav h4 {
+	color: white;
+}
+
+nav .logo {
+	width: 75px;
+	height: 75px;
+}
+
+footer {
+	padding-top: 0px;
+}
+
+footer .footer-text {
+	vertical-align: top;
+}
+
+.github-buttons {
+	position: absolute;
+	right: 30px;
+}
+
+.lnb .lnb-api li,
+.lnb .lnb-examples li {
+	border-bottom: none;
+}
+
+/* ===[ Github Button Styling ]=== */
+
+.button {
+	position: relative;
+	overflow: visible;
+	display: inline-block;
+	padding: 0.5em 1em;
+	border: 1px solid #d4d4d4;
+	margin: 0;
+	text-decoration: none;
+	text-shadow: 1px 1px 0 #fff;
+	font: 11px/normal sans-serif;
+	color: #333;
+	white-space: nowrap;
+	cursor: pointer;
+	outline: none;
+	background-color: #ececec;
+	background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#f4f4f4), to(#ececec));
+	background-image: -webkit-linear-gradient(#f4f4f4, #ececec);
+	background-image: -moz-linear-gradient(#f4f4f4, #ececec);
+	background-image: -o-linear-gradient(#f4f4f4, #ececec);
+	background-image: -ms-linear-gradient(#f4f4f4, #ececec);
+	background-image: linear-gradient(#f4f4f4, #ececec);
+	-moz-background-clip: padding;
+	background-clip: padding;
+	/* commented out due to Opera 11.10 bug */
+	-webkit-border-radius: 0.2em;
+	-moz-border-radius: 0.2em;
+	border-radius: 0.2em;
+	/* IE hacks */
+	zoom: 1;
+	*display: inline;
+}
+
+.button:hover,
+.button:focus {
+	border-color: #3072b3;
+	border-bottom-color: #2a65a0;
+	text-decoration: none;
+	text-shadow: -1px -1px 0 rgba(0, 0, 0, 0.3);
+	color: #fff;
+	background-color: #3C8DDE;
+	background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#599bdc), to(#3072b3));
+	background-image: -webkit-linear-gradient(#599bdc, #3072b3);
+	background-image: -moz-linear-gradient(#599bdc, #3072b3);
+	background-image: -o-linear-gradient(#599bdc, #3072b3);
+	background-image: -ms-linear-gradient(#599bdc, #3072b3);
+	background-image: linear-gradient(#599bdc, #3072b3);
+}
+
+.button:active,
+.button.active {
+	text-shadow: -1px -1px 0 rgba(0, 0, 0, 0.3);
+	color: #fff;
+	border-color: #2a65a0;
+	border-bottom-color: #3884CF;
+	background-color: #3072b3;
+	background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#3072b3), to(#599bdc));
+	background-image: -webkit-linear-gradient(#3072b3, #599bdc);
+	background-image: -moz-linear-gradient(#3072b3, #599bdc);
+	background-image: -o-linear-gradient(#3072b3, #599bdc);
+	background-image: -ms-linear-gradient(#3072b3, #599bdc);
+	background-image: linear-gradient(#3072b3, #599bdc);
+}
+
+/* overrides extra padding on button elements in Firefox  */
+
+.button::-moz-focus-inner {
+	padding: 0;
+	border: 0;
+}
+
+.button.primary {
+	font-weight: bold
+}
+
+/* ===[ Pill ]=== */
+
+.button.pill {
+	-webkit-border-radius: 50em;
+	-moz-border-radius: 50em;
+	border-radius: 50em;
+}
+
+.button-group {
+	list-style: none;
+	padding: 0;
+	margin: 10px;
+	/* IE hacks */
+	zoom: 1;
+	display: block;
+	overflow: hidden;
+}
+
+.button+.button,
+.button+.button-group,
+.button-group+.button,
+.button-group+.button-group {
+	margin-left: 15px
+}
+
+.button-group li {
+	float: left;
+	padding: 0;
+	margin: 0;
+}
+
+.button-group .button {
+	float: left;
+	margin-left: -1px;
+}
+
+.button-group>.button:not(:first-child):not(:last-child),
+.button-group li:not(:first-child):not(:last-child) .button {
+	-webkit-border-radius: 0;
+	-moz-border-radius: 0;
+	border-radius: 0;
+}
+
+.button-group>.button:first-child,
+.button-group li:first-child .button {
+	margin-left: 0;
+	-webkit-border-top-right-radius: 0;
+	-webkit-border-bottom-right-radius: 0;
+	-moz-border-radius-topright: 0;
+	-moz-border-radius-bottomright: 0;
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.button-group>.button:last-child,
+.button-group li:last-child>.button {
+	-webkit-border-top-left-radius: 0;
+	-webkit-border-bottom-left-radius: 0;
+	-moz-border-radius-topleft: 0;
+	-moz-border-radius-bottomleft: 0;
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+}
+
+/* ===[ Generic Unordered List ]=== */
+
+ul.generic {
+	list-style: none;
+	display: block;
+	overflow: hidden;
+	margin: 10px;
+	padding: 0;
+}
+
+ul.generic li {
+	float: left;
+	margin-left: 10px;
+}

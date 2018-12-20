@@ -1,8 +1,0 @@
-#!/bin/bash
-
-echo "Cleaning project folder of non-essentials for application"
-bin/cleanDev
-echo "creating the webform project in the app folder"
-bin/buildWebForm
-# node cli.js --packageApp=true "$@"
-electron-packager . --out=dist --overwrite=true --electron-version 1.7.10 --icon=icon.ico

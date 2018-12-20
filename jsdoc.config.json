@@ -1,0 +1,31 @@
+{
+	"opts": {
+		"encoding": "utf8",
+		"destination": "./docs/",
+		"template": "node_modules/tui-jsdoc-template",
+		"package": "package.json",
+		"readme": "README.md",
+		"tutorials": "./about"
+	},
+	"templates": {
+		"name": "QUASAR",
+		"logo": {
+			"url": "https://cdn.dtcn.com/temp/quasar/icon.png",
+			"width": "32px",
+			"height": "32px",
+			"link": "https://github.com/DigitalTrends/quasar"
+		},
+		"footerText": "a Quick, Usable, And Simple; Application Runtime",
+		"useCollapsibles": false,
+		"tabNames": {
+			"api": "API",
+			"tutorials": "About"
+		}
+	},
+	"plugins": [],
+	"source": {
+		"include": ["scripts"],
+		"includePattern": ".+\\.js(doc|x)?$",
+		"excludePattern": "(^|\\/|\\\\)_"
+	}
+}

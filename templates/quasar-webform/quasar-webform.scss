@@ -1,0 +1,578 @@
+@font-face {
+	font-family: space_age;
+	src: url("fonts/space_age.ttf");
+}
+
+body {
+	background-image: url("img/most_distant_quasar.jpg");
+	background-size: cover;
+	background-repeat: no-repeat;
+
+	.quasarBuildVideo {
+		position: absolute;
+
+		video {
+			height: 100%;
+		}
+	}
+
+	select {
+		display: inherit;
+	}
+
+	.material-icons {
+		font-size: 2em;
+	}
+
+	.hide {
+		visibility: hidden;
+	}
+
+	.show {
+		visibility: visible;
+	}
+
+	.mdl-layout__header,
+	.mdl-layout__drawer,
+	.mdl-layout-title,
+	.mdl-layout-heading {
+		// font-family: space_age !important;
+	}
+
+	.mdl-layout__header .mdl-layout-heading,
+	.mdl-layout__drawer .mdl-layout-title {
+		font-family: space_age;
+		font-size: 3em;
+		text-transform: uppercase;
+		cursor: pointer;
+	}
+
+	.mdl-layout__drawer {
+		.mdl-layout-title {
+			font-size: 2em;
+		}
+
+		.mdl-navigation {
+			span.mdl-navigation__link {
+				color: blue !important;
+			}
+
+			.mdl-navigation__link {
+				text-decoration: none;
+			}
+		}
+	}
+
+	.isBusy {
+		pointer-events: none;
+		opacity: 0.4;
+	}
+
+	#quasarHeading {
+		font-family: space_age;
+		display: inline-block;
+		color: white;
+		font-size: 4em;
+		text-shadow: 0px 3px black;
+		vertical-align: text-bottom;
+	}
+
+	#quasarSelector {
+		text-align: center;
+		font-size: 2em;
+		padding: 1em;
+		font-family: space_age;
+		display: inline-block;
+
+		select {
+			max-width: 400px;
+		}
+	}
+
+	nav {
+		color: transparent;
+		background-color: transparent;
+		box-shadow: none;
+		-webkit-box-shadow: none;
+	}
+
+	.formContainer {
+		position: relative;
+		margin-left: 1em;
+		margin-right: 1em;
+		background-color: rgba(255, 255, 255, 0.75);
+		padding: 1em;
+		padding-bottom: 4em;
+
+		.text-danger {
+			color: red;
+		}
+
+		form {
+			fieldset> {
+				.form-group.field {
+					padding: 15px 5px;
+					// min-width: 80%;
+					// max-width: 500px;
+
+					.required {
+						color: #26a69a;
+					}
+
+					&.is-invalid {
+						.required {
+							color: rgb(255, 64, 129);
+						}
+					}
+
+					.material-icons {
+						font-size: 2rem;
+						vertical-align: text-bottom;
+						padding-right: 5px;
+						z-index: 5;
+
+						&.active {
+							&::after {
+								color: #000;
+							}
+						}
+
+						&.inactive {
+							&::before {
+								color: #000;
+							}
+						}
+
+						&.clickable {
+							cursor: pointer;
+						}
+					}
+
+					#root_debris__title {
+						.material-icons {
+							&::before {
+								content: "blur_on"
+							}
+						}
+					}
+
+					label {
+						font-size: 1.5rem;
+						color: black;
+						font-family: "Roboto", sans-serif;
+
+						.material-icons {}
+
+						&[for="root_source"] {
+							.material-icons {
+								&::before {
+									content: "file_copy"
+								}
+
+								&::after {
+									content: "link";
+								}
+							}
+						}
+
+						&[for="root_domain"] {
+							.material-icons {
+								&::before {
+									content: "trip_origin";
+								}
+							}
+						}
+
+						&[for="root_signature"] {
+							.material-icons {
+								&::before {
+									content: "my_location";
+								}
+							}
+						}
+
+						&[for="root_askOptionalQuestions"] {
+							.material-icons {
+								&::before {
+									content: "tune";
+								}
+							}
+						}
+
+						&[for="root_oType"] {
+							.material-icons {
+								&::before {
+									content: "settings_ethernet";
+								}
+							}
+						}
+
+						&[for="root_destination"] {
+							.material-icons {
+								&::before {
+									content: "where_to_vote";
+								}
+							}
+						}
+
+						&[for="root_configFile"] {
+							.material-icons {
+								&::before {
+									content: "ballot";
+								}
+							}
+						}
+
+						&[for="root_footerText"] {
+							.material-icons {
+								&::before {
+									content: "short_text";
+								}
+							}
+						}
+
+						&[for="root_apiName"] {
+							.material-icons {
+								&::before {
+									content: "functions";
+								}
+							}
+						}
+
+						&[for="root_logoUrl"] {
+							.material-icons {
+								&::before {
+									content: "last_page";
+								}
+							}
+						}
+
+						&[for="root_logoClickUrl"] {
+							.material-icons {
+								&::before {
+									content: "launch";
+								}
+							}
+						}
+
+						&[for="root_template"] {
+							.material-icons {
+								&::before {
+									content: "layers";
+								}
+							}
+						}
+
+						&[for="root_id"] {
+							.material-icons {
+								&::before {
+									content: "graphic_eq";
+								}
+							}
+						}
+
+						&[for="root_package"] {
+							.material-icons {
+								&::before {
+									content: "redeem";
+								}
+							}
+						}
+
+						&[for="root_client"] {
+							.material-icons {
+								&::before {
+									content: "people_outline";
+								}
+							}
+						}
+
+						&[for="root_campaign"] {
+							.material-icons {
+								&::before {
+									content: "folder_special";
+								}
+							}
+						}
+
+						&[for="root_output"] {
+							.material-icons {
+								&::before {
+									content: "trip_origin";
+								}
+							}
+						}
+
+						&[for="root_uploadToS3"] {
+							.material-icons {
+								&::before {
+									content: "cloud_upload";
+								}
+							}
+						}
+
+						&[for="root_clickUrl"] {
+							.material-icons {
+								&::before {
+									content: "http";
+								}
+							}
+						}
+
+						&[for="root_clickTarget"] {
+							.material-icons {
+								&::before {
+									content: "open_in_browser";
+								}
+							}
+						}
+
+						&[for="root_readme"] {
+							.material-icons {
+								&::before {
+									content: "book";
+								}
+							}
+						}
+
+						&[for="root_uploadOutputFileAsTxtFile"] {
+							.material-icons {
+								&::before {
+									content: "cloud_done";
+								}
+							}
+						}
+
+						&[for="root_impressionTracker"] {
+							.material-icons {
+								&::before {
+									content: "center_focus_weak";
+								}
+							}
+						}
+
+						&[for="root_backgroundColor"] {
+							.material-icons {
+								&::before {
+									content: "colorize";
+								}
+							}
+						}
+
+						&[for="root_aspect"] {
+							.material-icons {
+								&::before {
+									content: "image_aspect_ratio";
+								}
+							}
+						}
+
+						&[for="root_imageName"] {
+							.material-icons {
+								&::before {
+									content: "photo";
+								}
+							}
+						}
+
+						&[for="root_scrollTarget"] {
+							.material-icons {
+								&::before {
+									content: "code";
+								}
+							}
+						}
+
+						&[for="root_desktopLogoName"] {
+							.material-icons {
+								&::before {
+									content: "laptop_mac";
+								}
+							}
+						}
+
+						&[for="root_mobileLogoName"] {
+							.material-icons {
+								&::before {
+									content: "phone_iphone";
+								}
+							}
+						}
+
+						&[for="root_body"] {
+							.material-icons {
+								&::before {
+									content: "line_style";
+								}
+							}
+						}
+
+						&[for="root_target"] {
+							.material-icons {
+								&::before {
+									content: "control_camera";
+								}
+							}
+						}
+
+						&[for="root_targetSelector"] {
+							.material-icons {
+								&::before {
+									content: "adjust";
+								}
+							}
+						}
+
+						&[for="root_insertAfterTargetSelector"] {
+							.material-icons {
+								&::before {
+									content: "center_focus_strong";
+								}
+							}
+						}
+
+						&[for="root_imageClass"] {
+							.material-icons {
+								&::before {
+									content: "burst_mode";
+								}
+							}
+						}
+
+						&[for="root_country"] {
+							.material-icons {
+								&::before {
+									content: "vpn_lock";
+								}
+							}
+						}
+
+						&[for="root_permalink"] {
+							.material-icons {
+								&::before {
+									content: "http";
+								}
+							}
+						}
+
+						&[for="root_title"] {
+							.material-icons {
+								&::before {
+									content: "title";
+								}
+							}
+						}
+
+						&[for="root_content"] {
+							.material-icons {
+								&::before {
+									content: "notes";
+								}
+							}
+						}
+
+						&[for="root_preload"] {
+							.material-icons {
+								&::before {
+									content: "rotate_right";
+								}
+							}
+						}
+
+						span.required {
+							display: none;
+						}
+					}
+				}
+			}
+
+			.field-array {
+				.row {
+					.btn-add {
+						background-color: #26a69a;
+					}
+				}
+
+				.array-item-list {
+					max-width: 500px;
+					flex-flow: column;
+					margin-left: 0;
+
+					.array-item {
+						display: inline-flex;
+
+						select {
+							margin-top: 15px;
+						}
+
+						.array-item-toolbox {
+							margin: auto;
+
+							.btn-group {
+								.mdl-button {
+									background-color: #26a69a;
+									min-width: unset;
+								}
+
+								.array-item-remove {
+									background-color: red;
+								}
+							}
+						}
+					}
+				}
+			}
+
+			.btn-success {}
+
+			.form-control {
+				// max-width: 50%;
+			}
+
+			>p {
+				button.btn-info {
+					position: absolute;
+				}
+
+				// text-align: center;
+				button[type="submit"] {
+					background-color: #26a69a !important;
+					position: absolute;
+					right: 2em;
+				}
+			}
+		}
+	}
+
+	@media screen and (max-width: 500px) {
+		padding-left: 0;
+		margin-left: 2px;
+
+		.formContainer {
+			fieldset> {
+				.form-group.field {
+					.material-icons {
+						font-size: 1rem;
+					}
+
+					label {
+						font-size: 1rem;
+					}
+				}
+			}
+
+			margin-left: 0;
+			margin-right: 0;
+			font-size: 1em;
+		}
+
+		.mdl-layout-heading {
+			visibility: hidden;
+			width: 0.85em;
+
+			&:first-letter {
+				visibility: visible;
+			}
+		}
+	}
+}

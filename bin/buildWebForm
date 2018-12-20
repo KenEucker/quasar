@@ -1,2 +1,0 @@
-#!/bin/bash
-node cli.js --qType=quasarWebform --noPrompt=true --loadTasks=quasarWebform --runAsProcess=true --outputFolder=./app --versionOutputFile=false  "$@"

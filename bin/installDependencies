@@ -1,0 +1,7 @@
+#!/bin/bash
+
+rm yarn.lock
+rm -rf node_modules
+yarn install
+bin/version
+echo "installation completed"

@@ -1,2 +1,0 @@
-#!/bin/bash 
-node cli.js --runAsProcess=true --runWebApi=true --runWebForm=true --watchJobs=true --useJobTimestampForBuild=true --autoLaunchBrowser=true "$@"
