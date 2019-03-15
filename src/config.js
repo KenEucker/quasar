@@ -151,7 +151,7 @@ class QuasarConfig {
 	 * @returns {string} output folder path
 	 */
 	get outputRoot() {
-		return this._outputFolder;
+		return this._outputRoot;
 	}
 
 	/**

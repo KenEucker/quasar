@@ -4,9 +4,12 @@
 	"description": "a Quick, Usable, And Simple; Application Runtime",
 	"main": "index.js",
 	"author": "keneucker@gmail.com",
-	"scripts": {},
+	"scripts": {
+		"test": "./node_modules/.bin/mocha test/main.js"
+	},
 	"bin": {},
 	"dependencies": {
+		"@babel/core": "^7.3.4",
 		"adm-zip": "^0.4.13",
 		"asciiart-logo": "^0.2.6",
 		"babel-core": "^6.26.3",

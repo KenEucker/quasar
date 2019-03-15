@@ -190,9 +190,9 @@ const copyFilesFromFolderToFolder = (sourcePath, destinationPath, files, exclude
 
 		logInfo(`copying files (${files.join()}) from ${sourcePath}/ to ${destinationPath}`);
 		return gulp.src(files.concat(excludeFiles), {
-				base: sourcePath,
-				allowEmpty: true,
-			})
+			base: sourcePath,
+			allowEmpty: true,
+		})
 			.on('error', err => {
 				logError('copying error', err);
 			})
@@ -620,7 +620,7 @@ const log = (message = '', obj, type = LOG_INFO, color = colors.grey, showType =
 
 		if (logLevel != LOG_DEBUG && type == LOG_DEBUG) {
 			return;
-		} else if (logLevel == LOG_DEBUG) {} else if (logLevel != LOG_DEFAULT && type != logLevel) {
+		} else if (logLevel == LOG_DEBUG) { } else if (logLevel != LOG_DEFAULT && type != logLevel) {
 			// show these levels always
 			if (type != LOG_SUCCESS && type != LOG_END) {
 				return;
@@ -694,7 +694,7 @@ const log = (message = '', obj, type = LOG_INFO, color = colors.grey, showType =
 			}
 			break;
 
-			// Logging turned off
+		// Logging turned off
 		case 'NONE':
 			if (force) {
 				logger(message);
@@ -829,8 +829,8 @@ const uploadFilesToS3 = (toS3BucketPath, includeFiles, fromDirectory, excludeFil
 						ACL: 'public-read',
 						metadataMap,
 					}, {
-						maxRetries: 5,
-					})
+							maxRetries: 5,
+						})
 				)
 				.on('error', function (err) {
 					logCritical('S3 error', err);
@@ -888,8 +888,8 @@ const uploadFilesToDropbox = (includeFiles, fromDirectory, toDropboxPath, exclud
 		);
 
 		return gulp.src(includeFiles.concat(excludeFiles), {
-				base: '/'
-			})
+			base: '/'
+		})
 			.pipe(gulpif(renameOutputFile, rename(outputFileName)))
 			.pipe(gulpDropbox({
 				token: dropboxConfig.accessToken,

@@ -155,57 +155,57 @@ class QuasarRuntime {
 
 		return (
 			gulp
-			.src(`${quasArgs.templatesFolder}/${files}`)
-			// Make it useful
-			.pipe(
-				babel({
-					presets: ['env', 'react'], //, 'babel-preset-react-app', 'syntax-dynamic-import' ],
-				})
-			)
-			.on(
-				'error',
-				function (err) {
-					this.logError('js compilation error:', err);
-				}.bind(this)
-			)
-			// Make it compatible
-			.pipe(
-				browserify({
-					ignoreMissing: true,
-					noBuiltins: true,
-					noCommondir: true
-				})
-			)
-			.on(
-				'error',
-				function (err) {
-					this.logError('js compilation error:', err);
-				}.bind(this)
-			)
-			// Bundle source files
-			.pipe(
-				concat(outputFilename, {
-					newLine: `;\n`
-				})
-			)
-			// Ouput single file in asset folder for use with build task
-			.pipe(gulp.dest(`${quasArgs.assetsFolder}`))
-			.on(
-				'error',
-				function (err) {
-					this.logError('js compilation error:', err);
-				}.bind(this)
-			)
-			.on(
-				'end',
-				function () {
-					this.logInfo(
-						`Scripts compiled into ${quasArgs.assetsFolder}/${
+				.src(`${quasArgs.templatesFolder}/${files}`)
+				// Make it useful
+				.pipe(
+					babel({
+						presets: ['env', 'react'], //, 'babel-preset-react-app', 'syntax-dynamic-import' ],
+					})
+				)
+				.on(
+					'error',
+					function (err) {
+						this.logError('js compilation error:', err);
+					}.bind(this)
+				)
+				// Make it compatible
+				.pipe(
+					browserify({
+						ignoreMissing: true,
+						noBuiltins: true,
+						noCommondir: true
+					})
+				)
+				.on(
+					'error',
+					function (err) {
+						this.logError('js compilation error:', err);
+					}.bind(this)
+				)
+				// Bundle source files
+				.pipe(
+					concat(outputFilename, {
+						newLine: `;\n`
+					})
+				)
+				// Ouput single file in asset folder for use with build task
+				.pipe(gulp.dest(`${quasArgs.assetsFolder}`))
+				.on(
+					'error',
+					function (err) {
+						this.logError('js compilation error:', err);
+					}.bind(this)
+				)
+				.on(
+					'end',
+					function () {
+						this.logInfo(
+							`Scripts compiled into ${quasArgs.assetsFolder}/${
 							quasArgs.qType
 							}.js`
-					);
-				}.bind(this)
-			)
+						);
+					}.bind(this)
+				)
 		);
 	}
 
@@ -228,42 +228,42 @@ class QuasarRuntime {
 		}
 		return (
 			gulp
-			.src(`${quasArgs.templatesFolder}/${files}`)
-			// Compile sass
-			.pipe(lib.sassify())
-			.on(
-				'error',
-				function (err) {
-					this.logError('css compilation error', err);
-				}.bind(this)
-			)
-			.pipe(cleanCSS())
-			.on(
-				'error',
-				function (err) {
-					this.logError('css compilation error', err);
-				}.bind(this)
-			)
-			// Bundle source files
-			.pipe(concat(outputFilename))
-			// Ouput single file in asset folder for use with build task
-			.pipe(gulp.dest(`${quasArgs.assetsFolder}`))
-			.on(
-				'error',
-				function (err) {
-					this.logError('css compilation error', err);
-				}.bind(this)
-			)
-			.on(
-				'end',
-				function () {
-					this.logInfo(
-						`Styles compiled into ${quasArgs.assetsFolder}/${
+				.src(`${quasArgs.templatesFolder}/${files}`)
+				// Compile sass
+				.pipe(lib.sassify())
+				.on(
+					'error',
+					function (err) {
+						this.logError('css compilation error', err);
+					}.bind(this)
+				)
+				.pipe(cleanCSS())
+				.on(
+					'error',
+					function (err) {
+						this.logError('css compilation error', err);
+					}.bind(this)
+				)
+				// Bundle source files
+				.pipe(concat(outputFilename))
+				// Ouput single file in asset folder for use with build task
+				.pipe(gulp.dest(`${quasArgs.assetsFolder}`))
+				.on(
+					'error',
+					function (err) {
+						this.logError('css compilation error', err);
+					}.bind(this)
+				)
+				.on(
+					'end',
+					function () {
+						this.logInfo(
+							`Styles compiled into ${quasArgs.assetsFolder}/${
 							quasArgs.qType
 							}.css`
-					);
-				}.bind(this)
-			)
+						);
+					}.bind(this)
+				)
 		);
 	}
 
@@ -278,47 +278,47 @@ class QuasarRuntime {
 
 		return (
 			gulp.src(`${quasArgs.templatesFolder}/**/*.mustache`)
-			// Compile mustache file
-			.pipe(
-				flatmap((stream, file) => {
-					const filename = `${file.path}.json`;
-					if (fs.existsSync(filename)) {
-						return stream.pipe(mustache(filename, {}, {}));
-					} else {
-						return stream.pipe(mustache());
+				// Compile mustache file
+				.pipe(
+					flatmap((stream, file) => {
+						const filename = `${file.path}.json`;
+						if (fs.existsSync(filename)) {
+							return stream.pipe(mustache(filename, {}, {}));
+						} else {
+							return stream.pipe(mustache());
+						}
+					})
+				)
+				.on(
+					'error',
+					function (err) {
+						this.logError('html compilation error', err);
+					}.bind(this)
+				)
+				// Bundle source files
+				.pipe(
+					concat(`${quasArgs.qType}.html`), {
+						newLine: `<!-- Section -->`
 					}
-				})
-			)
-			.on(
-				'error',
-				function (err) {
-					this.logError('html compilation error', err);
-				}.bind(this)
-			)
-			// Bundle source files
-			.pipe(
-				concat(`${quasArgs.qType}.html`), {
-					newLine: `<!-- Section -->`
-				}
-			)
-			// Ouput single file in asset folder for use with build task
-			.pipe(gulp.dest(`${quasArgs.assetsFolder}`))
-			.on(
-				'error',
-				function (err) {
-					this.logError('html compilation error', err);
-				}.bind(this)
-			)
-			.on(
-				'end',
-				function () {
-					this.logInfo(
-						`Documents compiled into ${quasArgs.assetsFolder}/${
+				)
+				// Ouput single file in asset folder for use with build task
+				.pipe(gulp.dest(`${quasArgs.assetsFolder}`))
+				.on(
+					'error',
+					function (err) {
+						this.logError('html compilation error', err);
+					}.bind(this)
+				)
+				.on(
+					'end',
+					function () {
+						this.logInfo(
+							`Documents compiled into ${quasArgs.assetsFolder}/${
 							quasArgs.qType
 							}.html`
-					);
-				}.bind(this)
-			)
+						);
+					}.bind(this)
+				)
 		);
 	}
 
@@ -772,8 +772,8 @@ class QuasarRuntime {
 	getQuasarOutputPath(quasArgs = {}) {
 		const outputSubdirectory =
 			quasArgs.domain.length && quasArgs.signature.length ?
-			`${quasArgs.domain}/${quasArgs.signature}` :
-			'';
+				`${quasArgs.domain}/${quasArgs.signature}` :
+				'';
 		return `${quasArgs.outputFolder.replace(path.resolve(`${quasArgs.outputFolder}../`), '')}/${outputSubdirectory}`;
 	}
 
@@ -865,9 +865,9 @@ class QuasarRuntime {
 				const urlToPrependCDNLink = quasArgs.target ?
 					quasArgs.target.replace('.html', '') :
 					quasArgs.targetFilePath
-					.split('/')
-					.pop()
-					.replace('.html', '');
+						.split('/')
+						.pop()
+						.replace('.html', '');
 				const cdnTemplate = `<%= cdnUrlStart %><%= bucketPath %>/`;
 
 				this.logInfo(
@@ -1020,15 +1020,15 @@ class QuasarRuntime {
 			quasArgs.cssInjectTargets;
 		const postCssInjectionLocation =
 			quasArgs.cssInjectTargets.length > 1 ?
-			quasArgs.cssInjectTargets[1] :
-			quasArgs.cssInjectTargets;
+				quasArgs.cssInjectTargets[1] :
+				quasArgs.cssInjectTargets;
 		const preJsInjectionLocation = quasArgs.jsInjectTargets.length ?
 			quasArgs.jsInjectTargets[0] :
 			quasArgs.jsInjectTargets;
 		const postJsInjectionLocation =
 			quasArgs.jsInjectTargets.length > 1 ?
-			quasArgs.jsInjectTargets[1] :
-			quasArgs.jsInjectTargets;
+				quasArgs.jsInjectTargets[1] :
+				quasArgs.jsInjectTargets;
 
 		if (quasArgs.cssPreAssetFile) {
 			contents = lib.injectTagStringIntoString(
@@ -1169,8 +1169,8 @@ class QuasarRuntime {
 			}
 
 			quasArgs.argsFile = quasArgs.argsFile.replace(
-					`/${quasArgs.status}`,
-					`/${toStatus}`)
+				`/${quasArgs.status}`,
+				`/${toStatus}`)
 				.replace(
 					`\\${quasArgs.status}`,
 					`\\${toStatus}`
@@ -1337,13 +1337,13 @@ class QuasarRuntime {
 				name: name || packageJson.name,
 				font,
 			})
-			.emptyLine()
-			.left(packageJson.description)
-			.emptyLine()
-			.right(`version ${packageJson.version}`)
-			.emptyLine()
-			.right(quasarPackageJson ? `Quasar Runtime version ${quasarPackageJson.version}` : '')
-			.render(),
+				.emptyLine()
+				.left(packageJson.description)
+				.emptyLine()
+				.right(`version ${packageJson.version}`)
+				.emptyLine()
+				.right(quasarPackageJson ? `Quasar Runtime version ${quasarPackageJson.version}` : '')
+				.render(),
 			packageJson,
 			lib.LOG_CRITICAL,
 			colors[color],

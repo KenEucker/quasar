@@ -80,7 +80,7 @@ class QuasarTask {
 			this.oTypes = [{
 				name: this.qType,
 				qType: this.qType
-			}, ];
+			},];
 		}
 
 		this.setDefaultQuasArgs(qType, additionalArgs);
@@ -335,7 +335,7 @@ class QuasarTask {
 	 * @param {QuasArgs} [args={}]
 	 * @memberof QuasarTask
 	 */
-	resolveQuasArgs(args = {}) {}
+	resolveQuasArgs(args = {}) { }
 
 	/**
 	 * @description Runs the quasar through validation, build, then cleanup.
@@ -367,7 +367,7 @@ class QuasarTask {
 			if (_config && !force) {
 				this.config = _config;
 			} else {
-				const QuasarConfig = require(`${applicationRoot}/config.js`);
+				const QuasarConfig = require(`${applicationRoot}/src/config.js`);
 				this.config = new QuasarConfig();
 			}
 		}
