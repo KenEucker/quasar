@@ -1,7 +1,14 @@
 # Quasar - a Quick, Usable, And Simple; Application Runtime
 
-* quasars are the tasks
-* templates are the before files
-* debris are the global dependencies
+Quasars are among the most luminous objects in the universe. Each one greatly outshines the combined output of all the stars in their host galaxies. (For instance, in 2015 astronomers announced they’d found a quasar that shines some 400 trillion times brighter than our sun.)
 
--> pipe in data from the CLI, a web application, or JSON file and you'll get a single file output of HTML or TXT or JSON.
+All large galaxies have giant black holes at their centers, and a quasar forms when one actively starts feeding, pulling in matter like gas and dust. But this stuff doesn’t fall directly into the black hole — it circles around the abyss at ever-increasing speeds while spiraling inward. Eventually, the cosmic food becomes so hot (from friction) that it pours out light before some of it makes its way into the black hole. The object that generates this prodigious amount of light — the black hole and cloud of debris swirling around it — is a quasar.
+
+Quasar is the library that runs quasars, compiles data and debris, and produces a singular document
+* `quasars` are the build tasks
+* `templates` are the before files
+* `debris` are the global dependencies
+
+Quasars can be large or small, complex or simple, and can include multiple frontend stacks. At the end of the day it is a document generator that takes input data and produces a singular output. That output is something that you might find yourself wanting to build, repeatedly, with either the same data or different data, in a predictably manner, to any destination of your choice. Quasars can support anything from entire websites to singular components used in other websites. Quasar can support JSON document generation and feed itself that JSON to create more JSON or an HTML file. Quasar can support TXT file output if you simply want to have your files ingested by something else. Quasar can deploy your resources to the cloud, or host them directly for testing purposes. 
+
+Quasar was built to facilitate the collaboration of different groups to create a singular output, for example: a sales team, a design team, an implementation team, and a QA team; the output of work from one team goes into quasar and becomes an input to the process of delivery on an item for the rest of the teams. In this example: the sales team creates a receipt from a sale, design creates assets from receipt information and provides that information in a new receipt, implementation creates the output from the receipt and assets, and QA tests the final output in a test environment (automated + human verified) and creates final receipt with the information included from all previous teams. The final receipts represent the entire product in it's raw form, and can be rebuilt over and over again. Receipts can be updated as assets change or templates change or the parameters of a sale changes, and rebuilt without having to revisit the entire process all over again. This enables small changes to be made by non-technical people, like: updating an image, updating copy, choosing a different template for the output, or changing the details of the sale.

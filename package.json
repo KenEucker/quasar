@@ -5,7 +5,10 @@
 	"main": "index.js",
 	"author": "keneucker@gmail.com",
 	"scripts": {
-		"test": "./node_modules/.bin/mocha test/main.js"
+		"test": "./node_modules/.bin/mocha test/main.js",
+		"updateIndex": "cat about/* > index.md",
+		"installDependencies": "./bin/installDependencies",
+		"version": "./bin/version"
 	},
 	"bin": {},
 	"dependencies": {

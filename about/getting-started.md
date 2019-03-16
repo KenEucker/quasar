@@ -13,10 +13,4 @@
 
 ## Run as a process
 
-1. run `bin/cli` to run the application as a process
-   - optionally add the `--runWebApi=true` argument to run the api @ http://localhost:2720
-   - optionally add the `--watchJobs=true` argument to autoload json files to build quasars
-   - optionally add the `--runWebform=true` to run the webform @ http://localhost:3000
-   - optionally add the `--autoBuildWebForm=true` to build the quasarWebform task on startup
-   - optionally add the `--autoBuildWebApp=true` to build the quasarWebApp task on startup
-   - optionally add the `--reRun=true` to rebuild the last successfully run arguments back through quasar
+- run `bin/cli` to run the application as a process, see the Coommand Line Interface section of the documentation for flags that you can use when running the cli as a process. 

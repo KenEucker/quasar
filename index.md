@@ -1,10 +1,17 @@
 # Quasar - a Quick, Usable, And Simple; Application Runtime
 
-* quasars are the tasks
-* templates are the before files
-* debris are the global dependencies
+Quasars are among the most luminous objects in the universe. Each one greatly outshines the combined output of all the stars in their host galaxies. (For instance, in 2015 astronomers announced they’d found a quasar that shines some 400 trillion times brighter than our sun.)
 
--> pipe in data from the CLI, a web application, or JSON file and you'll get a single file output of HTML or TXT or JSON.
+All large galaxies have giant black holes at their centers, and a quasar forms when one actively starts feeding, pulling in matter like gas and dust. But this stuff doesn’t fall directly into the black hole — it circles around the abyss at ever-increasing speeds while spiraling inward. Eventually, the cosmic food becomes so hot (from friction) that it pours out light before some of it makes its way into the black hole. The object that generates this prodigious amount of light — the black hole and cloud of debris swirling around it — is a quasar.
+
+Quasar is the library that runs quasars, compiles data and debris, and produces a singular document
+* `quasars` are the build tasks
+* `templates` are the before files
+* `debris` are the global dependencies
+
+Quasars can be large or small, complex or simple, and can include multiple frontend stacks. At the end of the day it is a document generator that takes input data and produces a singular output. That output is something that you might find yourself wanting to build, repeatedly, with either the same data or different data, in a predictably manner, to any destination of your choice. Quasars can support anything from entire websites to singular components used in other websites. Quasar can support JSON document generation and feed itself that JSON to create more JSON or an HTML file. Quasar can support TXT file output if you simply want to have your files ingested by something else. Quasar can deploy your resources to the cloud, or host them directly for testing purposes. 
+
+Quasar was built to facilitate the collaboration of different groups to create a singular output, for example: a sales team, a design team, an implementation team, and a QA team; the output of work from one team goes into quasar and becomes an input to the process of delivery on an item for the rest of the teams. In this example: the sales team creates a receipt from a sale, design creates assets from receipt information and provides that information in a new receipt, implementation creates the output from the receipt and assets, and QA tests the final output in a test environment (automated + human verified) and creates final receipt with the information included from all previous teams. The final receipts represent the entire product in it's raw form, and can be rebuilt over and over again. Receipts can be updated as assets change or templates change or the parameters of a sale changes, and rebuilt without having to revisit the entire process all over again. This enables small changes to be made by non-technical people, like: updating an image, updating copy, choosing a different template for the output, or changing the details of the sale.
 # Command Line Interface
 
 ## Install Dependencies
@@ -21,12 +28,19 @@
 ## CLI flags
 
 `--port=3000` argument to set the port number to run the application on
+
 `--runAsDaemon=true` argument to run the web api or watch jobs tasks in the background
+
 `--runWebApi=true` argument to run the api @ http://localhost:3000
+
 `--watchJobs=true` argument to autoload json files to build quasars
+
 `--runWebform=true` to run the webform @ http://localhost:3000
+
 `--autoBuildWebForm=true` to build the quasarWebform task on startup
+
 `--autoBuildWebApp=true` to build the quasarWebApp task on startup
+
 `--reRun=true` to rebuild the last successfully run arguments back through quasar
 # Development
 
@@ -65,13 +79,7 @@ defaultCliArgs = {
 
 ## Run as a process
 
-1. run `bin/cli` to run the application as a process
-   - optionally add the `--runWebApi=true` argument to run the api @ http://localhost:2720
-   - optionally add the `--watchJobs=true` argument to autoload json files to build quasars
-   - optionally add the `--runWebform=true` to run the webform @ http://localhost:3000
-   - optionally add the `--autoBuildWebForm=true` to build the quasarWebform task on startup
-   - optionally add the `--autoBuildWebApp=true` to build the quasarWebApp task on startup
-   - optionally add the `--reRun=true` to rebuild the last successfully run arguments back through quasar
+- run `bin/cli` to run the application as a process, see the Coommand Line Interface section of the documentation for flags that you can use when running the cli as a process. 
 # Development History
 
 ## 0.0.1 / 2017-11-24 (Thanksgiving Day!)
@@ -161,7 +169,48 @@ Web components should be isolated, self-contained, modular, consistent, pluggabl
 
 To think that language, stack, or framework used to create a component should also dictate the implementation of the stack is limiting as well. As long as you know how to get access to the data, can make api interactions from a common core, be able to attach to global events, and have your render managed externally then you should be enabled to implement your component however you see fit. With the advent of transpilers like Babel and compilers like Sass, in addition to tools that do minification and tree shaking and code splitting, we can do a lot more to support the wide range of developer experience and comfort with different stacks and tools to build their frontends.
 
-The architecture of view and view model separated by how data is set and how that data is rendered has always been littered with business rules and data processing before and after long term storage retrieval.
+The architecture of view and view model separated by how data is stored and retrieved and how the combination of the two is rendered has always been littered with business rules and data processing before and after long term storage retrieval. There must be a way to separate business rules from the process of rendering and using data as we have been able to separate view from model.
+
+Quasar is much like webpack or browserify in that it compiles code into a singular output from various resources. However, what Quasar does differently than these packages is that it provides a server for real-time rendering of templated code into singular outputs from templates developed in any sort of architecture. Quasar has no front end dependencies outside of the templates allowing developers of templates to define the stack and the user to simply input data into each build. The "build process" for quasar was my original reason for calling this a runtime and it was originally built on top of an express application using an HTML webform. The build process in Quasar comprises the following steps:
+
+Run
+
+Validate Required Input Arguments from the input [receipt]
+
+Copy files from sources [local, web]
+
+Setting additional arguments from the input using the source files [.zip files]
+
+Injecting code associated with the template [debris]
+
+Injecting data into the template [arguments]
+
+Compiling all js, css, and html elements into a singular text based output [template assets]
+
+Uploading files to the cloud [aws s3, dropbox, google]
+
+Deploying code to endpoint [google ad manager, placements]
+
+End
+
+Each Quasar, a type of middleware, has a build task file and a template folder associated with it. Quasar loads these files and uses some data, like defined arguments for template data, from these files to build the webform and webapp which serve as a user interface to create Quasar build jobs. This runtime was originally developed as an express web application which uses gulp to watch a local filesystem folder for new job files (.json) created by the web api endpoint which receives the receipts as json data. The Quasar Webform and Webapp are also generated by Quasar and I have developed those two stacks on React, which can be generated on the fly when starting up the web api which serves the form (on localhost:3000).  
+
+The architecture of this platform is as follows:
+
+`The Quasar SDK` - the runtime actions and tools that allow quasar developers to use any front-end stack they want to produce a singular html output that is cross-browser compatible.
+
+`The Quasar CLI` - the command line interface to the SDK which can run builds and spin up the Web Api.
+
+`The Quasar Web Api` - the express application which hosts and receives requests for running Quasar builds.
+
+`The Quasar Electron App` - the electron application which runs the Web Api and serves the webform or webapp in an application window on OS X, Windows, or Linux.
+
+`The Quasar Lambda Function` - an AWS Lambda implementation of the Quasar SDK for running builds in a serverless environment.
+
+`The Quasar Webform` - a longform UI of all the inputs for each Quasar in an environment. This was the original way to use Quasar and is now more of a developer tool.
+
+`The Quasar WebApp` - the platform application for the Quasar ecosystem in a scalable environment which allows users to login, manage builds step by step with a wizard, update and invalidate files uploaded to external storage, preview outputs in environments where Quasar widgets live, deploy widgets to production websites, and see usage statistics of quasars in production.
+
 
 # Implementation Philosophy
 
