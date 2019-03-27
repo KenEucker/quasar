@@ -20,7 +20,8 @@ const gulp = require('gulp'),
 	colors = require('colors'),
 	fs = require('fs'),
 	request = require('request'),
-	yargs = require('yargs');
+	yargs = require('yargs'),
+	envConfig = require('dotenv');
 
 const LOG_DEFAULT = LOG_CRITICAL = 'CRITICAL',
 	LOG_SUCCESS = 'SUCCESS',
@@ -35,12 +36,30 @@ const LOG_DEFAULT = LOG_CRITICAL = 'CRITICAL',
 	LOG_INFO = 'INFO',
 	LOG_END = LOG_DONE = 'END';
 
-// Logger
-let logToFile = yargs.argv.logFile || false,
-	logDate = yargs.argv.logDate;
-let logLevel = Array.isArray(yargs.argv.logSeverity) ? yargs.argv.logSeverity[yargs.argv.logSeverity.length - 1] : yargs.argv.logSeverity ? yargs.argv.logSeverity : LOG_DEFAULT;
-logLevel = Array.isArray(yargs.argv.log) ? yargs.argv.log[yargs.argv.log.length - 1] : yargs.argv.log ? yargs.argv.log : logLevel;
-logLevel = logLevel.toUpperCase();
+envConfig.config();
+
+const getCommandArgument = (names, _default) => {
+	let value = null;
+
+	// Enforce an array
+	if (!Array.isArray(names) && typeof names == 'string') {
+		names = [names];
+	}
+	names.forEach(name => {
+		// Try to get the value from CLI args
+		const newValue = Array.isArray(yargs.argv[name]) ? yargs.argv[name[yargs.argv[name].length - 1]] : yargs.argv[name];
+		// Use the value we already have, or if it is null use the newValue from CLI args, or if that is null use the environment variables
+		value = value || newValue || process.env[name];
+	});
+
+	return value || _default;
+}
+
+// Command arguments
+const logToFile = getCommandArgument('logFile', false),
+	logDate = getCommandArgument('logDate'),
+	logLevel = getCommandArgument(['logLevel', 'log'], LOG_DEFAULT).toUpperCase(),
+const activeTests = new Map();
 
 /**
  * @private
@@ -773,15 +792,6 @@ const sassify = (options) => {
 }
 
 /**
- * @description Sets the logging level
- * @private
- * @param {string} level
- */
-const setLogLevel = (level) => {
-	logLevel = level;
-}
-
-/**
  * @description uploads files to Amazon AWS S3
  * @param {string} toS3BucketPath
  * @param {string[]} includeFiles
@@ -949,5 +959,5 @@ module.exports = {
 	LOG_ERROR,
 	LOG_INFO,
 	LOG_END,
-	LOG_DONE
+	LOG_DONE,
 }

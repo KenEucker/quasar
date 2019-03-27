@@ -15,9 +15,6 @@ describe("Quasar - SDK", function () {
 
 			try {
 
-				yargs(['--logSeverity=NONE'])
-					.argv
-
 				quasarSDK = require(basePath)
 
 				assert.equal(true, !!quasarSDK, 'No error was thrown, but the instance is null')
