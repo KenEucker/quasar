@@ -58,8 +58,7 @@ const getCommandArgument = (names, _default) => {
 // Command arguments
 const logToFile = getCommandArgument('logFile', false),
 	logDate = getCommandArgument('logDate'),
-	logLevel = getCommandArgument(['logLevel', 'log'], LOG_DEFAULT).toUpperCase(),
-const activeTests = new Map();
+	logLevel = getCommandArgument(['logLevel', 'log'], LOG_DEFAULT).toUpperCase();
 
 /**
  * @private
@@ -941,7 +940,6 @@ module.exports = {
 	makePromptRequiredAndSanitary,
 	promptConsole,
 	sassify,
-	setLogLevel,
 	uploadFilesToDropbox,
 	uploadFilesToS3,
 

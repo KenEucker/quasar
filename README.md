@@ -1,5 +1,24 @@
 # Quasar
 
+<table>
+<tr>
+<td>Package</td><td>quasar</td>
+</tr>
+<tr>
+<td>Description</td>
+<td></td>
+</tr>
+<tr>
+<td>Node Version</td>
+<td>>= 6.0.0 </td>
+</tr>
+<tr>
+<td>Gulp Version</td>
+<td>>= 4.0.0</td>
+
+</tr>
+</table>
+
 Quasar is a build pipeline and application runtime that you can use to build web snippets of html with embedded javascript and css.
 
 You can read more about this project:

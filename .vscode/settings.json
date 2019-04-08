@@ -14,5 +14,5 @@
 	"prettier.printWidth": 60,
 	"eslint.enable": true,
 	"files.insertFinalNewline": true,
-	"window.zoomLevel": 0,
+	"window.zoomLevel": 0
 }
